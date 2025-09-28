@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Database</title>
+  <title>Restaurants</title>
   <style>
     body {
       font-family: sans-serif;
@@ -25,38 +25,25 @@
 <body>
   <nav>
     <a href="/">Home</a>
-    <a href="/database">Database</a>
+    <a href="/restaurants">Restaurants</a>
   </nav>
 
-  <h1>Database</h1>
+  <h1>Restaurants</h1>
 
   <table id="restaurants-table">
     <thead>
       <tr>
+        <th>Restaurant ID</th>
         <th>Name</th>
         <th>Location</th>
+        <th>Operating Hours</th>
       </tr>
     </thead>
     <tbody>
-      <!-- Data will be inserted here -->
     </tbody>
   </table>
 
-  <script>
-    fetch('/api/restaurants')
-      .then(response => response.json())
-      .then(data => {
-        const tableBody = document.querySelector('#restaurants-table tbody');
-        data.restaurants.forEach(restaurant => {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>${restaurant.name}</td>
-            <td>${restaurant.location}</td>
-          `;
-          tableBody.appendChild(row);
-        });
-      });
-  </script>
+  <script src="/scripts/restaurants.js"></script>
 
 </body>
 </html>
