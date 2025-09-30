@@ -3,7 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { getRestaurants } from './database.js';
 
-// Create a reliable path to the project directory
+// Create path to the project directory
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -13,6 +13,9 @@ const port = 3000;
 
 // Serve Static Files
 app.use(express.static(path.join(__dirname, '../public')));
+
+
+
 
 // API Route to get all restaurants from the db
 app.get('/api/restaurants', async (req, res) => {
@@ -27,6 +30,8 @@ app.get('/', (req, res) => {
 app.get('/restaurants', (req, res) => {
   res.sendFile(path.join(__dirname, '../public', 'restaurants.html'));
 });
+
+
 
 
 // Start server
