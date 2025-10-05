@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Checkout - GritDash</title>
+        <link rel="stylesheet" href="homepage-style.css">
+        <link rel="stylesheet" href="pages-style.css">
+        <script src="restaurant-data.js"></script>
+    </head>
+    <body>
+        <div class="nav-bar">
+            <img class="nav-logo" src="images/gritdash-logo-1.png" onclick="window.location.href='umbc-doordash-homepage.html'">
+            <a class="nav-link" onclick="window.location.href='umbc-doordash-homepage.html'">Home</a>
+            <a class="nav-link">Worker Portal</a>
+            <a class="nav-link">Admin Portal</a>
+            <div class="cart-icon-container" onclick="window.location.href='cart.html'">
+                <svg class="cart-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="30" height="30">
+                    <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
+                </svg>
+                <span class="cart-count">0</span>
+            </div>
+        </div>
+
+        <div class="page-content">
+            <button class="back-button" onclick="window.location.href='cart.html'">← Back to Cart</button>
+            <h1 class="page-title">Checkout</h1>
+            
+            <div class="checkout-container">
+                <div class="checkout-section">
+                    <h2 class="section-title">Order Summary</h2>
+                    <div id="orderSummary" class="order-summary">
+                        <!-- Order items will be loaded here -->
+                    </div>
+                </div>
+
+                <div class="checkout-section">
+                    <h2 class="section-title">Delivery Location</h2>
+                    <form id="checkoutForm" class="checkout-form">
+                        <div class="form-group">
+                            <label for="building">Building</label>
+                            <select id="building" required>
+                                <option value="">Select a building...</option>
+                                <option value="Library">Library</option>
+                                <option value="Commons">Commons</option>
+                                <option value="Administration">Administration Building</option>
+                                <option value="ITE">ITE Building</option>
+                                <option value="Engineering">Engineering Building</option>
+                                <option value="Physics">Physics Building</option>
+                                <option value="RAC">RAC (Recreation Center)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="room">Room/Location Details</label>
+                            <input type="text" id="room" placeholder="Room number or specific location" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="instructions">Delivery Instructions (Optional)</label>
+                            <textarea id="instructions" placeholder="Any special instructions for delivery..." rows="3"></textarea>
+                        </div>
+
+                        <h2 class="section-title">Payment Method</h2>
+
+                        <div class="form-group">
+                            <label>Select Payment Method</label>
+                            <div class="payment-options">
+                                <label class="payment-option">
+                                    <input type="radio" name="payment" value="card" checked>
+                                    <span>Credit/Debit Card</span>
+                                </label>
+                                <label class="payment-option">
+                                    <input type="radio" name="payment" value="cash">
+                                    <span>Cash on Delivery</span>
+                                </label>
+                                <label class="payment-option">
+                                    <input type="radio" name="payment" value="meal-plan">
+                                    <span>UMBC Meal Plan</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="checkout-total">
+                            <span>Total Amount:</span>
+                            <span id="checkoutTotal">$0.00</span>
+                        </div>
+
+                        <button type="submit" class="place-order-btn">Place Order</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div id="orderConfirmationModal" class="modal">
+            <div class="modal-content">
+                <h2>Order Placed Successfully!</h2>
+                <p>Your order has been sent to our delivery team.</p>
+                <p>Order ID: <span id="orderId"></span></p>
+                <p>Estimated delivery time: 25-35 minutes</p>
+                <button onclick="goToHome()" class="modal-btn">Return to Home</button>
+            </div>
+        </div>
+
+        <script>
+            function displayOrderSummary() {
+                const orderSummaryContainer = document.getElementById('orderSummary');
+                const checkoutTotalElement = document.getElementById('checkoutTotal');
+                const cart = getCart();
+
+                if (cart.length === 0) {
+                    window.location.href = 'restaurants.html';
+                    return;
+                }
+
+                orderSummaryContainer.innerHTML = '';
+                cart.forEach(cartItem => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'summary-item';
+                    itemDiv.innerHTML = `
+                        <div class="summary-item-info">
+                            <p class="summary-item-name">${cartItem.item.name}</p>
+                            <p class="summary-item-restaurant">${cartItem.restaurantName}</p>
+                        </div>
+                        <p class="summary-item-price">$${cartItem.item.price.toFixed(2)}</p>
+                    `;
+                    orderSummaryContainer.appendChild(itemDiv);
+                });
+
+                const total = getCartTotal();
+                checkoutTotalElement.textContent = `$${total.toFixed(2)}`;
+            }
+
+            function handleCheckoutSubmit(event) {
+                event.preventDefault();
+
+                const building = document.getElementById('building').value;
+                const room = document.getElementById('room').value;
+                const instructions = document.getElementById('instructions').value;
+                const paymentMethod = document.querySelector('input[name="payment"]:checked').value;
+
+                // Create order object
+                const order = {
+                    orderId: 'ORD-' + Date.now(),
+                    items: getCart(),
+                    deliveryLocation: {
+                        building: building,
+                        room: room,
+                        instructions: instructions
+                    },
+                    paymentMethod: paymentMethod,
+                    total: getCartTotal(),
+                    timestamp: new Date().toISOString(),
+                    status: 'pending'
+                };
+
+                // Save order to localStorage (simulating sending to database)
+                const orders = JSON.parse(localStorage.getItem('gritdash-orders') || '[]');
+                orders.push(order);
+                localStorage.setItem('gritdash-orders', JSON.stringify(orders));
+
+                // Show confirmation modal
+                document.getElementById('orderId').textContent = order.orderId;
+                document.getElementById('orderConfirmationModal').style.display = 'flex';
+
+                // Clear cart
+                clearCart();
+            }
+
+            function goToHome() {
+                window.location.href = 'umbc-doordash-homepage.html';
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+                displayOrderSummary();
+                document.getElementById('checkoutForm').addEventListener('submit', handleCheckoutSubmit);
+            });
+        </script>
+    </body>
+</html>

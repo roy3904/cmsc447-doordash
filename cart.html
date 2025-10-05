@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Cart - GritDash</title>
+        <link rel="stylesheet" href="homepage-style.css">
+        <link rel="stylesheet" href="pages-style.css">
+        <script src="restaurant-data.js"></script>
+    </head>
+    <body>
+        <div class="nav-bar">
+            <img class="nav-logo" src="images/gritdash-logo-1.png" onclick="window.location.href='umbc-doordash-homepage.html'">
+            <a class="nav-link" onclick="window.location.href='umbc-doordash-homepage.html'">Home</a>
+            <a class="nav-link">Worker Portal</a>
+            <a class="nav-link">Admin Portal</a>
+            <div class="cart-icon-container active">
+                <svg class="cart-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="30" height="30">
+                    <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
+                </svg>
+                <span class="cart-count">0</span>
+            </div>
+        </div>
+
+        <div class="page-content">
+            <h1 class="page-title">Your Cart</h1>
+            <div class="cart-container">
+                <div id="cartItems" class="cart-items">
+                    <!-- Cart items will be loaded here -->
+                </div>
+                <div class="cart-summary">
+                    <div class="cart-total">
+                        <span>Total:</span>
+                        <span id="cartTotal">$0.00</span>
+                    </div>
+                    <button class="checkout-btn" id="checkoutBtn" onclick="proceedToCheckout()">
+                        Proceed to Checkout
+                    </button>
+                    <button class="clear-cart-btn" onclick="clearCartAndRefresh()">
+                        Clear Cart
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            function displayCart() {
+                const cartItemsContainer = document.getElementById('cartItems');
+                const cartTotalElement = document.getElementById('cartTotal');
+                const checkoutBtn = document.getElementById('checkoutBtn');
+                const cart = getCart();
+
+                if (cart.length === 0) {
+                    cartItemsContainer.innerHTML = `
+                        <div class="empty-cart">
+                            <p>Your cart is empty</p>
+                            <button class="browse-btn" onclick="window.location.href='restaurants.html'">
+                                Browse Restaurants
+                            </button>
+                        </div>
+                    `;
+                    checkoutBtn.disabled = true;
+                    checkoutBtn.style.opacity = '0.5';
+                    checkoutBtn.style.cursor = 'not-allowed';
+                    return;
+                }
+
+                cartItemsContainer.innerHTML = '';
+                cart.forEach((cartItem, index) => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'cart-item';
+                    itemDiv.innerHTML = `
+                        <div class="cart-item-info">
+                            <p class="cart-item-restaurant">${cartItem.restaurantName}</p>
+                            <h3 class="cart-item-name">${cartItem.item.name}</h3>
+                            <p class="cart-item-price">$${cartItem.item.price.toFixed(2)}</p>
+                        </div>
+                        <button class="remove-btn" onclick="removeItem(${index})">Remove</button>
+                    `;
+                    cartItemsContainer.appendChild(itemDiv);
+                });
+
+                const total = getCartTotal();
+                cartTotalElement.textContent = `$${total.toFixed(2)}`;
+                checkoutBtn.disabled = false;
+                checkoutBtn.style.opacity = '1';
+                checkoutBtn.style.cursor = 'pointer';
+            }
+
+            function removeItem(index) {
+                removeFromCart(index);
+                displayCart();
+            }
+
+            function clearCartAndRefresh() {
+                if (confirm('Are you sure you want to clear your cart?')) {
+                    clearCart();
+                    displayCart();
+                }
+            }
+
+            function proceedToCheckout() {
+                window.location.href = 'checkout.html';
+            }
+
+            document.addEventListener('DOMContentLoaded', displayCart);
+        </script>
+    </body>
+</html>
