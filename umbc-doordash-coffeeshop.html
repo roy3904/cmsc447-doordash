@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>Coffee Shop | Gritdash</title>
+        <link rel="stylesheet" href="homepage-style.css">
+        <script src="https://kit.fontawesome.com/5d92ce3398.js" crossorigin="anonymous"></script>
+    </head>
+    <body>
+        <main>
+            <header class="nav-bar">
+                <div class="header-container">
+                    <img class="nav-logo" src="images/gritdash-logo-1.png">
+                    <a class="nav-link" href="umbc-doordash-homepage.html">Home</a>
+                    <a class="nav-link">Worker Portal</a>
+                    <a class="nav-link">Admin Portal</a>
+                </div>
+                <i class="fa-solid fa-cart-shopping"></i>
+            </header>
+    
+            <p class="food-title">The Coffee Shoppe</p>
+    
+            <div class="food-container">
+                <div class="food-item">
+                    <img class="food-img" src="images/scrambled-eggs.jpg">
+                    <div class="food-description">
+                        <p class="food-name">Scrambled Eggs</p>
+                        <p class="food-cost">$4.99</p>
+                    </div>
+                    <div class="add-to-cart">
+                        <button class="food-button">Add to Cart</button>
+                        <p class="added-text js-added-text-eggs">Added To Cart!</p>
+                    </div>
+                     
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <img class="footer-logo" src="images/gritdash-logo-1.png">
+        </footer>
+        <script>
+            let addToCartClicked = false;
+            function showAddedToCart(foodId){
+                if(addToCartClicked === true){
+                    clearTimeout(timeoudId);
+                } 
+                else{
+                    addToCartClicked = true;
+                }
+
+                timeoutId = setTimeout(() => {
+                    document.querySelector(`.js-added-text-${foodId}`).classList.remove('added-text-selected');
+                    addToCartClicked = false;
+                }, 2000);
+
+                document.querySelector(`.js-added-text-${foodId}`).classList.add('added-text-selected');
+            }
+
+            document.querySelector('.food-button').addEventListener('click', () => {
+                showAddedToCart('eggs');
+            });
+        </script>
+    </body>
+</html>
