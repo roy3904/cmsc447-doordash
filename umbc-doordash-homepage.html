@@ -4,13 +4,40 @@
     <head>
         <title>GritDash</title>
         <link rel="stylesheet" href="homepage-style.css">
+        <script src="https://kit.fontawesome.com/5d92ce3398.js" crossorigin="anonymous"></script>
     </head>
     <body>
-        <div class="nav-bar">
-            <img class="nav-logo" src="images/gritdash-logo-1.png">
-            <a class="nav-link">Home</a>
-            <a class="nav-link">Worker Portal</a>
-            <a class="nav-link">Admin Portal</a>
+        <header class="nav-bar">
+            <div class="header-container">
+                <img class="nav-logo" src="images/gritdash-logo-1.png">
+                <a class="nav-link" href="umbc-doordash-homepage.html">Home</a>
+                <a class="nav-link">Worker Portal</a>
+                <a class="nav-link">Admin Portal</a>
+            </div>
+            <i class="fa-solid fa-cart-shopping"></i>
+        </header>
+
+        <p class="home-title">Restaurants Available For Delivery</p>
+
+        <div class="restaurants-container">
+            <div class="restaurant-item">
+                <img class="restaurant-img" src="images/coffee-shoppe.PNG">
+                <div class="restaurant-info">
+                    <p class="restaurant-name">Admin Coffee Shop</p>
+                    <button class="restaurant-button">Pick Restaurant</button>
+                </div>
+            </div>
         </div>
+        
+        <footer>
+            <img class="footer-logo" src="images/gritdash-logo-1.png">
+        </footer>
+
+        <script>
+            const button = document.querySelector('.restaurant-button');
+            button.addEventListener('click', ()=>{
+                window.location.href = 'umbc-doordash-coffeeshop.html';
+            });
+        </script>
     </body>
 </html>

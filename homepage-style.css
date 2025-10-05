@@ -1,17 +1,30 @@
 body{
     margin: 0px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+p{
+    font: arial;
+    font-family: Arial, Helvetica, sans-serif;
 }
 
 .nav-bar{
+    display: flex;
     background-color: black;
     border-bottom: 3px solid rgb(255, 222, 0);
-    box-shadow: 0px 3px 20px black;
+    box-shadow: 0px 3px 10px rgb(190, 190, 190);
     padding-left: 10px;
     padding-right: 10px;
+    top: 0;
+    position: sticky;
+}
+
+.header-container{
     display: flex;
     align-items: center;
     gap: 60px;
-    position: fixed;
     width: 100vw;
 }
 
@@ -28,9 +41,10 @@ body{
 .nav-link{
     color: white;
     font-size: 22px;
+    padding: 10px;
     font: arial;
     font-family: Arial, Helvetica, sans-serif;
-    padding: 10px;
+    text-decoration: none;
 }
 
 .nav-link:hover{
@@ -38,4 +52,169 @@ body{
     cursor: pointer;
     background-color: rgb(52, 52, 52);
     border-radius: 10px;
+}
+
+.fa-cart-shopping{
+    color: white;
+    font-size: 30px;
+    justify-self: end;
+    padding: 10px;
+    border-radius: 8px;
+    align-self: center;
+    margin-right: 30px;
+}
+
+.fa-cart-shopping:hover{
+    cursor: pointer;
+    color: rgb(255, 222, 0);
+    background-color: rgb(52, 52, 52);
+}
+
+.home-title{
+    text-align: center;
+    font-size: 100px;
+    margin-top: 30px;
+    font-weight: bold;
+    color: rgb(0, 62, 110);
+}
+
+.restaurants-container{
+    display: flex;
+    justify-content: center;
+    margin-top: 50px;
+    gap: 100px;
+    flex-wrap: wrap;
+}
+
+.restaurant-item{
+    padding: 40px;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    background-color: rgb(255, 255, 255);
+    box-shadow: 0px 1px 3px rgb(125, 125, 125);
+    border-radius: 15px;
+    max-height: 450px;
+}
+
+.restaurant-img{
+    width: 500px;
+    height: 365px;
+    border-radius: 15px;
+}
+
+.restaurant-info{
+    display: flex;
+    justify-content: center;
+    gap: 50px;
+    margin-top: 15px;
+    align-items: center;
+}
+
+.restaurant-name{
+    font-size: 25px;
+}
+
+.restaurant-button{
+    height: 50px;
+    padding: 0px;
+    width: 200px;
+    font-size: 20px;
+    border-style: none;
+    background-color: black;
+    color: white;
+    border-radius: 5px;
+}
+
+.restaurant-button:hover{
+    background-color: rgb(45, 45, 45);
+    cursor: pointer;
+}
+
+
+
+.food-title{
+    font-size: 100px;
+    margin-top: 30px;
+    text-align: center;
+    color: rgb(0, 62, 110);
+}
+
+.food-container{
+    margin-top: 50px;
+    display: flex;
+    gap: 100px;
+    margin-left: 100px;
+    margin-right: 100px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.food-item{
+    display: flex;
+    flex-direction: column;
+    padding: 40px;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    align-items: center;
+    box-shadow: 0px 1px 3px rgb(125, 125, 125);
+    border-radius: 15px;
+}
+
+.food-img{
+    width: 500px;
+    border-radius: 15px;
+}
+
+.food-description{
+    font-size: 30px;
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.food-cost{
+    color: rgb(0, 62, 110);
+}
+
+.add-to-cart{
+    display: flex;
+    align-items: flex-start;
+    width: 100%;
+    gap: 20px;
+}
+
+.food-button{
+    width: 200px;
+    height: 50px;
+    background-color: rgb(255, 222, 0);
+    font-size: 25px;
+    border: 1px solid black;
+    align-self: flex-start;
+    border-radius: 5px;
+}
+
+.food-button:hover{
+    background-color: rgb(255, 237, 117);
+    cursor: pointer;
+}
+
+.added-text{
+    color: green;
+    opacity: 0;
+    transition: opacity .1s;
+}
+
+.added-text-selected{
+    opacity: 1;
+}
+
+footer{
+    margin-top: 100px;
+    background-color: black;
+    align-content: center;
+    padding: 30px;
+}
+
+.footer-logo{
+    width: 500px;
 }
