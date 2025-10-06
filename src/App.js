@@ -16,19 +16,28 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 
 
-
 // API Route to get all restaurants from the db
 app.get('/api/restaurants', async (req, res) => {
   const restaurants = await getRestaurants();
   res.json({ restaurants });
 });
-// Route to serve homepage (index.html)
+
+// Route to serve homepage
+const HOMEPAGE = "homepage.html"
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public', 'index.html'));
+  res.sendFile(path.join(__dirname, '../public', HOMEPAGE));
 });
+
+// Route to serve Coffe Shop page
+const COFFEE_SHOP = "coffeeshop.html"
+app.get('/coffee-shop', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public', COFFEE_SHOP));
+});
+
 // Route to serve Restaurants page (restaurants.html)
+const RESTAURANT_PAGE = "restaurants.html"
 app.get('/restaurants', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public', 'restaurants.html'));
+  res.sendFile(path.join(__dirname, '../public', RESTAURANT_PAGE));
 });
 
 
