@@ -17,6 +17,16 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 
 // API Route to get all restaurants from the db
+app.get('/api/restaurants', async (req, res) => {
+  try {
+    const restaurants = await getRestaurants();
+    res.json({ restaurants });
+  } catch (error) {
+    console.error('Failed to get restaurants:', error);
+    res.status(500).json({ error: 'Failed to get restaurants' });
+  }
+});
+
 // API Route to get menu items for a specific restaurant
 app.get('/api/restaurants/:id/menu', async (req, res) => {
   try {
@@ -34,16 +44,22 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../public', HOMEPAGE));
 });
 
-// Route to serve Coffe Shop page
-const COFFEE_SHOP = "coffeeshop.html"
-app.get('/coffee-shop', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public', COFFEE_SHOP));
+// Route to serve Restaurants DB Page
+const DB_RESTAURANTS = "db-pages/restaurants.html"
+app.get('/db/restaurants', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public', DB_RESTAURANTS));
+});
+
+// Route to serve The Coffe Shoppe page
+const COFFEE_SHOPPE = "coffeeshop.html"
+app.get('/coffee-shoppe', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public', COFFEE_SHOPPE));
 });
 
 // Route to serve DB Coffee Shop page
-const DB_COFFEE_SHOP = "db-pages/db-coffeeshop.html"
-app.get('/db-coffeeshop', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public', DB_COFFEE_SHOP));
+const DB_COFFEE_SHOPPE = "db-pages/coffeeshoppe.html"
+app.get('/db/coffeeshoppe', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public', DB_COFFEE_SHOPPE));
 });
 
 
