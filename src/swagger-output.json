@@ -1,8 +1,8 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "UMBC GritDash API",
-    "description": "API documentation for UMBC GritDash",
+    "title": "Gritdash API",
+    "description": "Gritdash API Documentation",
     "version": "1.0.0"
   },
   "host": "localhost:3000",
@@ -11,48 +11,6 @@
     "http"
   ],
   "paths": {
-    "/api/restaurants": {
-      "get": {
-        "tags": [
-          "Restaurants"
-        ],
-        "summary": "Get all restaurants",
-        "description": "",
-        "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "500": {
-            "description": "Internal Server Error"
-          }
-        }
-      }
-    },
-    "/api/restaurants/{id}/menu": {
-      "get": {
-        "tags": [
-          "Restaurants"
-        ],
-        "summary": "Get menu for a specific restaurant",
-        "description": "",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "500": {
-            "description": "Internal Server Error"
-          }
-        }
-      }
-    },
     "/": {
       "get": {
         "tags": [
@@ -97,10 +55,56 @@
     },
     "/db/coffeeshoppe": {
       "get": {
+        "tags": [
+          "DB_Page"
+        ],
+        "summary": "Redirect to COFFEE_SHOPPE DB Page",
         "description": "",
         "responses": {
           "200": {
             "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/restaurants": {
+      "get": {
+        "tags": [
+          "Restaurants"
+        ],
+        "summary": "Get all restaurants",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/restaurants/{id}/menu": {
+      "get": {
+        "tags": [
+          "Restaurants"
+        ],
+        "summary": "Get menu for a specific restaurant",
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "500": {
+            "description": "Internal Server Error"
           }
         }
       }
