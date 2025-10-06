@@ -11,12 +11,23 @@ async function openDb() {
 
 // Fetch all restaurants from Restaurant table
 export async function getRestaurants() {
-  // Open database connection
-  const db = await openDb();
+  let db;
+  try {
+    // Open database connection
+    db = await openDb();
 
-  // Run SQL query to get all rows
-  const restaurants = await db.all('SELECT * FROM Restaurant');
+    // Run SQL query to get all rows
+    const restaurants = await db.all('SELECT * FROM Restaurant');
 
-  // Return result as array of objects
-  return restaurants;
+    // Return result as array of objects
+    return restaurants;
+  } catch (error) {
+      console.error('Error getting restaurants:', error);
+      throw error;
+  } finally {
+      // Ensure the database connection is closed
+      if (db) {
+        await db.close();
+      }
+  }
 }

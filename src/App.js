@@ -18,8 +18,13 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 // API Route to get all restaurants from the db
 app.get('/api/restaurants', async (req, res) => {
-  const restaurants = await getRestaurants();
-  res.json({ restaurants });
+  try {
+    const restaurants = await getRestaurants();
+    res.json({ restaurants });
+  } catch (error) {
+    console.error('Failed to get restaurants:', error);
+    res.status(500).json({ error: 'Failed to get restaurants' });
+  }
 });
 
 // Route to serve homepage
