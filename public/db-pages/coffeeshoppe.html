@@ -3,13 +3,33 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The Coffee Shop Menu</title>
-  <link rel="stylesheet" href="../homepage-style.css">
+  <title>The Coffee Shoppe Menu</title>
+  <style>
+    body {
+      font-family: sans-serif;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+  </style>
 </head>
 <body>
-  <header>
-    <h1>The Coffee Shop Menu</h1>
-  </header>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/restaurants">Restaurants</a>
+  </nav>
+
+  <h1>The Coffee Shoppe Menu</h1>
+
   <main>
     <table id="menu-table">
       <thead>
@@ -21,8 +41,7 @@
         </tr>
       </thead>
       <tbody>
-        <!-- Menu items will be inserted here dynamically -->
-      </tbody>
+        </tbody>
     </table>
   </main>
   <script>
