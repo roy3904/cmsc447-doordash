@@ -1,0 +1,37 @@
+{
+  "name": "cmsc447-doordash",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "prestart": "npm install",
+    "start": "npm run swagger && node src/App.js",
+    "dev": "nodemon --ext js,html src/App.js",
+    "swagger": "node src/swagger.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/roy3904/cmsc447-doordash.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/roy3904/cmsc447-doordash/issues"
+  },
+  "homepage": "https://github.com/roy3904/cmsc447-doordash#readme",
+  "dependencies": {
+    "express": "^5.1.0",
+    "fs": "^0.0.1-security",
+    "path": "^0.12.7",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7",
+    "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4",
+    "swagger-autogen": "^2.23.7"
+  }
+}
