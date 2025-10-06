@@ -31,3 +31,23 @@ export async function getRestaurants() {
       }
   }
 }
+
+export async function getMenuItemsByRestaurantId(restaurantId) {
+  let db;
+  try {
+    db = await openDb();
+    const menu = await db.get('SELECT MenuID FROM Menu WHERE RestaurantID = ?', restaurantId);
+    if (!menu) {
+      return [];
+    }
+    const menuItems = await db.all('SELECT * FROM MenuItem WHERE MenuID = ?', menu.MenuID);
+    return menuItems;
+  } catch (error) {
+    console.error(`Error getting menu items for restaurant ${restaurantId}:`, error);
+    throw error;
+  } finally {
+    if (db) {
+      await db.close();
+    }
+  }
+}

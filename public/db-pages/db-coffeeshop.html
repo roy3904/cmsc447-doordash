@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Coffee Shop Menu</title>
+  <link rel="stylesheet" href="../homepage-style.css">
+</head>
+<body>
+  <header>
+    <h1>The Coffee Shop Menu</h1>
+  </header>
+  <main>
+    <table id="menu-table">
+      <thead>
+        <tr>
+          <th>Item ID</th>
+          <th>Name</th>
+          <th>Description</th>
+          <th>Price</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Menu items will be inserted here dynamically -->
+      </tbody>
+    </table>
+  </main>
+  <script>
+    async function populateMenu() {
+      const response = await fetch('/api/restaurants/1/menu');
+      const data = await response.json();
+
+      const tableBody = document.querySelector('#menu-table tbody');
+      tableBody.innerHTML = '';
+
+      data.menuItems.forEach(item => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${item.ItemID}</td>
+          <td>${item.Name}</td>
+          <td>${item.Description}</td>
+          <td>${item.Price}</td>
+        `;
+        tableBody.appendChild(row);
+      });
+    }
+
+    populateMenu();
+  </script>
+</body>
+</html>

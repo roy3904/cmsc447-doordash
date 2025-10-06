@@ -1,7 +1,7 @@
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { getRestaurants } from './database.js';
+import { getRestaurants, getMenuItemsByRestaurantId } from './database.js';
 
 // Create path to the project directory
 const __filename = fileURLToPath(import.meta.url);
@@ -17,13 +17,14 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 
 // API Route to get all restaurants from the db
-app.get('/api/restaurants', async (req, res) => {
+// API Route to get menu items for a specific restaurant
+app.get('/api/restaurants/:id/menu', async (req, res) => {
   try {
-    const restaurants = await getRestaurants();
-    res.json({ restaurants });
+    const menuItems = await getMenuItemsByRestaurantId(req.params.id);
+    res.json({ menuItems });
   } catch (error) {
-    console.error('Failed to get restaurants:', error);
-    res.status(500).json({ error: 'Failed to get restaurants' });
+    console.error(`Failed to get menu items for restaurant ${req.params.id}:`, error);
+    res.status(500).json({ error: 'Failed to get menu items' });
   }
 });
 
@@ -39,10 +40,10 @@ app.get('/coffee-shop', (req, res) => {
   res.sendFile(path.join(__dirname, '../public', COFFEE_SHOP));
 });
 
-// Route to serve Restaurants page (restaurants.html)
-const RESTAURANT_PAGE = "restaurants.html"
-app.get('/restaurants', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public', RESTAURANT_PAGE));
+// Route to serve DB Coffee Shop page
+const DB_COFFEE_SHOP = "db-pages/db-coffeeshop.html"
+app.get('/db-coffeeshop', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public', DB_COFFEE_SHOP));
 });
 
 
