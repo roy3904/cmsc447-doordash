@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Cart | GritDash</title>
+    <link rel="stylesheet" href="homepage-style.css">
+    <script src="https://kit.fontawesome.com/5d92ce3398.js" crossorigin="anonymous"></script>
+    <style>
+      /* Minimal page-specific styling */
+      .cart-container { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+      .cart-list { width: 100%; border-collapse: collapse; }
+      .cart-list th, .cart-list td { padding: 0.75rem; border-bottom: 1px solid #e0e0e0; text-align: left; }
+      .cart-actions { display:flex; gap:1rem; justify-content:flex-end; margin-top:1rem; }
+      .empty { text-align:center; color:#666; margin: 2rem 0; }
+  .badge { position: relative; }
+      .cart-total { text-align:right; font-weight:700; margin-top:1rem; font-size:1.1rem; }
+      .btn { background:#2b6cb0; color:white; padding:8px 12px; border:none; border-radius:4px; cursor:pointer; }
+      .btn.secondary { background:#e53e3e; }
+      .remove-button { background:transparent; border:1px solid #ddd; padding:6px 8px; border-radius:4px; cursor:pointer; }
+    </style>
+  </head>
+  <body>
+    <header class="nav-bar">
+      <div class="header-container">
+        <img class="nav-logo" src="images/gritdash-logo-1.png" alt="GritDash logo">
+        <a class="nav-link" href="homepage.html">Home</a>
+        <a class="nav-link">Worker Portal</a>
+        <a class="nav-link">Admin Portal</a>
+      </div>
+        <a href="cart.html" aria-label="Cart" id="cart-link" style="color:inherit;text-decoration:none;">
+        <i class="fa-solid fa-cart-shopping badge" style="font-size:22px;">
+          <span id="cart-count" class="badge-count">0</span>
+        </i>
+      </a>
+    </header>
+
+    <main class="cart-container">
+      <h2>Your Cart</h2>
+
+      <div id="cart-area">
+        <p class="empty" id="empty-msg">Your cart is empty. Start ordering from the restaurants!</p>
+
+        <table class="cart-list" id="cart-table" style="display:none">
+          <thead>
+            <tr>
+              <th>Restaurant</th>
+              <th>Item</th>
+              <th>Price</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="cart-body"></tbody>
+        </table>
+
+        <div id="cart-footer" style="display:none">
+          <div class="cart-total" id="cart-total"></div>
+          <div class="cart-actions">
+            <button id="clear-cart" class="btn secondary">Clear Cart</button>
+            <button id="checkout" class="btn">Proceed to Checkout</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <img class="footer-logo" src="images/gritdash-logo-1.png">
+    </footer>
+
+    <script>
+      // Cart key in localStorage
+      const CART_KEY = 'cart';
+
+      function getCart() {
+        try {
+          return JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+        } catch (e) {
+          return [];
+        }
+      }
+
+      function saveCart(cart) {
+        localStorage.setItem(CART_KEY, JSON.stringify(cart));
+        window.dispatchEvent(new Event('cart_updated'));
+      }
+
+      function updateBadge() {
+        const cart = getCart();
+        const count = cart.reduce((s, it) => s + (it.quantity || 1), 0);
+        const el = document.getElementById('cart-count');
+        if (count > 0) {
+          el.style.display = 'inline-block';
+          el.textContent = count;
+        } else {
+          el.style.display = 'none';
+        }
+      }
+
+      function renderCart() {
+        const cart = getCart();
+        const table = document.getElementById('cart-table');
+        const body = document.getElementById('cart-body');
+        const emptyMsg = document.getElementById('empty-msg');
+        const footer = document.getElementById('cart-footer');
+        const totalEl = document.getElementById('cart-total');
+
+        if (!cart.length) {
+          table.style.display = 'none';
+          emptyMsg.style.display = 'block';
+          footer.style.display = 'none';
+          updateBadge();
+          return;
+        }
+
+        emptyMsg.style.display = 'none';
+        table.style.display = 'table';
+        footer.style.display = 'block';
+        body.innerHTML = '';
+
+        let total = 0;
+        cart.forEach((item, idx) => {
+          const tr = document.createElement('tr');
+          const price = parseFloat(item.price || 0) * (item.quantity || 1);
+          total += price;
+          tr.innerHTML = `
+            <td>${escapeHtml(item.restaurant || '')}</td>
+            <td>${escapeHtml(item.name || '')}${item.quantity && item.quantity > 1 ? ' <small>×' + item.quantity + '</small>' : ''}</td>
+            <td>$${price.toFixed(2)}</td>
+            <td><button class="remove-button" data-idx="${idx}">Remove</button></td>
+          `;
+          body.appendChild(tr);
+        });
+
+        totalEl.textContent = 'Total: $' + total.toFixed(2);
+        updateBadge();
+
+        // attach remove handlers
+        document.querySelectorAll('.remove-button').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const idx = parseInt(e.currentTarget.getAttribute('data-idx'));
+            removeItem(idx);
+          });
+        });
+      }
+
+      function removeItem(index) {
+        const cart = getCart();
+        if (index >= 0 && index < cart.length) {
+          cart.splice(index, 1);
+          saveCart(cart);
+          renderCart();
+        }
+      }
+
+      function clearCart() {
+        if (!confirm('Are you sure you want to clear your cart?')) return;
+        saveCart([]);
+        renderCart();
+      }
+
+      function escapeHtml(text) {
+        return text.replace(/[&<>"']/g, function (m) {
+          return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m];
+        });
+      }
+
+      document.getElementById('clear-cart').addEventListener('click', clearCart);
+      document.getElementById('checkout').addEventListener('click', () => {
+        window.location.href = 'checkout.html';
+      });
+
+      // update badge when storage changes in other tabs
+      window.addEventListener('storage', (e) => {
+        if (e.key === CART_KEY || e.key === null) renderCart();
+      });
+
+      // custom event for same-tab updates
+      window.addEventListener('cart_updated', () => renderCart());
+
+      // initial render
+      renderCart();
+    </script>
+  </body>
+</html>
