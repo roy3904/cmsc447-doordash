@@ -70,6 +70,27 @@ p{
     background-color: rgb(52, 52, 52);
 }
 
+/* Cart badge (small number) shown near cart icon */
+.badge{
+    position: relative;
+    display: inline-block;
+}
+
+.badge-count{
+    position: absolute;
+    left: calc(100% + 8px); /* place to the right of the icon */
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0,0,0,0.9); /* dark background to work on light/dark pages */
+    color: rgb(255, 222, 0); /* gold number to match page accents */
+    font-weight: 700;
+    font-size: 12px;
+    padding: 4px 7px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 222, 0, 0.12);
+    white-space: nowrap;
+}
+
 .home-title{
     text-align: center;
     font-size: 100px;
