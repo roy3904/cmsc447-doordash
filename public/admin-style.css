@@ -92,6 +92,7 @@ input:focus{
     height: 600px;
     background-color: rgb(185, 185, 185);
     border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
     overflow-y: auto;
 }
 
@@ -119,4 +120,97 @@ input:focus{
 
 .modify-button:hover{
     background-color: rgb(55, 195, 255);
+}
+
+.not-found-text{
+    text-align: center;
+    font-size: 18px;
+}
+
+
+/*Extra properties for customer info page*/
+
+.customer-info-container{
+    margin-top: 50px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 1px solid black;
+    width: 1500px;
+    justify-content: center;
+    margin: 50px auto;
+    padding: 50px;
+    border-radius: 20px;
+    
+}
+
+.customer-info-header{
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    width: 1500px;
+    border-bottom: 1px solid black;
+    padding-bottom: 30px;
+}
+
+.profile-picture{
+    width: 250px;
+}
+
+.customer-title-name{
+    font-size: 50px;
+    margin: 0px;
+}
+
+.customer-info-header-leftside{
+    display: flex;
+    align-items: end;
+    gap: 50px;
+}
+
+.delete-user-button{
+    background-color: red;
+    width: 200px;
+    height: 70px;
+    color: white;
+    border: none;
+    font-size: 25px;
+    cursor: pointer;
+}
+
+.delete-user-button:hover{
+    background-color: rgb(255, 68, 68);
+}
+
+.customer-info-body{
+    margin-top: 30px;
+    display: flex;
+    flex-direction: column;
+}
+
+.customer-info{
+    display: flex;
+    font-size: 20px;
+    align-items: center;
+    width: 1500px;
+}
+
+.customer-info-text{
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    width: 1500px;
+}
+
+.customer-edit-button{
+    background-color: black;
+    color: white;
+    border: none;
+    width: 70px;
+    height: 30px;
+    cursor: pointer;
+}
+
+.customer-edit-button:hover{
+    background-color: rgb(45, 45, 45);
 }

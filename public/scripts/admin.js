@@ -1,4 +1,4 @@
-const customers = [
+export const customers = [
     {
         name: "Joe Biden",
         id: "123456",
@@ -22,8 +22,6 @@ const customers = [
     } 
 ];
 
-renderCustomerList();
-
 function renderCustomerList(){
     let customerListHTML = '';
     customers.forEach((customer) => {
@@ -40,9 +38,77 @@ function renderCustomerList(){
             <p class="customer-phone">${phone}</p>
             <p class="customer-email">${email}</p>
             <p class="password">${password}</p>
-            <button class="modify-button">Modify</button>
+            <button class="modify-button" data-user-id="${id}">Modify</button>
         </div>
         `
     })
     document.querySelector('.database-list-content').innerHTML = customerListHTML;
+
+    const modifyButtons = document.querySelectorAll('.modify-button');
+    modifyButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            const userId = button.dataset.userId;
+            window.location.href = `customer-info.html?id=${userId}`
+        });
+    });
 }
+
+function searchCustomerList(){
+    let customerListHTML = '';
+
+    const input = searchInput.value;
+    customers.forEach((customer) => {
+        const name = customer.name;
+        const id = customer.id;
+        const phone = customer.phone;
+        const email = customer.email;
+        const password = customer.password;
+
+        if(name.toLowerCase().includes(input.toLowerCase()) || id.toLowerCase().includes(input.toLowerCase())){
+            customerListHTML += `
+        <div class="database-item student-item">
+            <p class="customer-name">${name}</p>
+            <p class="customer-ID">${id}</p>
+            <p class="customer-phone">${phone}</p>
+            <p class="customer-email">${email}</p>
+            <p class="password">${password}</p>
+            <button class="modify-button" data-user-id="${id}">Modify</button>
+        </div>
+        `
+        }
+    })
+    
+    if(customerListHTML === ''){
+        customerListHTML = '<p class="not-found-text">Sorry, there were no students found with that information!</p>'
+    }
+    document.querySelector('.database-list-content').innerHTML = customerListHTML;
+
+    const modifyButtons = document.querySelectorAll('.modify-button');
+    modifyButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            const userId = button.dataset.userId;
+            window.location.href = `customer-info.html?id=${userId}`
+        });
+    });
+}
+
+if(window.location.href.includes('admin.html')){
+    renderCustomerList();
+    const searchInput = document.querySelector('.search');
+    searchInput.addEventListener('keyup', (event) => {
+        if(event.key === 'Enter'){
+            searchCustomerList();
+        }
+        else if(event.key === 'Backspace' && searchInput.value.length > 0){
+            searchCustomerList();
+        }
+        else if(event.key === 'Backspace' && searchInput.value.length === 0){
+            renderCustomerList();
+        }
+    });
+
+    document.querySelector('.search-button').addEventListener('click', () => {
+        searchCustomerList();
+});
+}
+
