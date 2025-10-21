@@ -191,15 +191,14 @@ input:focus{
 .customer-info{
     display: flex;
     font-size: 20px;
+    justify-content: space-between;
     align-items: center;
     width: 1500px;
 }
 
 .customer-info-text{
     display: flex;
-    align-items: end;
     justify-content: space-between;
-    width: 1500px;
 }
 
 .customer-edit-button{
@@ -214,3 +213,114 @@ input:focus{
 .customer-edit-button:hover{
     background-color: rgb(45, 45, 45);
 }
+
+.enter-input-container{
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.info-input{
+    height: 25px;
+}
+
+.cancel-edit-button{
+    background-color: rgb(154, 0, 0);
+    color: white;
+    border: 1px solid black;
+    height: 30px;
+    width: 60px;
+    cursor: pointer;
+}
+
+.cancel-edit-button:hover{
+    background-color: rgb(184, 39, 39);
+}
+
+.confirm-edit-button{
+    background-color: rgb(0, 157, 0);
+    color: white;
+    height: 30px;
+    border: 1px solid black;
+    cursor: pointer;
+}
+
+.confirm-edit-button:hover{
+    background-color:rgb(32, 191, 32);
+}
+
+.edit-buttons{
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.error-text{
+    font-size: 15px;
+    color: red;
+}
+
+.delete-confirm-window{
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: display .15s ease-in-out;
+}
+
+.delete-confirm-popup{
+    background-color: white;
+    width: 1000px;
+    height: 600px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 100px;
+    border: 5px solid black;
+    box-shadow: 0px 0px 5px black;
+}
+
+.confirm-text{
+    font-size: 40px;
+    text-align: center;
+}
+
+.delete-confirm-buttons{
+    display: flex;
+    gap: 100px;
+}
+
+.delete-confirm-button{
+    width: 200px;
+    height: 75px;
+    font-size: 30px;
+    cursor: pointer;
+    border: none;
+}
+
+.delete-accept-button{
+    background-color: rgb(0, 199, 0);
+}
+
+.delete-accept-button:hover{
+    background-color: rgb(31, 225, 31);
+}
+
+.delete-deny-button{
+    background-color: red;
+}
+
+.delete-deny-button:hover{
+    background-color: rgb(255, 81, 81);
+}
+
+.hidden{
+    display: none;
+}
+

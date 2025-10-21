@@ -92,6 +92,37 @@ function searchCustomerList(){
     });
 }
 
+export function findCustomer(customerId){
+    for(let i = 0; i < customers.length; i++){
+        if(customers[i].id === customerId){
+            return customers[i];
+        }
+    }
+    return null;
+}
+
+export function changeName(id, name){
+    findCustomer(id).name = name;
+}
+export function changePhone(id, phone){
+    findCustomer(id).phone = phone;
+}
+export function changeEmail(id, email){
+    findCustomer(id).email = email;
+}
+export function changePassword(id, password){
+    findCustomer(id).password = password;
+}
+
+export function removeCustomer(id){
+    for(let i = 0; i < customers.length; i++){
+        if(customers[i].id === id){
+            customers.splice(i, 1);
+            break;
+        }
+    }
+}
+
 if(window.location.href.includes('admin.html')){
     renderCustomerList();
     const searchInput = document.querySelector('.search');

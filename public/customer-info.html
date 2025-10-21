@@ -11,35 +11,14 @@
         </header>
         <a class="return-link" href="admin.html">&lt Return to Admin Portal</a>
         <div class="customer-info-container">
-            <div class="customer-info-header">
-                
-                <div class="customer-info-header-leftside">
-                    <img class="profile-picture" src="images/retriever-profile-picture.png">
-                    <p class="customer-title-name">Leeroy Jenkins</p>
-                </div>
-                
-                <button class="delete-user-button">Delete User</button>
-                
-            </div> 
-            <div class="customer-info-body">
-                <div class="customer-info">
-                    <p class="customer-info-text">ID: 123456</p>
-                </div>
-                <div class="customer-info">
-                    <p class="customer-info-text">Name: Leeroy Jenkins</p>
-                    <button class="customer-edit-button">Edit</button>
-                </div>
-                <div class="customer-info">
-                    <p class="customer-info-text">Phone: 123-456-7890</p>
-                    <button class="customer-edit-button">Edit</button>
-                </div>
-                <div class="customer-info">
-                    <p class="customer-info-text">Email: ljenkins@umbc.edu</p>
-                    <button class="customer-edit-button">Edit</button>
-                </div>
-                <div class="customer-info">
-                    <p class="customer-info-text">Password: encrypted password</p>
-                    <button class="customer-edit-button">Edit</button>
+            
+        </div>
+        <div class="hidden delete-confirm-window">
+            <div class="delete-confirm-popup">
+                <p class="confirm-text">Are You Sure You Want to Delete this User? You won't be able to undo this action!</p>
+                <div class="delete-confirm-buttons">
+                    <button class="delete-confirm-button delete-accept-button js-delete-accept-button">Yes</button>
+                    <button class="delete-confirm-button delete-deny-button js-delete-deny-button">No</button>
                 </div>
             </div>
         </div>
