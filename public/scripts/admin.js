@@ -56,7 +56,7 @@ function renderCustomerList(){
 function searchCustomerList(){
     let customerListHTML = '';
 
-    const input = searchInput.value;
+    const input = document.querySelector('.search').value;
     customers.forEach((customer) => {
         const name = customer.name;
         const id = customer.id;
