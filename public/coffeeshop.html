@@ -23,21 +23,10 @@
                                                 </a>
             </header>
     
-            <p class="food-title">The Coffee Shoppe</p>
+            <p class="food-title" id="restaurant-name">Restaurant</p>
     
-            <div class="food-container">
-                <div class="food-item">
-                    <img class="food-img" src="images/scrambled-eggs.jpg">
-                    <div class="food-description">
-                        <p class="food-name">Scrambled Eggs</p>
-                        <p class="food-cost">$4.99</p>
-                    </div>
-                    <div class="add-to-cart">
-                            <button id="add-eggs" class="food-button">Add to Cart</button>
-                        <p class="added-text js-added-text-eggs">Added To Cart!</p>
-                    </div>
-                     
-                </div>
+            <div class="food-container" id="food-container">
+                <!-- Menu items dynamically load here -->
             </div>
         </main>
 
@@ -45,34 +34,86 @@
             <img class="footer-logo" src="images/gritdash-logo-1.png">
         </footer>
         <script>
-            let addToCartClicked = false;
-            function showAddedToCart(foodId){
-                if(addToCartClicked === true){
-                    clearTimeout(timeoudId);
-                } 
-                else{
-                    addToCartClicked = true;
+            document.addEventListener('DOMContentLoaded', async () => {
+                const urlParams = new URLSearchParams(window.location.search);
+                const restaurantId = urlParams.get('restaurantId');
+
+                if (!restaurantId) {
+                    document.getElementById('food-container').innerHTML = '<p>Restaurant not found.</p>';
+                    return;
                 }
 
-                timeoutId = setTimeout(() => {
-                    document.querySelector(`.js-added-text-${foodId}`).classList.remove('added-text-selected');
-                    addToCartClicked = false;
-                }, 2000);
+                try {
+                    // Fetch restaurant details to get the name
+                    const restaurantsResponse = await fetch('/api/restaurants');
+                    const { restaurants } = await restaurantsResponse.json();
+                    const restaurant = restaurants.find(r => r.RestaurantID === restaurantId);
 
-                document.querySelector(`.js-added-text-${foodId}`).classList.add('added-text-selected');
-            }
+                    if (restaurant) {
+                        document.getElementById('restaurant-name').textContent = restaurant.Name;
+                    } else {
+                        document.getElementById('restaurant-name').textContent = 'Restaurant Not Found';
+                    }
 
-                        document.querySelector('#add-eggs').addEventListener('click', () => {
-                                showAddedToCart('eggs');
-                                // Add to cart via shared script
-                                if(typeof addToCart === 'function'){
-                                    addToCart({ restaurant: 'The Coffee Shoppe', name: 'Scrambled Eggs', price: 4.99, quantity: 1 });
-                                } else {
-                                    // fallback: naive localStorage push
-                                    const CART_KEY = 'cart';
-                                    try{ const cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]'); cart.push({ restaurant: 'The Coffee Shoppe', name: 'Scrambled Eggs', price:4.99, quantity:1 }); localStorage.setItem(CART_KEY, JSON.stringify(cart)); window.dispatchEvent(new Event('cart_updated')); }catch(e){}
-                                }
+                    // Fetch menu items
+                    const menuResponse = await fetch(`/api/restaurants/${restaurantId}/menu`);
+                    const { menuItems } = await menuResponse.json();
+                    const container = document.getElementById('food-container');
+
+                    if (menuItems.length === 0) {
+                        container.innerHTML = '<p>No menu items available for this restaurant.</p>';
+                        return;
+                    }
+
+                    menuItems.forEach(item => {
+                        const foodItem = document.createElement('div');
+                        foodItem.className = 'food-item';
+
+                        const foodImg = document.createElement('img');
+                        foodImg.className = 'food-img';
+                        foodImg.src = 'images/scrambled-eggs.jpg'; // TODO: Change to dynamic path
+                        foodItem.appendChild(foodImg);
+
+                        const foodDescription = document.createElement('div');
+                        foodDescription.className = 'food-description';
+
+                        const foodName = document.createElement('p');
+                        foodName.className = 'food-name';
+                        foodName.textContent = item.Name;
+                        foodDescription.appendChild(foodName);
+
+                        const foodCost = document.createElement('p');
+                        foodCost.className = 'food-cost';
+                        foodCost.textContent = `$${item.Price.toFixed(2)}`;
+                        foodDescription.appendChild(foodCost);
+
+                        foodItem.appendChild(foodDescription);
+
+                        const addToCartDiv = document.createElement('div');
+                        addToCartDiv.className = 'add-to-cart';
+
+                        const addButton = document.createElement('button');
+                        addButton.className = 'food-button';
+                        addButton.textContent = 'Add to Cart';
+                        addButton.addEventListener('click', () => {
+                            if(typeof addToCart === 'function'){
+                                addToCart({ restaurant: restaurant.Name, name: item.Name, price: item.Price, quantity: 1 });
+                            } else {
+                                // Fallback
+                                const CART_KEY = 'cart';
+                                try{ const cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]'); cart.push({ restaurant: restaurant.Name, name: item.Name, price: item.Price, quantity:1 }); localStorage.setItem(CART_KEY, JSON.stringify(cart)); window.dispatchEvent(new Event('cart_updated')); }catch(e){}
+                            }
                         });
+
+                        addToCartDiv.appendChild(addButton);
+                        foodItem.appendChild(addToCartDiv);
+                        container.appendChild(foodItem);
+                    });
+                } catch (error) {
+                    console.error('Failed to load menu:', error);
+                    document.getElementById('food-container').innerHTML = '<p>Failed to load menu.</p>';
+                }
+            });
         </script>
     </body>
 </html>

@@ -24,14 +24,8 @@
 
         <p class="home-title">Restaurants Available For Delivery</p>
 
-        <div class="restaurants-container">
-            <div class="restaurant-item">
-                <img class="restaurant-img" src="images/coffee-shoppe.PNG">
-                <div class="restaurant-info">
-                    <p class="restaurant-name">The Coffee Shoppe</p>
-                    <button class="restaurant-button">Pick Restaurant</button>
-                </div>
-            </div>
+        <div class="restaurants-container" id="restaurants-container">
+            <!-- Restaurants dynamically load here -->
         </div>
         
         <footer>
@@ -39,9 +33,47 @@
         </footer>
 
         <script>
-            const button = document.querySelector('.restaurant-button');
-            button.addEventListener('click', ()=>{
-                window.location.href = 'coffeeshop.html';
+            document.addEventListener('DOMContentLoaded', async () => {
+                try {
+                    const response = await fetch('/api/restaurants');
+                    const { restaurants } = await response.json();
+                    const container = document.getElementById('restaurants-container');
+
+                    restaurants.forEach(restaurant => {
+                        const restaurantItem = document.createElement('div');
+                        restaurantItem.className = 'restaurant-item';
+
+                        const restaurantImg = document.createElement('img');
+                        restaurantImg.className = 'restaurant-img';
+                        
+                        restaurantImg.src = 'images/coffee-shoppe.PNG'; // TODO: Change to dynamic path
+                        restaurantItem.appendChild(restaurantImg);
+
+                        const restaurantInfo = document.createElement('div');
+                        restaurantInfo.className = 'restaurant-info';
+
+                        const restaurantName = document.createElement('p');
+                        restaurantName.className = 'restaurant-name';
+                        restaurantName.textContent = restaurant.Name;
+                        restaurantInfo.appendChild(restaurantName);
+
+                        const restaurantButton = document.createElement('button');
+                        restaurantButton.className = 'restaurant-button';
+                        restaurantButton.textContent = 'Pick Restaurant';
+                        restaurantButton.addEventListener('click', () => {
+                            // TODO: Dynamically route to restaurant page
+                            window.location.href = `coffeeshop.html?restaurantId=${restaurant.RestaurantID}`;
+                        });
+                        restaurantInfo.appendChild(restaurantButton);
+
+                        restaurantItem.appendChild(restaurantInfo);
+                        container.appendChild(restaurantItem);
+                    });
+                } catch (error) {
+                    console.error('Failed to load restaurants:', error);
+                    const container = document.getElementById('restaurants-container');
+                    container.textContent = 'Failed to load restaurants.';
+                }
             });
         </script>
     </body>
