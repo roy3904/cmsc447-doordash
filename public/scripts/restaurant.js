@@ -1,7 +1,17 @@
 document.addEventListener('DOMContentLoaded', async () => {
-    // Get restaurantId from URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const restaurantId = urlParams.get('restaurantId');
+    // Get restaurantId from URL path or query parameter
+    let restaurantId;
+    const pathParts = window.location.pathname.split('/');
+    const lastPart = pathParts[pathParts.length - 1];
+
+    if (lastPart && lastPart !== 'restaurant.html' && lastPart !== '') {
+        // From path /restaurant/1
+        restaurantId = lastPart;
+    } else {
+        // From query /restaurant.html?restaurantId=1
+        const urlParams = new URLSearchParams(window.location.search);
+        restaurantId = urlParams.get('restaurantId');
+    }
     
     // Check if Restaurant exists
     if (!restaurantId) {

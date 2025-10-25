@@ -1,13 +1,13 @@
 
 import express from 'express';
-import { getHomepage, getCoffeeShoppe, getDbRestaurants, getDbCoffeeShoppe } from '../controllers/pagesController.js';
+import { getHomepage, getRestaurantPage, getDbRestaurants, getDbCoffeeShoppe } from '../controllers/pagesController.js';
 
 const router = express.Router();
 
 // Route to serve homepage
 router.get('/', getHomepage);
-// Route to serve The Coffe Shoppe page
-router.get('/coffee-shoppe', getCoffeeShoppe);
+// Route to serve a restaurant page by ID
+router.get('/restaurant/:id', getRestaurantPage);
 
 
 // Route to serve Restaurants DB Page
