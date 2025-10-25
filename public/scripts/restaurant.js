@@ -19,6 +19,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (restaurant) {
             document.getElementById('restaurant-name').textContent = restaurant.Name;
             document.title = restaurant.Name + ' | Gritdash';
+
+            // TODO: Needs frontend formatting
+            const restaurantInfoDiv = document.getElementById('restaurant-info');
+            restaurantInfoDiv.innerHTML = `
+                <p><b>Location:</b> ${restaurant.Location}</p>
+                <p><b>Operating Hours:</b> ${restaurant.OperatingHours}</p>
+            `;
         } else {
             document.getElementById('restaurant-name').textContent = 'Restaurant Not Found';
         }
