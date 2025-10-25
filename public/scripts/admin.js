@@ -22,6 +22,15 @@ export const customers = [
     } 
 ];
 
+export const restaurants = [
+    {
+        name: "Coffee Shoppe",
+        id: "384098",
+        location: "Admin Building",
+        hours: "8am - 5pm",
+    }
+];
+
 function renderCustomerList(){
     let customerListHTML = '';
     customers.forEach((customer) => {
@@ -38,17 +47,46 @@ function renderCustomerList(){
             <p class="customer-phone">${phone}</p>
             <p class="customer-email">${email}</p>
             <p class="password">${password}</p>
-            <button class="modify-button" data-user-id="${id}">Modify</button>
+            <button class="modify-button js-modify-customer" data-user-id="${id}">Modify</button>
         </div>
         `
     })
-    document.querySelector('.database-list-content').innerHTML = customerListHTML;
+    document.querySelector('.js-customer-list-content').innerHTML = customerListHTML;
 
-    const modifyButtons = document.querySelectorAll('.modify-button');
+    const modifyButtons = document.querySelectorAll('.js-modify-customer');
     modifyButtons.forEach((button) => {
         button.addEventListener('click', () => {
             const userId = button.dataset.userId;
             window.location.href = `customer-info.html?id=${userId}`
+        });
+    });
+}
+
+function renderRestaurantList(){
+    let restaurantListHTML = '';
+    restaurants.forEach((restaurant) => {
+        const name = restaurant.name;
+        const id = restaurant.id;
+        const location = restaurant.location;
+        const hours = restaurant.hours;
+
+        restaurantListHTML += `
+        <div class="database-item student-item">
+            <p class="restaurant-name">${name}</p>
+            <p class="restaurant-ID">${id}</p>
+            <p class="restaurant-location">${location}</p>
+            <p class="restaurant-hours">${hours}</p>
+            <button class="modify-button js-modify-restaurant" data-restaurant-id="${id}">Modify</button>
+        </div>
+        `
+    })
+    document.querySelector('.js-restaurant-list-content').innerHTML = restaurantListHTML;
+
+    const modifyButtons = document.querySelectorAll('.js-modify-restaurant');
+    modifyButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            const restaurantId = button.dataset.restaurantId;
+            window.location.href = `restaurant-info.html?id=${restaurantId}`
         });
     });
 }
@@ -125,6 +163,7 @@ export function removeCustomer(id){
 
 if(window.location.href.includes('admin.html')){
     renderCustomerList();
+    renderRestaurantList();
     const searchInput = document.querySelector('.search');
     searchInput.addEventListener('keyup', (event) => {
         if(event.key === 'Enter'){
