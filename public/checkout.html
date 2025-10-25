@@ -47,7 +47,17 @@
 
       <div style="margin-top:1rem">
         <label for="building">Delivery Address / Building</label>
-        <input id="building" class="input" placeholder="Building name or full address (e.g., Commons, Library, ITE, Engineering, 1000 Hilltop Cir)" />
+        <select id="building" class="input">
+          <option value="" disabled selected>Select building or delivery location</option>
+          <option value="Commons">Commons</option>
+          <option value="Library">Library</option>
+          <option value="ITE">ITE</option>
+          <option value="Engineering">Engineering</option>
+          <option value="1000 Hilltop Cir">1000 Hilltop Cir</option>
+          <option value="Student Center">Student Center</option>
+          <option value="Residence Hall">Residence Hall</option>
+          <option value="Administration">Administration</option>
+        </select>
       </div>
 
       <div style="margin-top:0.75rem">
@@ -140,7 +150,8 @@
         const cart = getCart();
         if(!cart.length){ alert('Your cart is empty.'); return; }
 
-        const building = document.getElementById('building').value;
+  const building = document.getElementById('building').value;
+  if(!building){ alert('Please select a delivery building/location.'); return; }
         const room = document.getElementById('room').value || '';
         const instructions = document.getElementById('instructions').value || '';
         const tipVal = parseFloat(document.getElementById('tip').value) || 0;
