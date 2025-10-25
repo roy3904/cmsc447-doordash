@@ -18,10 +18,10 @@ export const getHomepage = (req, res) => {
   res.sendFile(path.join(__dirname, '../../public', HOMEPAGE));
 };
 
-export const getCoffeeShoppe = (req, res) => {
+export const getRestaurantPage = (req, res) => {
   // #swagger.tags = ['Page']
-  // #swagger.summary = 'Redirect to The Coffee Shoppe page'
-  res.sendFile(path.join(__dirname, '../../public', COFFEE_SHOPPE));
+  // #swagger.summary = 'Redirect to a restaurant page'
+  res.sendFile(path.join(__dirname, '../../public', "restaurant.html"));
 };
 
 export const getDbRestaurants = (req, res) => {
