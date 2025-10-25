@@ -22,7 +22,7 @@ export const customers = [
     } 
 ];
 
-export const restaurants = [
+export const restaurants = [//hello
     {
         name: "Coffee Shoppe",
         id: "384098",
