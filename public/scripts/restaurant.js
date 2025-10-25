@@ -45,8 +45,30 @@ document.addEventListener('DOMContentLoaded', async () => {
             const foodImg = document.createElement('img');
             foodImg.className = 'food-img';
 
-            foodImg.src = `../images/${item.ImageFile}`;
+            const restaurantNamePath = restaurant.Name.replace(/\s+/g, '-');
+            // console.log('Restaurant Name:', restaurant.Name);
+            // console.log('Restaurant Path:', restaurantNamePath);
+
+            let imageFilePath;
+
+            if (!item || !item.ImageFile) {
+                // Derive filename from item name
+                imageFilePath = item.Name.toLowerCase().replace(/\s+/g, '-') + '.png';
+                // console.warn('Missing ImageFile, using derived path:', imageFilePath);
+            } else {
+                imageFilePath = item.ImageFile.toLowerCase();
+                // console.log('Original ImageFile:', item.ImageFile);
+                // console.log('Lowercased ImageFile:', imageFilePath);
+            }
+
+            foodImg.src = `../images/${restaurantNamePath}/${imageFilePath}`;
             foodImg.alt = item.Name;
+
+            // console.log('Final Image Source:', foodImg.src);
+            // console.log('Image Alt Text:', foodImg.alt);
+
+            // foodImg.onload = () => console.log('Image loaded successfully:', foodImg.src);
+            // foodImg.onerror = (err) => console.error('Image failed to load:', foodImg.src, err);
 
             foodItem.appendChild(foodImg);
 
