@@ -46,7 +46,6 @@
                         const restaurantImg = document.createElement('img');
                         restaurantImg.className = 'restaurant-img';
                         
-
                         const restaurantInfo = document.createElement('div');
                         restaurantInfo.className = 'restaurant-info';
 
@@ -55,7 +54,9 @@
                         restaurantName.textContent = restaurant.Name;
                         restaurantInfo.appendChild(restaurantName);
 
-                        restaurantImg.src = `images/${encodeURIComponent(restaurant.logoFile)}`;
+                        const folderName = restaurant.Name.replaceAll(' ', '-');
+                        restaurantImg.src = `images/${folderName}/logo.png`;
+
                         restaurantImg.alt = `${restaurant.Name} Logo`;
                         restaurantItem.appendChild(restaurantImg);
 
