@@ -69,11 +69,6 @@
                         const foodItem = document.createElement('div');
                         foodItem.className = 'food-item';
 
-                        const foodImg = document.createElement('img');
-                        foodImg.className = 'food-img';
-                        foodImg.src = 'images/scrambled-eggs.jpg'; // TODO: Change to dynamic path
-                        foodItem.appendChild(foodImg);
-
                         const foodDescription = document.createElement('div');
                         foodDescription.className = 'food-description';
 
@@ -81,6 +76,14 @@
                         foodName.className = 'food-name';
                         foodName.textContent = item.Name;
                         foodDescription.appendChild(foodName);
+
+                        const foodImg = document.createElement('img');
+                        foodImg.className = 'food-img';
+
+                        foodImg.src = `images/${item.ImageFile}`; 
+                        foodImg.alt = item.Name;
+
+                        foodItem.appendChild(foodImg);
 
                         const foodCost = document.createElement('p');
                         foodCost.className = 'food-cost';
