@@ -46,8 +46,6 @@
                         const restaurantImg = document.createElement('img');
                         restaurantImg.className = 'restaurant-img';
                         
-                        restaurantImg.src = 'images/coffee-shoppe.PNG'; // TODO: Change to dynamic path
-                        restaurantItem.appendChild(restaurantImg);
 
                         const restaurantInfo = document.createElement('div');
                         restaurantInfo.className = 'restaurant-info';
@@ -57,12 +55,16 @@
                         restaurantName.textContent = restaurant.Name;
                         restaurantInfo.appendChild(restaurantName);
 
+                        restaurantImg.src = `images/${encodeURIComponent(restaurant.logoFile)}`;
+                        restaurantImg.alt = `${restaurant.Name} Logo`;
+                        restaurantItem.appendChild(restaurantImg);
+
                         const restaurantButton = document.createElement('button');
                         restaurantButton.className = 'restaurant-button';
                         restaurantButton.textContent = 'Pick Restaurant';
                         restaurantButton.addEventListener('click', () => {
                             // TODO: Dynamically route to restaurant page
-                            window.location.href = `coffeeshop.html?restaurantId=${restaurant.RestaurantID}`;
+                            window.location.href = `restaurant.html?restaurantId=${restaurant.RestaurantID}`;
                         });
                         restaurantInfo.appendChild(restaurantButton);
 
