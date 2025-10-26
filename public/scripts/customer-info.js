@@ -1,4 +1,4 @@
-import {customers, findCustomer, changeName, changePhone, changeEmail, changePassword, removeCustomer} from './admin.js';
+import {customers, findCustomer, changeCustomerName, changePhone, changeEmail, changePassword, removeCustomer} from './admin.js';
 
 const params = new URLSearchParams(window.location.search);
 const userId = params.get('id');
@@ -12,45 +12,45 @@ function renderCustomerInfo(){
     let customerInfoHTML = '';
 
     if(currCustomer === null){
-        customerInfoHTML = '<p class="invalid-customer-message">This is an empty customer page!</p>';
+        customerInfoHTML = '<p class="invalid-message">This is an empty customer page!</p>';
     }
     else{
         customerInfoHTML += `
-            <div class="customer-info-header">
+            <div class="info-header">
                     
-                <div class="customer-info-header-leftside">
+                <div class="info-header-leftside">
                     <img class="profile-picture" src="images/retriever-profile-picture.png">
-                    <p class="customer-title-name">${currCustomer.name}</p>
+                    <p class="title-name">${currCustomer.name}</p>
                 </div>
                 
                 <button class="delete-user-button">Delete User</button>
                 
             </div> 
-            <div class="customer-info-body">
-                <div class="customer-info js-id-info">
-                    <p class="customer-info-text js-id-text">ID: ${currCustomer.id}</p>
+            <div class="info-body js-customer-info-body">
+                <div class="entity-info js-id-info">
+                    <p class="entity-info-text js-id-text">ID: ${currCustomer.id}</p>
                 </div>
-                <div class="customer-info js-name-info">
-                    <p class="customer-info-text js-name-text">Name: ${currCustomer.name}</p>
-                    <button class="customer-edit-button js-edit-name-button">Edit</button>
+                <div class="entity-info js-name-info">
+                    <p class="entity-info-text js-name-text">Name: ${currCustomer.name}</p>
+                    <button class="entity-edit-button js-edit-name-button">Edit</button>
                 </div>
-                <div class="customer-info js-phone-info">
-                    <p class="customer-info-text js-phone-text">Phone: ${currCustomer.phone}</p>
-                    <button class="customer-edit-button js-edit-phone-button">Edit</button>
+                <div class="entity-info js-phone-info">
+                    <p class="entity-info-text js-phone-text">Phone: ${currCustomer.phone}</p>
+                    <button class="entity-edit-button js-edit-phone-button">Edit</button>
                 </div>
-                <div class="customer-info js-email-info">
-                    <p class="customer-info-text js-email-text">Email: ${currCustomer.email}</p>
-                    <button class="customer-edit-button js-edit-email-button">Edit</button>
+                <div class="entity-info js-email-info">
+                    <p class="entity-info-text js-email-text">Email: ${currCustomer.email}</p>
+                    <button class="entity-edit-button js-edit-email-button">Edit</button>
                 </div>
-                <div class="customer-info js-password-info">
-                    <p class="customer-info-text js-password-text">Password: ${currCustomer.password}</p>
-                    <button class="customer-edit-button js-edit-password-button">Edit</button>
+                <div class="entity-info js-password-info">
+                    <p class="entity-info-text js-password-text">Password: ${currCustomer.password}</p>
+                    <button class="entity-edit-button js-edit-password-button">Edit</button>
                 </div>
             </div>
         `
     }
     
-    document.querySelector('.customer-info-container').innerHTML = customerInfoHTML;
+    document.querySelector('.js-customer-info-container').innerHTML = customerInfoHTML;
 
     renderButtons();
     
@@ -90,7 +90,7 @@ function renderButtons(){
         }
         
         if(event.target.classList.contains('js-confirm-edit-button')){
-            changeName(userId, document.querySelector('.js-name-input').value);
+            changeCustomerName(userId, document.querySelector('.js-name-input').value);
             renderCustomerInfo();
         }
     });
