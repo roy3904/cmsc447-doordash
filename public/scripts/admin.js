@@ -22,6 +22,15 @@ export const customers = [
     } 
 ];
 
+export const restaurants = [//hello
+    {
+        name: "Coffee Shoppe",
+        id: "384098",
+        location: "Admin Building",
+        hours: "8am - 5pm",
+    }
+];
+
 function renderCustomerList(){
     let customerListHTML = '';
     customers.forEach((customer) => {
@@ -38,13 +47,13 @@ function renderCustomerList(){
             <p class="customer-phone">${phone}</p>
             <p class="customer-email">${email}</p>
             <p class="password">${password}</p>
-            <button class="modify-button" data-user-id="${id}">Modify</button>
+            <button class="modify-button js-modify-customer" data-user-id="${id}">Modify</button>
         </div>
         `
     })
-    document.querySelector('.database-list-content').innerHTML = customerListHTML;
+    document.querySelector('.js-customer-list-content').innerHTML = customerListHTML;
 
-    const modifyButtons = document.querySelectorAll('.modify-button');
+    const modifyButtons = document.querySelectorAll('.js-modify-customer');
     modifyButtons.forEach((button) => {
         button.addEventListener('click', () => {
             const userId = button.dataset.userId;
@@ -53,10 +62,39 @@ function renderCustomerList(){
     });
 }
 
+function renderRestaurantList(){
+    let restaurantListHTML = '';
+    restaurants.forEach((restaurant) => {
+        const name = restaurant.name;
+        const id = restaurant.id;
+        const location = restaurant.location;
+        const hours = restaurant.hours;
+
+        restaurantListHTML += `
+        <div class="database-item restaurant-item">
+            <p class="restaurant-name">${name}</p>
+            <p class="restaurant-ID">${id}</p>
+            <p class="restaurant-location">${location}</p>
+            <p class="restaurant-hours">${hours}</p>
+            <button class="modify-button js-modify-restaurant" data-restaurant-id="${id}">Modify</button>
+        </div>
+        `
+    })
+    document.querySelector('.js-restaurant-list-content').innerHTML = restaurantListHTML;
+
+    const modifyButtons = document.querySelectorAll('.js-modify-restaurant');
+    modifyButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            const restaurantId = button.dataset.restaurantId;
+            window.location.href = `restaurant-info.html?id=${restaurantId}`
+        });
+    });
+}
+
 function searchCustomerList(){
     let customerListHTML = '';
 
-    const input = document.querySelector('.search').value;
+    const input = document.querySelector('.js-search-customers').value;
     customers.forEach((customer) => {
         const name = customer.name;
         const id = customer.id;
@@ -72,22 +110,59 @@ function searchCustomerList(){
             <p class="customer-phone">${phone}</p>
             <p class="customer-email">${email}</p>
             <p class="password">${password}</p>
-            <button class="modify-button" data-user-id="${id}">Modify</button>
+            <button class="modify-button js-modify-customer" data-user-id="${id}">Modify</button>
         </div>
         `
         }
     })
     
     if(customerListHTML === ''){
-        customerListHTML = '<p class="not-found-text">Sorry, there were no students found with that information!</p>'
+        customerListHTML = '<p class="not-found-text">Sorry, there were no users found with that information!</p>'
     }
-    document.querySelector('.database-list-content').innerHTML = customerListHTML;
+    document.querySelector('.js-customer-list-content').innerHTML = customerListHTML;
 
-    const modifyButtons = document.querySelectorAll('.modify-button');
+    const modifyButtons = document.querySelectorAll('.js-modify-customer');
     modifyButtons.forEach((button) => {
         button.addEventListener('click', () => {
             const userId = button.dataset.userId;
             window.location.href = `customer-info.html?id=${userId}`
+        });
+    });
+}
+
+function searchRestaurantList(){
+    let customerListHTML = '';
+
+    const input = document.querySelector('.js-search-restaurants').value;
+    restaurants.forEach((restaurant) => {
+        const name = restaurant.name;
+        const id = restaurant.id;
+        const location = restaurant.location;
+        const hours = restaurant.hours;
+
+        if(name.toLowerCase().includes(input.toLowerCase()) || id.toLowerCase().includes(input.toLowerCase())){
+            customerListHTML += `
+        <div class="database-item restaurant-item">
+            <p class="restaurant-name">${name}</p>
+            <p class="restaurant-ID">${id}</p>
+            <p class="restaurant-location">${location}</p>
+            <p class="restaurant-hours">${hours}</p>
+            <button class="modify-button js-modify-restaurant" data-restaurant-id="${id}">Modify</button>
+        </div>
+        `
+        }
+    })
+    
+    if(customerListHTML === ''){
+        customerListHTML = '<p class="not-found-text">Sorry, there were no restaurants found with that information!</p>'
+    }
+    document.querySelector('.js-restaurant-list-content').innerHTML = customerListHTML;
+
+    const modifyButtons = document.querySelectorAll('.js-modify-restaurant');
+    modifyButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            const userId = button.dataset.userId;
+            window.location.href = `restaurant-info.html?id=${userId}`
         });
     });
 }
@@ -101,7 +176,7 @@ export function findCustomer(customerId){
     return null;
 }
 
-export function changeName(id, name){
+export function changeCustomerName(id, name){
     findCustomer(id).name = name;
 }
 export function changePhone(id, phone){
@@ -123,23 +198,69 @@ export function removeCustomer(id){
     }
 }
 
+export function changeRestaurantName(id, name){
+    findRestaurant(id).name = name;
+}
+export function changeLocation(id, location){
+    findRestaurant(id).location = location;
+}
+export function changeHours(id, hours){
+    findRestaurant(id).hours = hours;
+}
+
+export function findRestaurant(restaurantId){
+    for(let i = 0; i < restaurants.length; i++){
+        if(restaurants[i].id === restaurantId){
+            return restaurants[i];
+        }
+    }
+    return null;
+}
+
+export function removeRestaurant(id){
+    for(let i = 0; i < restaurants.length; i++){
+        if(restaurants[i].id === id){
+            restaurants.splice(i, 1);
+            break;
+        }
+    }
+}
+
 if(window.location.href.includes('admin.html')){
     renderCustomerList();
-    const searchInput = document.querySelector('.search');
-    searchInput.addEventListener('keyup', (event) => {
+    renderRestaurantList();
+    const customerSearchInput = document.querySelector('.js-search-customers');
+    customerSearchInput.addEventListener('keyup', (event) => {
         if(event.key === 'Enter'){
             searchCustomerList();
         }
-        else if(event.key === 'Backspace' && searchInput.value.length > 0){
+        else if(event.key === 'Backspace' && customerSearchInput.value.length > 0){
             searchCustomerList();
         }
-        else if(event.key === 'Backspace' && searchInput.value.length === 0){
+        else if(event.key === 'Backspace' && customerSearchInput.value.length === 0){
             renderCustomerList();
         }
     });
 
-    document.querySelector('.search-button').addEventListener('click', () => {
+    const RestaurantSearchInput = document.querySelector('.js-search-restaurants');
+    RestaurantSearchInput.addEventListener('keyup', (event) => {
+        if(event.key === 'Enter'){
+            searchRestaurantList();
+        }
+        else if(event.key === 'Backspace' && RestaurantSearchInput.value.length > 0){
+            searchRestaurantList();
+        }
+        else if(event.key === 'Backspace' && RestaurantSearchInput.value.length === 0){
+            searchRestaurantList();
+        }
+    });
+
+    document.querySelector('.js-search-customer-button').addEventListener('click', () => {
         searchCustomerList();
-});
+    });
+
+    document.querySelector('.js-search-restaurant-button').addEventListener('click', () => {
+        searchRestaurantList();
+    });
 }
 

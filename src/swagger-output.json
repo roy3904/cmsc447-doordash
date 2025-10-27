@@ -25,13 +25,21 @@
         }
       }
     },
-    "/coffee-shoppe": {
+    "/restaurant/{id}": {
       "get": {
         "tags": [
           "Page"
         ],
-        "summary": "Redirect to The Coffee Shoppe page",
+        "summary": "Redirect to a restaurant page",
         "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK"
