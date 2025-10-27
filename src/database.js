@@ -164,9 +164,12 @@ export async function addToCart(customerId, itemId, quantity) {
     let cart = await db.get('SELECT * FROM "Order" WHERE CustomerID = ? AND OrderStatus = \'Cart\'', customerId);
     if (!cart) {
       const menuItem = await db.get('SELECT MenuID FROM MenuItem WHERE ItemID = ?', itemId);
+      if (!menuItem) {
+        throw new Error(`Item with ID ${itemId} not found`);
+      }
       const menu = await db.get('SELECT RestaurantID FROM Menu WHERE MenuID = ?', menuItem.MenuID);
       const newOrderId = 'ORD-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8).toUpperCase();
-      await db.run('INSERT INTO "Order" (OrderID, CustomerID, RestaurantID, OrderStatus) VALUES (?, ?, ?, \'Cart\')', [newOrderId, customerId, menu.RestaurantID]);
+      await db.run('INSERT INTO "Order" (OrderID, CustomerID, RestaurantID, OrderStatus) VALUES (?, ?, ?, ?)', [newOrderId, customerId, menu.RestaurantID, 'Cart']);
       cart = { OrderID: newOrderId };
     }
 
@@ -175,6 +178,9 @@ export async function addToCart(customerId, itemId, quantity) {
       await db.run('UPDATE OrderItem SET Quantity = Quantity + ? WHERE OrderID = ? AND ItemID = ?', [quantity, cart.OrderID, itemId]);
     } else {
       const menuItem = await db.get('SELECT Price FROM MenuItem WHERE ItemID = ?', itemId);
+      if (!menuItem) {
+        throw new Error(`Item with ID ${itemId} not found`);
+      }
       await db.run('INSERT INTO OrderItem (OrderID, ItemID, Quantity, Price) VALUES (?, ?, ?, ?)', [cart.OrderID, itemId, quantity, menuItem.Price]);
     }
 
@@ -286,4 +292,3 @@ export async function getMenuItem(itemId) {
     }
   }
 }
-

@@ -136,7 +136,7 @@
         return 'ODR-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,8).toUpperCase();
       }
 
-      document.getElementById('place-order').addEventListener('click', () => {
+      document.getElementById('place-order').addEventListener('click', async () => {
         const cart = getCart();
         if(!cart.length){ alert('Your cart is empty.'); return; }
 
@@ -146,27 +146,43 @@
         const tipVal = parseFloat(document.getElementById('tip').value) || 0;
         const payment = document.querySelector('input[name="payment"]:checked').value;
 
+        const totalCost = cart.reduce((total, item) => total + (parseFloat(item.price) * item.quantity), 0) + tipVal;
+
         const order = {
           id: generateOrderId(),
-          createdAt: new Date().toISOString(),
-          items: cart.map(it => ({ restaurant: it.restaurant, name: it.name, price: parseFloat(it.price||0), quantity: it.quantity||1 })),
+          customerId: 'CUST-123', // TODO: Fetch Customer ID
+          restaurantId: cart[0].restaurantId, // Assuming all items are from the same restaurant
           delivery: { building, room, instructions },
-          paymentMethod: payment,
+          items: cart.map(it => ({ id: it.id, name: it.name, price: parseFloat(it.price||0), quantity: it.quantity||1 })),
+          totalCost: totalCost,
           tip: tipVal,
+          paymentMethod: payment,
           status: 'Placed',
-          estimatedMinutes: 20 + Math.floor(Math.random()*16) // random 20-35 min
         };
 
-        const orders = getOrders();
-        orders.push(order);
-        saveOrders(orders);
+        try {
+          const response = await fetch('/api/orders', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(order)
+          });
 
-        // clear cart after successful order
-        saveCart([]);
+          if (!response.ok) {
+            throw new Error('Failed to place order');
+          }
 
-        // show confirmation modal
-        document.getElementById('conf-text').innerHTML = `Your order <strong>${order.id}</strong> was placed. Estimated delivery: <strong>${order.estimatedMinutes} minutes</strong> to ${escapeHtml(building)} ${escapeHtml(room)}.`;
-        document.getElementById('confirmation').style.display = 'flex';
+          // clear cart after successful order
+          saveCart([]);
+
+          // show confirmation modal
+          document.getElementById('conf-text').innerHTML = `Your order <strong>${order.id}</strong> was placed. Estimated delivery: <strong>20-35 minutes</strong> to ${escapeHtml(building)} ${escapeHtml(room)}.`;
+          document.getElementById('confirmation').style.display = 'flex';
+        } catch (error) {
+          console.error('Error placing order:', error);
+          alert('There was an error placing your order. Please try again.');
+        }
       });
 
       document.getElementById('close-modal').addEventListener('click', () => {

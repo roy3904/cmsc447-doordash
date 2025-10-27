@@ -66,48 +66,22 @@
       <img class="footer-logo" src="images/gritdash-logo-1.png">
     </footer>
 
+    <script src="scripts/cart-common.js"></script>
     <script>
-      // Cart key in localStorage
-      const CART_KEY = 'cart';
-
-      function getCart() {
-        try {
-          return JSON.parse(localStorage.getItem(CART_KEY) || '[]');
-        } catch (e) {
-          return [];
-        }
-      }
-
-      function saveCart(cart) {
-        localStorage.setItem(CART_KEY, JSON.stringify(cart));
-        window.dispatchEvent(new Event('cart_updated'));
-      }
-
-      function updateBadge() {
-        const cart = getCart();
-        const count = cart.reduce((s, it) => s + (it.quantity || 1), 0);
-        const el = document.getElementById('cart-count');
-        if (count > 0) {
-          el.style.display = 'inline-block';
-          el.textContent = count;
-        } else {
-          el.style.display = 'none';
-        }
-      }
-
-      function renderCart() {
-        const cart = getCart();
+      async function renderCart() {
         const table = document.getElementById('cart-table');
         const body = document.getElementById('cart-body');
         const emptyMsg = document.getElementById('empty-msg');
         const footer = document.getElementById('cart-footer');
         const totalEl = document.getElementById('cart-total');
 
-        if (!cart.length) {
+        const cart = await getCart();
+
+        if (!cart || !cart.items || !cart.items.length) {
           table.style.display = 'none';
           emptyMsg.style.display = 'block';
           footer.style.display = 'none';
-          updateBadge();
+          updateCartBadge();
           return;
         }
 
@@ -117,43 +91,40 @@
         body.innerHTML = '';
 
         let total = 0;
-        cart.forEach((item, idx) => {
+        for (const item of cart.items) {
           const tr = document.createElement('tr');
-          const price = parseFloat(item.price || 0) * (item.quantity || 1);
+          const price = parseFloat(item.Price || 0) * (item.Quantity || 1);
           total += price;
+          const menuItem = await getMenuItem(item.ItemID);
           tr.innerHTML = `
-            <td>${escapeHtml(item.restaurant || '')}</td>
-            <td>${escapeHtml(item.name || '')}${item.quantity && item.quantity > 1 ? ' <small>×' + item.quantity + '</small>' : ''}</td>
+            <td>${escapeHtml(menuItem.restaurant.Name || '')}</td>
+            <td>${escapeHtml(menuItem.Name || '')}${item.Quantity && item.Quantity > 1 ? ' <small>×' + item.Quantity + '</small>' : ''}</td>
             <td>$${price.toFixed(2)}</td>
-            <td><button class="remove-button" data-idx="${idx}">Remove</button></td>
+            <td><button class="remove-button" data-item-id="${item.ItemID}">Remove</button></td>
           `;
           body.appendChild(tr);
-        });
+        }
 
         totalEl.textContent = 'Total: $' + total.toFixed(2);
-        updateBadge();
+        updateCartBadge();
 
         // attach remove handlers
         document.querySelectorAll('.remove-button').forEach(btn => {
           btn.addEventListener('click', (e) => {
-            const idx = parseInt(e.currentTarget.getAttribute('data-idx'));
-            removeItem(idx);
+            const itemId = e.currentTarget.getAttribute('data-item-id');
+            removeItem(itemId);
           });
         });
       }
 
-      function removeItem(index) {
-        const cart = getCart();
-        if (index >= 0 && index < cart.length) {
-          cart.splice(index, 1);
-          saveCart(cart);
-          renderCart();
-        }
+      async function removeItem(itemId) {
+        await removeFromCart({ id: itemId, quantity: 1 });
+        renderCart();
       }
 
-      function clearCart() {
+      async function clearCart() {
         if (!confirm('Are you sure you want to clear your cart?')) return;
-        saveCart([]);
+        await fetch('/api/cart', { method: 'DELETE' });
         renderCart();
       }
 
@@ -166,11 +137,6 @@
       document.getElementById('clear-cart').addEventListener('click', clearCart);
       document.getElementById('checkout').addEventListener('click', () => {
         window.location.href = 'checkout.html';
-      });
-
-      // update badge when storage changes in other tabs
-      window.addEventListener('storage', (e) => {
-        if (e.key === CART_KEY || e.key === null) renderCart();
       });
 
       // custom event for same-tab updates
