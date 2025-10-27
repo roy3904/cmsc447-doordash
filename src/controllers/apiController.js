@@ -1,4 +1,4 @@
-import { getRestaurants, getMenuItemsByRestaurantId } from '../database.js';
+import { getRestaurants, getMenuItemsByRestaurantId, createOrder } from '../database.js';
 
 export const getAllRestaurants = async (req, res) => {
   // #swagger.tags = ['Restaurants']
@@ -21,5 +21,17 @@ export const getMenuItems = async (req, res) => {
   } catch (error) {
     console.error(`Failed to get menu items for restaurant ${req.params.id}:`, error);
     res.status(500).json({ error: 'Failed to get menu items' });
+  }
+};
+
+export const placeOrder = async (req, res) => {
+  // #swagger.tags = ['Orders']
+  // #swagger.summary = 'Place a new order'
+  try {
+    const orderId = await createOrder(req.body);
+    res.status(201).json({ message: 'Order placed successfully', orderId });
+  } catch (error) {
+    console.error('Failed to place order:', error);
+    res.status(500).json({ error: 'Failed to place order' });
   }
 };
