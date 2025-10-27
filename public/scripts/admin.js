@@ -22,14 +22,18 @@ export const customers = [
     } 
 ];
 
-export const restaurants = [//hello
-    {
-        name: "Coffee Shoppe",
-        id: "384098",
-        location: "Admin Building",
-        hours: "8am - 5pm",
+export let restaurants = [];
+
+async function fetchRestaurants() {
+    try {
+        const response = await fetch('/api/restaurants');
+        const data = await response.json();
+        restaurants = data.restaurants;
+        renderRestaurantList();
+    } catch (error) {
+        console.error('Failed to fetch restaurants:', error);
     }
-];
+}
 
 function renderCustomerList(){
     let customerListHTML = '';
