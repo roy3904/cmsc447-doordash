@@ -69,10 +69,10 @@ function renderCustomerList(){
 function renderRestaurantList(){
     let restaurantListHTML = '';
     restaurants.forEach((restaurant) => {
-        const name = restaurant.name;
-        const id = restaurant.id;
-        const location = restaurant.location;
-        const hours = restaurant.hours;
+        const name = restaurant.Name;
+        const id = restaurant.RestaurantID;
+        const location = restaurant.Location;
+        const hours = restaurant.OperatingHours;
 
         restaurantListHTML += `
         <div class="database-item restaurant-item">
@@ -135,17 +135,17 @@ function searchCustomerList(){
 }
 
 function searchRestaurantList(){
-    let customerListHTML = '';
+    let restaurantListHTML = '';
 
     const input = document.querySelector('.js-search-restaurants').value;
     restaurants.forEach((restaurant) => {
-        const name = restaurant.name;
-        const id = restaurant.id;
-        const location = restaurant.location;
-        const hours = restaurant.hours;
+        const name = restaurant.Name;
+        const id = restaurant.RestaurantID;
+        const location = restaurant.Location;
+        const hours = restaurant.OperatingHours;
 
         if(name.toLowerCase().includes(input.toLowerCase()) || id.toLowerCase().includes(input.toLowerCase())){
-            customerListHTML += `
+            restaurantListHTML += `
         <div class="database-item restaurant-item">
             <p class="restaurant-name">${name}</p>
             <p class="restaurant-ID">${id}</p>
@@ -157,16 +157,16 @@ function searchRestaurantList(){
         }
     })
     
-    if(customerListHTML === ''){
-        customerListHTML = '<p class="not-found-text">Sorry, there were no restaurants found with that information!</p>'
+    if(restaurantListHTML === ''){
+        restaurantListHTML = '<p class="not-found-text">Sorry, there were no restaurants found with that information!</p>'
     }
-    document.querySelector('.js-restaurant-list-content').innerHTML = customerListHTML;
+    document.querySelector('.js-restaurant-list-content').innerHTML = restaurantListHTML;
 
     const modifyButtons = document.querySelectorAll('.js-modify-restaurant');
     modifyButtons.forEach((button) => {
         button.addEventListener('click', () => {
-            const userId = button.dataset.userId;
-            window.location.href = `restaurant-info.html?id=${userId}`
+            const restaurantId = button.dataset.restaurantId;
+            window.location.href = `restaurant-info.html?id=${restaurantId}`
         });
     });
 }
@@ -231,6 +231,7 @@ export function removeRestaurant(id){
 }
 
 if(window.location.href.includes('admin.html')){
+    fetchRestaurants();
     renderCustomerList();
     renderRestaurantList();
     const customerSearchInput = document.querySelector('.js-search-customers');
