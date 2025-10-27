@@ -8,7 +8,6 @@
 
   function saveCart(cart){ localStorage.setItem(CART_KEY, JSON.stringify(cart)); window.dispatchEvent(new Event('cart_updated')); }
 
-  // Add item with deduplication by restaurant+name -> increments quantity
   function addToCart(item){
     if(!item || !item.name) return;
     const cart = getCart();
@@ -16,16 +15,25 @@
     item.price = parseFloat(item.price) || 0;
     if(!item.quantity) item.quantity = 1;
 
-    // find existing
-    const idx = cart.findIndex(it => (it.restaurant||'') === (item.restaurant||'') && (it.name||'') === (item.name||''));
-    if(idx >= 0){
-      cart[idx].quantity = (cart[idx].quantity || 1) + (item.quantity || 1);
-      // ensure price stored as number
-      cart[idx].price = parseFloat(item.price) || cart[idx].price;
+    if (cart.length > 0 && cart[0].restaurantId !== item.restaurantId) {
+      if (confirm('You have items from a different restaurant in your cart. Do you want to clear your cart and start a new order?')) {
+        saveCart([item]);
+      } else {
+        return;
+      }
     } else {
-      cart.push(item);
+      // find existing
+      const idx = cart.findIndex(it => (it.id||'') === (item.id||''));
+      if(idx >= 0){
+        cart[idx].quantity = (cart[idx].quantity || 1) + (item.quantity || 1);
+        // ensure price stored as number
+        cart[idx].price = parseFloat(item.price) || cart[idx].price;
+      }
+       else {
+        cart.push(item);
+      }
+      saveCart(cart);
     }
-    saveCart(cart);
   }
 
   function updateBadge(){
