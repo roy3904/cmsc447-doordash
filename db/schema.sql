@@ -55,9 +55,9 @@ CREATE TABLE "Order" (
     OrderID TEXT PRIMARY KEY,
     CustomerID TEXT,
     RestaurantID TEXT,
-    DeliveryLocation TEXT NOT NULL,
+    DeliveryLocation TEXT,
     OrderStatus TEXT NOT NULL,
-    TotalCost REAL NOT NULL CHECK(TotalCost > 0),
+    TotalCost REAL,
     Tip REAL DEFAULT 0,
     FOREIGN KEY (CustomerID) REFERENCES Customer(CustomerID),
     FOREIGN KEY (RestaurantID) REFERENCES Restaurant(RestaurantID)
