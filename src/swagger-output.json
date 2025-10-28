@@ -75,6 +75,20 @@
         }
       }
     },
+    "/admin": {
+      "get": {
+        "tags": [
+          "Page"
+        ],
+        "summary": "Redirect to Admin Page",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/restaurants": {
       "get": {
         "tags": [
