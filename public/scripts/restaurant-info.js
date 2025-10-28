@@ -18,7 +18,7 @@ function renderRestaurantInfo(){
             <div class="info-header">
                     
                 <div class="info-header-leftside">
-                    <img class="profile-picture" src="images/retriever-profile-picture.png">
+                    <img class="profile-picture" src="./images/retriever-profile-picture.png">
                     <p class="title-name">${currRestaurant.name}</p>
                 </div>
                 

@@ -21,6 +21,9 @@ const port = 3000;
 // Serve Static Files
 app.use(express.static(path.join(__dirname, '../public')));
 
+// Parse JSON bodies
+app.use(express.json());
+
 // Use Routers
 app.use('/', pagesRouter);
 app.use('/api', apiRouter);

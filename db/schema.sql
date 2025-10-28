@@ -43,20 +43,21 @@ CREATE TABLE Menu (
 --- Create MenuItem Table
 CREATE TABLE MenuItem (
     ItemID TEXT PRIMARY KEY,
-    MenuID TEXT, -- Change to MenuID
+    MenuID TEXT,
     Name TEXT NOT NULL,
     Description TEXT,
     Price REAL NOT NULL CHECK(Price > 0),
+    Quantity INTEGER DEFAULT 0 CHECK(Quantity >= 0),
     FOREIGN KEY (MenuID) REFERENCES Menu(MenuID)
 );
 --- Create Order Table
 CREATE TABLE "Order" (
     OrderID TEXT PRIMARY KEY,
     CustomerID TEXT,
-    RestaurantID TEXT, -- Add this line
-    DeliveryLocation TEXT NOT NULL,
+    RestaurantID TEXT,
+    DeliveryLocation TEXT,
     OrderStatus TEXT NOT NULL,
-    TotalCost REAL NOT NULL CHECK(TotalCost > 0),
+    TotalCost REAL,
     Tip REAL DEFAULT 0,
     FOREIGN KEY (CustomerID) REFERENCES Customer(CustomerID),
     FOREIGN KEY (RestaurantID) REFERENCES Restaurant(RestaurantID)
@@ -67,7 +68,7 @@ CREATE TABLE OrderItem (
     ItemID TEXT,
     Quantity INTEGER NOT NULL CHECK(Quantity > 0),
     Price REAL NOT NULL CHECK(Price > 0),
-    PRIMARY KEY (OrderID, ItemID), -- Define a composite primary key
+    PRIMARY KEY (OrderID, ItemID),
     FOREIGN KEY (OrderID) REFERENCES "Order"(OrderID),
     FOREIGN KEY (ItemID) REFERENCES MenuItem(ItemID)
 );

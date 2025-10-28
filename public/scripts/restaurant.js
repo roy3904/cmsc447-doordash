@@ -116,13 +116,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             const addButton = document.createElement('button');
             addButton.className = 'food-button';
             addButton.textContent = 'Add to Cart';
+            addButton.dataset.quantity = item.Quantity;
             addButton.addEventListener('click', () => {
                 if(typeof addToCart === 'function'){
-                    addToCart({ restaurant: restaurant.Name, name: item.Name, price: item.Price, quantity: 1 });
+                    addToCart({ id: item.ItemID, quantity: 1 });
                 } else {
-                    // Fallback
-                    const CART_KEY = 'cart';
-                    try{ const cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]'); cart.push({ restaurant: restaurant.Name, name: item.Name, price: item.Price, quantity:1 }); localStorage.setItem(CART_KEY, JSON.stringify(cart)); window.dispatchEvent(new Event('cart_updated')); }catch(e){}
+                    console.error('addToCart function not found');
                 }
             });
 

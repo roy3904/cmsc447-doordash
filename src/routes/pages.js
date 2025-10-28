@@ -1,6 +1,6 @@
 
 import express from 'express';
-import { getHomepage, getRestaurantPage, getDbRestaurants, getDbCoffeeShoppe } from '../controllers/pagesController.js';
+import { getHomepage, getRestaurantPage, getDbRestaurants, getDbCoffeeShoppe, getAdminPage } from '../controllers/pagesController.js';
 
 const router = express.Router();
 
@@ -14,5 +14,8 @@ router.get('/restaurant/:id', getRestaurantPage);
 router.get('/db/restaurants', getDbRestaurants);
 // Route to serve DB Coffee Shop page
 router.get('/db/coffeeshoppe', getDbCoffeeShoppe);
+
+// Route to serve Admin page
+router.get('/admin', getAdminPage);
 
 export default router;

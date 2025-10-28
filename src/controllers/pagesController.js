@@ -35,3 +35,9 @@ export const getDbCoffeeShoppe = (req, res) => {
   // #swagger.summary = 'Redirect to COFFEE_SHOPPE DB Page'
   res.sendFile(path.join(__dirname, '../../public', DB_COFFEE_SHOPPE));
 };
+
+export const getAdminPage = (req, res) => {
+  // #swagger.tags = ['Page']
+  // #swagger.summary = 'Redirect to Admin Page'
+  res.sendFile(path.join(__dirname, '../../public', 'admin.html'));
+};
