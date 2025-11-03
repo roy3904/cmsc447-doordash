@@ -269,3 +269,114 @@ if(window.location.href.includes('admin.html')){
     });
 }
 
+// Worker management
+async function fetchWorkersFromServer(){
+    try{
+        const resp = await fetch('/api/workers');
+        if(!resp.ok) return [];
+        const data = await resp.json();
+        return data.workers || [];
+    }catch(e){ console.error(e); return []; }
+}
+
+function renderWorkerList(workers){
+    let html = '';
+    workers.forEach(w => {
+        html += `
+        <div class="database-item worker-item">
+            <p class="worker-name">${w.Name}</p>
+            <p class="worker-id">${w.WorkerID}</p>
+            <p class="worker-email">${w.Email}</p>
+            <p class="worker-availability">${w.AvailabilityStatus || ''}</p>
+                        <div style="margin-top:8px">
+                            <button class="modify-button js-delete-worker" data-id="${w.WorkerID}">Delete</button>
+                        </div>
+        </div>
+        `;
+    });
+    document.querySelector('.js-worker-list-content').innerHTML = html || '<p class="not-found-text">No workers</p>';
+
+    // attach delete handlers
+    document.querySelectorAll('.js-delete-worker').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const id = btn.dataset.id;
+            if(!confirm(`Delete worker ${id}? This cannot be undone.`)) return;
+            try{
+                const resp = await fetch(`/api/workers/${encodeURIComponent(id)}`, { method: 'DELETE' });
+                if(!resp.ok) throw new Error('Failed to delete');
+                const workers = await fetchWorkersFromServer(); renderWorkerList(workers);
+            }catch(e){ alert('Failed to delete worker'); console.error(e); }
+        });
+    });
+}
+
+function renderApplications(){
+    const apps = JSON.parse(localStorage.getItem('worker_applications') || '[]');
+    if(!apps.length){ document.querySelector('.js-worker-apps-content').innerHTML = '<p>No pending applications</p>'; return; }
+    let html = '';
+    apps.forEach((a, i) => {
+        html += `
+        <div class="database-item app-item">
+            <p class="worker-name">${a.Name}</p>
+            <p class="worker-id">${a.WorkerID}</p>
+            <p class="worker-email">${a.Email}</p>
+            <p class="worker-availability">${a.Availability || ''}</p>
+            <button class="approve js-approve" data-idx="${i}">Approve</button>
+            <button class="decline js-decline" data-idx="${i}">Decline</button>
+        </div>
+        `;
+    });
+    document.querySelector('.js-worker-apps-content').innerHTML = html;
+
+    document.querySelectorAll('.js-approve').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const idx = parseInt(btn.dataset.idx,10);
+            const apps = JSON.parse(localStorage.getItem('worker_applications') || '[]');
+            const app = apps[idx];
+            if(!app) return;
+            // send to server to create worker
+            try{
+                const resp = await fetch('/api/workers', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ WorkerID: app.WorkerID, Name: app.Name, Email: app.Email, Phone: app.Phone, AvailabilityStatus: app.Availability, PasswordHash: app.PasswordHash || '' }) });
+                if(!resp.ok) throw new Error('Failed');
+                apps.splice(idx,1);
+                localStorage.setItem('worker_applications', JSON.stringify(apps));
+                renderApplications();
+                // refresh worker list
+                const workers = await fetchWorkersFromServer(); renderWorkerList(workers);
+            }catch(e){ alert('Failed to approve'); console.error(e); }
+        });
+    });
+
+    document.querySelectorAll('.js-decline').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const idx = parseInt(btn.dataset.idx,10);
+            const apps = JSON.parse(localStorage.getItem('worker_applications') || '[]');
+            apps.splice(idx,1);
+            localStorage.setItem('worker_applications', JSON.stringify(apps));
+            renderApplications();
+        });
+    });
+}
+
+if(window.location.href.includes('admin.html')){
+    // load worker list
+    fetchWorkersFromServer().then(renderWorkerList).catch(e=>console.error(e));
+    renderApplications();
+    // search worker input
+    const workerSearchInput = document.querySelector('.js-search-workers');
+    if(workerSearchInput){
+        workerSearchInput.addEventListener('keyup', async (event)=>{
+            const q = workerSearchInput.value.trim().toLowerCase();
+            const workers = await fetchWorkersFromServer();
+            const filtered = workers.filter(w => (w.Name||'').toLowerCase().includes(q) || (w.WorkerID||'').toLowerCase().includes(q));
+            renderWorkerList(filtered);
+        });
+    }
+    document.querySelector('.js-search-worker-button').addEventListener('click', async ()=>{
+        const q = document.querySelector('.js-search-workers').value.trim().toLowerCase();
+        const workers = await fetchWorkersFromServer();
+        const filtered = workers.filter(w => (w.Name||'').toLowerCase().includes(q) || (w.WorkerID||'').toLowerCase().includes(q));
+        renderWorkerList(filtered);
+    });
+}
+

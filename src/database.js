@@ -80,16 +80,26 @@ export async function createOrder(order) {
     db = await openDb();
 
     // Begin transaction
-    await db.run('BEGIN TRANSACTION');
+    // Check if an order with this ID already exists (e.g., a Cart)
+    const existing = await db.get('SELECT * FROM "Order" WHERE OrderID = ?', order.id);
+    const deliveryStr = JSON.stringify(order.delivery || {});
+    if (existing && existing.OrderStatus === 'Cart') {
+      // Transition existing cart to placed order
+      await db.run('BEGIN TRANSACTION');
+      await db.run('UPDATE "Order" SET DeliveryLocation = ?, OrderStatus = ?, TotalCost = ?, Tip = ? WHERE OrderID = ?', [deliveryStr, 'Placed', order.totalCost, order.tip, order.id]);
+      await db.run('COMMIT');
+      return order.id;
+    }
 
-    // Insert new order record into Order table
+    // Otherwise create a fresh placed order
+    await db.run('BEGIN TRANSACTION');
     const orderResult = await db.run(
       'INSERT INTO "Order" (OrderID, CustomerID, RestaurantID, DeliveryLocation, OrderStatus, TotalCost, Tip) VALUES (?, ?, ?, ?, ?, ?, ?)',
       [
         order.id,
         order.customerId,
         order.restaurantId,
-        order.delivery.building,
+        deliveryStr,
         'Placed',
         order.totalCost,
         order.tip
@@ -112,7 +122,7 @@ export async function createOrder(order) {
     await db.run('COMMIT');
 
     // Return ID of newly created order
-    return orderResult.lastID;
+    return orderResult.lastID || order.id;
   } catch (error) {
     // Roll back transaction if an error occurs
     if (db) {
@@ -127,6 +137,170 @@ export async function createOrder(order) {
     if (db) {
       await db.close();
     }
+  }
+}
+
+// =======================================
+// Worker declines an order (record a declined DeliveryJob)
+// =======================================
+export async function declineOrderByWorker(orderId, workerId) {
+  let db;
+  try {
+    db = await openDb();
+    const jobId = 'JOB-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,8).toUpperCase();
+    const now = new Date().toISOString();
+    await db.run('INSERT INTO DeliveryJob (JobID, OrderID, WorkerID, AcceptTime, JobStatus) VALUES (?, ?, ?, ?, ?)', [jobId, orderId, workerId, now, 'Declined']);
+    return jobId;
+  } catch (error) {
+    console.error('Error declining order by worker:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
+// =======================================
+// Get Orders with status 'Placed'
+// =======================================
+export async function getPlacedOrders() {
+  let db;
+  try {
+    db = await openDb();
+    const orders = await db.all('SELECT * FROM "Order" WHERE OrderStatus = ?', 'Placed');
+    for (const o of orders) {
+      o.items = await db.all('SELECT * FROM OrderItem WHERE OrderID = ?', o.OrderID);
+      // try to parse delivery JSON
+      try { o.delivery = JSON.parse(o.DeliveryLocation || '{}'); } catch (e) { o.delivery = { building: o.DeliveryLocation }; }
+      // attach restaurant info
+      o.restaurant = await db.get('SELECT * FROM Restaurant WHERE RestaurantID = ?', o.RestaurantID);
+    }
+    return orders;
+  } catch (error) {
+    console.error('Error getting placed orders:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
+// =======================================
+// Assign an order to a worker (create DeliveryJob)
+// =======================================
+export async function assignOrderToWorker(orderId, workerId) {
+  let db;
+  try {
+    db = await openDb();
+    await db.run('BEGIN TRANSACTION');
+    const jobId = 'JOB-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,8).toUpperCase();
+    const now = new Date().toISOString();
+    await db.run('INSERT INTO DeliveryJob (JobID, OrderID, WorkerID, AcceptTime, JobStatus) VALUES (?, ?, ?, ?, ?)', [jobId, orderId, workerId, now, 'Accepted']);
+    await db.run('UPDATE "Order" SET OrderStatus = ? WHERE OrderID = ?', ['Accepted', orderId]);
+    await db.run('COMMIT');
+    return jobId;
+  } catch (error) {
+    if (db) await db.run('ROLLBACK');
+    console.error('Error assigning order to worker:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
+// =======================================
+// Complete a delivery job
+// =======================================
+export async function completeDeliveryJob(jobId) {
+  let db;
+  try {
+    db = await openDb();
+    const now = new Date().toISOString();
+    const job = await db.get('SELECT * FROM DeliveryJob WHERE JobID = ?', jobId);
+    if (!job) throw new Error('Job not found');
+    await db.run('BEGIN TRANSACTION');
+    await db.run('UPDATE DeliveryJob SET CompletionTime = ?, JobStatus = ? WHERE JobID = ?', [now, 'Completed', jobId]);
+    await db.run('UPDATE "Order" SET OrderStatus = ? WHERE OrderID = ?', ['Delivered', job.OrderID]);
+    await db.run('COMMIT');
+    return true;
+  } catch (error) {
+    if (db) await db.run('ROLLBACK');
+    console.error('Error completing delivery job:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
+// =======================================
+// Worker related helpers
+// =======================================
+export async function createWorker(worker) {
+  let db;
+  try {
+    db = await openDb();
+    await db.run('INSERT INTO Worker (WorkerID, AvailabilityStatus, Name, Email, Phone, PasswordHash) VALUES (?, ?, ?, ?, ?, ?)', [worker.WorkerID, worker.AvailabilityStatus || 'Available', worker.Name, worker.Email, worker.Phone || '', worker.PasswordHash || '']);
+    return true;
+  } catch (error) {
+    console.error('Error creating worker:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
+export async function getWorkers() {
+  let db;
+  try {
+    db = await openDb();
+    const workers = await db.all('SELECT * FROM Worker');
+    return workers;
+  } catch (error) {
+    console.error('Error getting workers:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
+// =======================================
+// Delete a worker by WorkerID
+// =======================================
+export async function deleteWorker(workerId) {
+  let db;
+  try {
+    db = await openDb();
+    await db.run('DELETE FROM Worker WHERE WorkerID = ?', workerId);
+    return true;
+  } catch (error) {
+    console.error('Error deleting worker:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
+// =======================================
+// Get active jobs for a worker
+// =======================================
+export async function getJobsForWorker(workerId) {
+  let db;
+  try {
+    db = await openDb();
+    // fetch jobs that are not completed (Accepted)
+    const jobs = await db.all('SELECT * FROM DeliveryJob WHERE WorkerID = ? AND JobStatus = ?', [workerId, 'Accepted']);
+    for (const job of jobs) {
+      job.order = await db.get('SELECT * FROM "Order" WHERE OrderID = ?', job.OrderID);
+      if (job.order) {
+        job.items = await db.all('SELECT * FROM OrderItem WHERE OrderID = ?', job.OrderID);
+        try { job.order.delivery = JSON.parse(job.order.DeliveryLocation || '{}'); } catch (e) { job.order.delivery = { building: job.order.DeliveryLocation }; }
+        job.order.restaurant = await db.get('SELECT * FROM Restaurant WHERE RestaurantID = ?', job.order.RestaurantID);
+      }
+    }
+    return jobs;
+  } catch (error) {
+    console.error('Error getting jobs for worker:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
   }
 }
 

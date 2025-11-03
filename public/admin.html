@@ -43,6 +43,28 @@
             </div>
         </div>
 
+        <div class="database-container">
+            <p class="database-title">Worker Database / Applications</p>
+            <div class="database-list-container">
+                <div class="database-list-header">
+                    <p class="database-list-title">Active Workers</p>
+                    <div class="input-container">
+                        <input class="search js-search-workers" type="text" placeholder="Search Name/Worker ID">
+                        <button class="search-button js-search-worker-button">Search</button>
+                    </div>
+                </div>
+                <div class="database-list-content js-worker-list-content">
+                    
+                </div>
+            </div>
+            <div style="margin-top:1rem" class="database-list-container">
+                <div class="database-list-header">
+                    <p class="database-list-title">Pending Applications (local)</p>
+                </div>
+                <div class="database-list-content js-worker-apps-content"></div>
+            </div>
+        </div>
+
         
         <script type="module" src="./scripts/admin.js"></script>
     </body>

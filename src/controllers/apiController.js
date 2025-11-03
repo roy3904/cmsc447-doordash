@@ -1,4 +1,5 @@
-import { getRestaurants, getMenuItemsByRestaurantId, createOrder, getCart as dbGetCart, addToCart as dbAddToCart, removeFromCart as dbRemoveFromCart, clearCart as dbClearCart, getMenuItem as dbGetMenuItem } from '../database.js';
+import { getRestaurants, getMenuItemsByRestaurantId, createOrder, getCart as dbGetCart, addToCart as dbAddToCart, removeFromCart as dbRemoveFromCart, clearCart as dbClearCart, getMenuItem as dbGetMenuItem, getPlacedOrders, assignOrderToWorker, completeDeliveryJob, getWorkers, createWorker, declineOrderByWorker, deleteWorker } from '../database.js';
+import { getJobsForWorker } from '../database.js';
 
 export const getAllRestaurants = async (req, res) => {
   // #swagger.tags = ['Restaurants']
@@ -33,6 +34,99 @@ export const placeOrder = async (req, res) => {
   } catch (error) {
     console.error('Failed to place order:', error);
     res.status(500).json({ error: 'Failed to place order' });
+  }
+};
+
+export const getOrdersPlaced = async (req, res) => {
+  try {
+    const orders = await getPlacedOrders();
+    res.json({ orders });
+  } catch (error) {
+    console.error('Failed to get placed orders:', error);
+    res.status(500).json({ error: 'Failed to get placed orders' });
+  }
+};
+
+export const acceptOrder = async (req, res) => {
+  try {
+    const orderId = req.params.id;
+    const { workerId } = req.body;
+    if(!workerId) return res.status(400).json({ error: 'workerId required' });
+    const jobId = await assignOrderToWorker(orderId, workerId);
+    res.json({ message: 'Order accepted', jobId });
+  } catch (error) {
+    console.error('Failed to accept order:', error);
+    res.status(500).json({ error: 'Failed to accept order' });
+  }
+};
+
+export const declineOrder = async (req, res) => {
+  try {
+    const orderId = req.params.id;
+    const { workerId } = req.body;
+    if(!workerId) return res.status(400).json({ error: 'workerId required' });
+    const jobId = await declineOrderByWorker(orderId, workerId);
+    res.json({ message: 'Order declined recorded', jobId });
+  } catch (error) {
+    console.error('Failed to record decline:', error);
+    res.status(500).json({ error: 'Failed to record decline' });
+  }
+};
+
+export const completeOrder = async (req, res) => {
+  try {
+    const jobId = req.params.id;
+    await completeDeliveryJob(jobId);
+    res.json({ message: 'Job completed' });
+  } catch (error) {
+    console.error('Failed to complete job:', error);
+    res.status(500).json({ error: 'Failed to complete job' });
+  }
+};
+
+export const getAllWorkers = async (req, res) => {
+  try {
+    const workers = await getWorkers();
+    res.json({ workers });
+  } catch (error) {
+    console.error('Failed to get workers:', error);
+    res.status(500).json({ error: 'Failed to get workers' });
+  }
+};
+
+export const addWorker = async (req, res) => {
+  try {
+    const worker = req.body;
+    if(!worker || !worker.WorkerID) return res.status(400).json({ error: 'Worker data missing or WorkerID required' });
+    await createWorker(worker);
+    res.status(201).json({ message: 'Worker created' });
+  } catch (error) {
+    console.error('Failed to create worker:', error);
+    res.status(500).json({ error: 'Failed to create worker' });
+  }
+};
+
+export const removeWorker = async (req, res) => {
+  try {
+    const workerId = req.params.id;
+    if(!workerId) return res.status(400).json({ error: 'workerId required' });
+    await deleteWorker(workerId);
+    res.json({ message: 'Worker deleted' });
+  } catch (error) {
+    console.error('Failed to delete worker:', error);
+    res.status(500).json({ error: 'Failed to delete worker' });
+  }
+};
+
+export const getWorkerJobs = async (req, res) => {
+  try {
+    const workerId = req.params.id;
+    if (!workerId) return res.status(400).json({ error: 'workerId required' });
+    const jobs = await getJobsForWorker(workerId);
+    res.json({ jobs });
+  } catch (error) {
+    console.error('Failed to get worker jobs:', error);
+    res.status(500).json({ error: 'Failed to get worker jobs' });
   }
 };
 
