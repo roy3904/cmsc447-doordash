@@ -22,7 +22,7 @@
       <div class="header-container">
         <img class="nav-logo" src="./images/gritdash-logo-1.png" alt="GritDash logo">
         <a class="nav-link" href="homepage.html">Home</a>
-        <a class="nav-link">Worker Portal</a>
+  <a class="nav-link" href="worker-portal.html">Worker Portal</a>
         <a class="nav-link" href="admin.html">Admin Portal</a>
       </div>
       <a href="cart.html" aria-label="Cart" id="cart-link" style="color:inherit;text-decoration:none;">
@@ -30,6 +30,7 @@
           <span id="cart-count" class="badge-count">0</span>
         </i>
       </a>
+      <script src="./scripts/cart-common.js"></script>
     </header>
 
     <main class="checkout-container">
@@ -102,41 +103,38 @@
     </div>
 
     <script>
-      const CART_KEY = 'cart';
-      const ORDERS_KEY = 'orders';
-
-      function getCart() { try { return JSON.parse(localStorage.getItem(CART_KEY) || '[]'); } catch(e){ return []; } }
-      function saveCart(c){ localStorage.setItem(CART_KEY, JSON.stringify(c)); window.dispatchEvent(new Event('cart_updated')); }
-      function getOrders(){ try { return JSON.parse(localStorage.getItem(ORDERS_KEY) || '[]'); } catch(e){ return []; } }
-      function saveOrders(o){ localStorage.setItem(ORDERS_KEY, JSON.stringify(o)); }
-
-      function updateBadge(){
-        const cart = getCart();
-        const count = cart.reduce((s, it) => s + (it.quantity || 1), 0);
-        const el = document.getElementById('cart-count');
-        if(el) {
-          if(count>0) { el.style.display='inline-block'; el.textContent = count; }
-          else { el.style.display='none'; }
+      // Use server-backed cart APIs (cart-common.js provides getCart/updateCartBadge/getMenuItem)
+      async function updateBadge(){
+        if(typeof window.updateCartBadge === 'function'){
+          try { await window.updateCartBadge(); } catch(e) { console.error(e); }
+          return;
         }
+        // fallback: hide badge
+        const el = document.getElementById('cart-count'); if(el) el.style.display='none';
       }
 
-      function renderSummary(){
-        const cart = getCart();
+      async function renderSummary(){
         const list = document.getElementById('items-list');
         const totalEl = document.getElementById('summary-total');
         list.innerHTML = '';
-        if(!cart.length){ document.getElementById('empty-warning').style.display='block'; document.getElementById('order-summary').style.display='none'; updateBadge(); return; }
-        document.getElementById('empty-warning').style.display='none'; document.getElementById('order-summary').style.display='block';
-        let total = 0;
-        cart.forEach(item => {
-          const price = parseFloat(item.price || 0) * (item.quantity || 1);
-          total += price;
-          const div = document.createElement('div'); div.className='line-item';
-          div.innerHTML = `<div>${escapeHtml(item.restaurant || '')} — ${escapeHtml(item.name || '')}${item.quantity && item.quantity>1? ' ×'+item.quantity:''}</div><div>$${price.toFixed(2)}</div>`;
-          list.appendChild(div);
-        });
-        totalEl.textContent = '$' + total.toFixed(2);
-        updateBadge();
+        try{
+          const cart = (typeof window.getCart === 'function') ? await window.getCart() : null;
+          if(!cart || !cart.items || cart.items.length === 0){ document.getElementById('empty-warning').style.display='block'; document.getElementById('order-summary').style.display='none'; await updateBadge(); return; }
+          document.getElementById('empty-warning').style.display='none'; document.getElementById('order-summary').style.display='block';
+          let total = 0;
+          // items are OrderItem rows with ItemID, Quantity, Price
+          for(const it of cart.items){
+            const menuItem = (typeof window.getMenuItem === 'function') ? await window.getMenuItem(it.ItemID) : null;
+            const name = menuItem ? menuItem.Name : (it.ItemID || 'Item');
+            const price = parseFloat(it.Price || 0) * (it.Quantity || 1);
+            total += price;
+            const div = document.createElement('div'); div.className='line-item';
+            div.innerHTML = `<div>${escapeHtml(name)}${it.Quantity && it.Quantity>1? ' ×'+it.Quantity:''}</div><div>$${price.toFixed(2)}</div>`;
+            list.appendChild(div);
+          }
+          totalEl.textContent = '$' + total.toFixed(2);
+          await updateBadge();
+        }catch(e){ console.error('Error rendering summary', e); list.innerHTML = '<p>Error loading cart</p>'; }
       }
 
       function escapeHtml(text){ return (text||'').replace(/[&<>"']/g, function(m){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]; }); }
@@ -147,53 +145,50 @@
       }
 
       document.getElementById('place-order').addEventListener('click', async () => {
-        const cart = getCart();
-        if(!cart.length){ alert('Your cart is empty.'); return; }
+        try{
+          const cart = (typeof window.getCart === 'function') ? await window.getCart() : null;
+          if(!cart || !cart.items || cart.items.length===0){ alert('Your cart is empty.'); return; }
+          const building = document.getElementById('building').value;
+          if(!building){ alert('Please select a delivery building/location.'); return; }
+          const room = document.getElementById('room').value || '';
+          const instructions = document.getElementById('instructions').value || '';
+          const tipVal = parseFloat(document.getElementById('tip').value) || 0;
+          const payment = document.querySelector('input[name="payment"]:checked').value;
 
-  const building = document.getElementById('building').value;
-  if(!building){ alert('Please select a delivery building/location.'); return; }
-        const room = document.getElementById('room').value || '';
-        const instructions = document.getElementById('instructions').value || '';
-        const tipVal = parseFloat(document.getElementById('tip').value) || 0;
-        const payment = document.querySelector('input[name="payment"]:checked').value;
-
-        const totalCost = cart.reduce((total, item) => total + (parseFloat(item.price) * item.quantity), 0) + tipVal;
-
-        const order = {
-          id: generateOrderId(),
-          customerId: 'CUST-123', // TODO: Fetch Customer ID
-          restaurantId: cart[0].restaurantId, // Assuming all items are from the same restaurant
-          delivery: { building, room, instructions },
-          items: cart.map(it => ({ id: it.id, name: it.name, price: parseFloat(it.price||0), quantity: it.quantity||1 })),
-          totalCost: totalCost,
-          tip: tipVal,
-          paymentMethod: payment,
-          status: 'Placed',
-        };
-
-        try {
-          const response = await fetch('/api/orders', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(order)
-          });
-
-          if (!response.ok) {
-            throw new Error('Failed to place order');
+          const items = [];
+          let total = 0;
+          for(const it of cart.items){
+            const menuItem = (typeof window.getMenuItem === 'function') ? await window.getMenuItem(it.ItemID) : null;
+            const name = menuItem ? menuItem.Name : it.ItemID;
+            const priceVal = parseFloat(it.Price || 0);
+            items.push({ id: it.ItemID, name, price: priceVal, quantity: it.Quantity });
+            total += priceVal * (it.Quantity || 1);
           }
+          const totalCost = total + tipVal;
 
-          // clear cart after successful order
-          saveCart([]);
+          const order = {
+            id: cart.OrderID || generateOrderId(),
+            customerId: cart.CustomerID || 'CUST-123',
+            restaurantId: cart.RestaurantID,
+            delivery: { building, room, instructions },
+            items: items,
+            totalCost: totalCost,
+            tip: tipVal,
+            paymentMethod: payment,
+            status: 'Placed',
+          };
+
+          const response = await fetch('/api/orders', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(order) });
+          if(!response.ok) throw new Error('Failed to place order');
+
+          // clear server-side cart
+          await fetch('/api/cart', { method: 'DELETE' });
+          await updateBadge();
 
           // show confirmation modal
           document.getElementById('conf-text').innerHTML = `Your order <strong>${order.id}</strong> was placed. Estimated delivery: <strong>20-35 minutes</strong> to ${escapeHtml(building)} ${escapeHtml(room)}.`;
           document.getElementById('confirmation').style.display = 'flex';
-        } catch (error) {
-          console.error('Error placing order:', error);
-          alert('There was an error placing your order. Please try again.');
-        }
+        }catch(e){ console.error(e); alert('There was an error placing your order. Please try again.'); }
       });
 
       document.getElementById('close-modal').addEventListener('click', () => {
@@ -201,9 +196,9 @@
         window.location.href = 'homepage.html';
       });
 
-      // storage sync
-      window.addEventListener('storage', (e) => { if(e.key===CART_KEY||e.key===null) renderSummary(); });
+      // react to cart updates
       window.addEventListener('cart_updated', renderSummary);
+      window.addEventListener('storage', (e) => { if(e.key==='worker_applications' || e.key==='current_worker') renderSummary(); });
 
       // init
       updateBadge();

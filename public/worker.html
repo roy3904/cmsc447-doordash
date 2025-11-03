@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Worker Dashboard | GritDash</title>
+    <link rel="stylesheet" href="homepage-style.css">
+    <style>
+      .dashboard { max-width:900px;margin:2rem auto;padding:1rem }
+      .order { border:1px solid #e6e6e6;padding:0.75rem;margin-bottom:0.75rem;border-radius:6px;}
+      .order h4{margin:0 0 0.5rem 0}
+      .btn{background:#2b6cb0;color:#fff;padding:6px 10px;border-radius:4px;border:none;cursor:pointer}
+    </style>
+  </head>
+  <body>
+    <header class="nav-bar">
+      <div class="header-container">
+        <img class="nav-logo" src="./images/gritdash-logo-1.png" alt="GritDash logo">
+        <a class="nav-link" href="homepage.html">Home</a>
+        <a class="nav-link" href="worker-portal.html">Worker Portal</a>
+        <a class="nav-link" href="admin.html">Admin Portal</a>
+      </div>
+      <a href="cart.html" aria-label="Cart" style="color:inherit;text-decoration:none;"><i class="fa-solid fa-cart-shopping badge" style="font-size:22px;"><span id="cart-count" class="badge-count">0</span></i></a>
+      <script src="./scripts/cart-common.js"></script>
+    </header>
+
+    <main class="dashboard">
+      <h2>Your Available Orders</h2>
+  <p id="worker-info"></p>
+  <div style="text-align:right;margin-bottom:0.5rem;"><button id="signout" class="btn" style="background:#e53e3e">Sign Out</button></div>
+      <div id="orders-list">Loading pending orders...</div>
+      <h3 style="margin-top:1.5rem">Your Active Jobs</h3>
+      <div id="active-jobs">Loading active jobs...</div>
+    </main>
+
+    <footer><img class="footer-logo" src="./images/gritdash-logo-1.png"></footer>
+
+    <script>
+      const currentWorker = JSON.parse(localStorage.getItem('current_worker')||'null');
+  const ordersList = document.getElementById('orders-list');
+      const workerInfo = document.getElementById('worker-info');
+      if(!currentWorker){ window.location.href='worker-signin.html'; }
+      else { workerInfo.textContent = `Signed in as ${currentWorker.Name} (${currentWorker.WorkerID})`; }
+
+      document.getElementById('signout').addEventListener('click', ()=>{
+        localStorage.removeItem('current_worker');
+        window.location.href = 'worker-signin.html';
+      });
+
+      // small helper to escape user-provided text when inserting into innerHTML
+      function escapeHtml(unsafe){
+        if(!unsafe && unsafe !== 0) return '';
+        return String(unsafe)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+
+  async function loadOrders(){
+        try{
+          const res = await fetch('/api/orders/placed');
+          if(!res.ok) throw new Error('Failed to load');
+          const data = await res.json();
+          const orders = data.orders || [];
+          if(!orders.length){ ordersList.innerHTML = '<p>No pending orders right now.</p>'; return; }
+          ordersList.innerHTML = '';
+          for (const o of orders) {
+            const div = document.createElement('div'); div.className='order';
+            // build items html with item names
+            let itemsHtml = '';
+            for (const it of o.items) {
+              try{
+                const menuItem = (typeof window.getMenuItem === 'function') ? await window.getMenuItem(it.ItemID) : null;
+                const name = menuItem ? menuItem.Name : it.ItemID;
+                itemsHtml += `${it.Quantity}× ${name} — $${(it.Price||0).toFixed? (it.Price||0).toFixed(2) : (it.Price||0)}<br>`;
+              }catch(e){ itemsHtml += `${it.Quantity}× ${it.ItemID} — $${it.Price}<br>`; }
+            }
+            const instructions = (o.delivery && (o.delivery.instructions || o.delivery.room)) ? { text: o.delivery.instructions||'', room: o.delivery.room||'' } : null;
+            div.innerHTML = `<h4>Order ${o.OrderID} — $${(o.TotalCost||o.TotalCost===0? (o.TotalCost.toFixed? o.TotalCost.toFixed(2):o.TotalCost) : '')}</h4>
+              <div><strong>Restaurant:</strong> ${o.restaurant? o.restaurant.Name : o.RestaurantID}</div>
+              <div><strong>Items:</strong><div>${itemsHtml}</div></div>
+              <div><strong>Deliver to:</strong> ${(o.delivery && o.delivery.building) || o.DeliveryLocation} ${(o.delivery && o.delivery.room) || ''}</div>
+              <div><strong>Instructions:</strong> ${instructions && instructions.text ? escapeHtml(instructions.text) : 'None'}</div>
+              ${instructions && instructions.room ? `<div><strong>Room/Location:</strong> ${escapeHtml(instructions.room)}</div>` : ''}
+              <div><strong>Tip:</strong> $${o.Tip || 0}</div>
+              <div style="margin-top:0.5rem">
+                <button class="btn js-accept" data-id="${o.OrderID}">Accept</button>
+                <button class="btn js-decline" data-id="${o.OrderID}" style="background:#a0aec0;margin-left:8px">Decline</button>
+              </div>`;
+            ordersList.appendChild(div);
+          }
+
+          document.querySelectorAll('.js-accept').forEach(btn => {
+            btn.addEventListener('click', async (e)=>{
+              const orderId = btn.dataset.id;
+              const body = { workerId: currentWorker.WorkerID };
+              const resp = await fetch(`/api/orders/${orderId}/accept`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+              if(!resp.ok){ alert('Failed to accept order'); return; }
+              const d = await resp.json();
+              const jobId = d.jobId;
+              // show pickup and delivery guidance
+                const order = (await (await fetch('/api/orders/placed')).json()).orders.find(x=>x.OrderID===orderId);
+                const pickup = order && order.restaurant ? order.restaurant.Location : 'Restaurant pickup location';
+                alert(`Order accepted. Pickup at: ${pickup}. Deliver to: ${order.delivery && order.delivery.building} ${order.delivery && order.delivery.room || ''}`);
+                // Optimistically move the order from pending to active jobs immediately for snappy UX
+                try{
+                  // remove pending element from DOM
+                  const pendingEl = btn.closest('.order');
+                  if(pendingEl) pendingEl.remove();
+                  // create minimal job object and render into Active Jobs
+                  const optimisticJob = { JobID: jobId, OrderID: order.OrderID, order: order, items: order.items };
+                  appendActiveJobToDOM(optimisticJob);
+                }catch(e){ console.error('Optimistic UI update failed', e); }
+                // sync with server in background
+                loadActiveJobs();
+                loadOrders();
+            });
+          });
+          document.querySelectorAll('.js-decline').forEach(btn => {
+            btn.addEventListener('click', async () => {
+              const orderId = btn.dataset.id;
+              const body = { workerId: currentWorker.WorkerID };
+              const resp = await fetch(`/api/orders/${orderId}/decline`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+              if(!resp.ok){ alert('Failed to record decline'); return; }
+              // remove the order element from the list
+              btn.closest('.order').remove();
+            });
+          });
+        }catch(e){ console.error(e); ordersList.innerHTML = '<p>Error loading orders</p>'; }
+      }
+
+      // handle completing job via query param
+      async function maybeCompleteJob(){
+        const params = new URLSearchParams(window.location.search);
+        const job = params.get('job');
+        if(job){
+          const done = confirm('Mark this job as delivered and finish?');
+          if(done){
+            const r = await fetch(`/api/jobs/${job}/complete`, { method: 'POST' });
+            if(r.ok){ alert('Job marked completed. Nice work!'); window.history.replaceState({}, '', 'worker.html'); await loadOrders(); await loadActiveJobs(); }
+            else alert('Failed to mark completed');
+          } else { window.history.replaceState({}, '', 'worker.html'); }
+        }
+      }
+
+      async function loadActiveJobs(){
+        try{
+          const activeEl = document.getElementById('active-jobs');
+          const res = await fetch(`/api/jobs/worker/${currentWorker.WorkerID}`);
+          if(!res.ok) throw new Error('Failed to load active jobs');
+          const data = await res.json();
+          const jobs = data.jobs || [];
+          if(!jobs.length){ activeEl.innerHTML = '<p>No active jobs right now.</p>'; return; }
+          activeEl.innerHTML = '';
+          for(const job of jobs){
+            const div = document.createElement('div'); div.className = 'order';
+            let itemsHtml = '';
+            for(const it of job.items){
+              try{
+                const menuItem = (typeof window.getMenuItem === 'function') ? await window.getMenuItem(it.ItemID) : null;
+                const name = menuItem ? menuItem.Name : it.ItemID;
+                itemsHtml += `${it.Quantity}× ${name} — $${(it.Price||0).toFixed? (it.Price||0).toFixed(2) : (it.Price||0)}<br>`;
+              }catch(e){ itemsHtml += `${it.Quantity}× ${it.ItemID} — $${it.Price}<br>`; }
+            }
+            const delivery = job.order && job.order.delivery ? job.order.delivery : {};
+            div.innerHTML = `<h4>Job ${job.JobID} — Order ${job.order ? job.order.OrderID : job.OrderID}</h4>
+              <div><strong>Restaurant:</strong> ${job.order && job.order.restaurant ? job.order.restaurant.Name : ''}</div>
+              <div><strong>Items:</strong><div>${itemsHtml}</div></div>
+              <div><strong>Deliver to:</strong> ${delivery.building || job.order.DeliveryLocation} ${delivery.room || ''}</div>
+              <div><strong>Instructions:</strong> ${delivery.instructions ? escapeHtml(delivery.instructions) : 'None'}</div>
+              <div style="margin-top:0.5rem"><button class="btn js-complete" data-id="${job.JobID}">Mark Delivered</button></div>`;
+            activeEl.appendChild(div);
+          }
+
+          document.querySelectorAll('.js-complete').forEach(btn => {
+            btn.addEventListener('click', async () => {
+              const jobId = btn.dataset.id;
+              if(!confirm('Confirm you have delivered this order?')) return;
+              const r = await fetch(`/api/jobs/${jobId}/complete`, { method: 'POST' });
+              if(r.ok){ alert('Job completed.'); await loadActiveJobs(); await loadOrders(); }
+              else alert('Failed to complete job');
+            });
+          });
+        }catch(e){ console.error(e); document.getElementById('active-jobs').innerHTML = '<p>Error loading active jobs</p>'; }
+      }
+
+      // Append a single active job to the Active Jobs DOM (used for optimistic UI)
+      function appendActiveJobToDOM(job){
+        try{
+          const activeEl = document.getElementById('active-jobs');
+          if(!activeEl) return;
+          // create job card
+          const div = document.createElement('div'); div.className = 'order';
+          let itemsHtml = '';
+          // show item ids immediately; names will be filled in asynchronously
+          for(const it of job.items){
+            const priceStr = (it.Price||0).toFixed ? (it.Price||0).toFixed(2) : (it.Price||0);
+            itemsHtml += `${it.Quantity}× ${it.ItemID} — $${priceStr}<br>`;
+          }
+          const delivery = job.order && job.order.delivery ? job.order.delivery : {};
+          div.innerHTML = `<h4>Job ${job.JobID} — Order ${job.order ? job.order.OrderID : job.OrderID}</h4>
+            <div><strong>Restaurant:</strong> ${job.order && job.order.restaurant ? job.order.restaurant.Name : ''}</div>
+            <div><strong>Items:</strong><div class="job-items">${itemsHtml}</div></div>
+            <div><strong>Deliver to:</strong> ${delivery.building || (job.order && job.order.DeliveryLocation) || ''} ${delivery.room || ''}</div>
+            <div><strong>Instructions:</strong> ${delivery.instructions ? escapeHtml(delivery.instructions) : 'None'}</div>
+            <div style="margin-top:0.5rem"><button class="btn js-complete" data-id="${job.JobID}">Mark Delivered</button></div>`;
+          activeEl.prepend(div);
+
+          // attach complete handler
+          div.querySelector('.js-complete').addEventListener('click', async () => {
+            const jobId = job.JobID;
+            if(!confirm('Confirm you have delivered this order?')) return;
+            const r = await fetch(`/api/jobs/${jobId}/complete`, { method: 'POST' });
+            if(r.ok){ alert('Job completed.'); await loadActiveJobs(); await loadOrders(); }
+            else alert('Failed to complete job');
+          });
+
+          // asynchronously resolve item names
+          (async ()=>{
+            try{
+              const itemsDiv = div.querySelector('.job-items');
+              if(!itemsDiv) return;
+              let resolved = '';
+              for(const it of job.items){
+                try{
+                  const menuItem = (typeof window.getMenuItem === 'function') ? await window.getMenuItem(it.ItemID) : null;
+                  const name = menuItem ? menuItem.Name : it.ItemID;
+                  const priceStr = (it.Price||0).toFixed ? (it.Price||0).toFixed(2) : (it.Price||0);
+                  resolved += `${it.Quantity}× ${name} — $${priceStr}<br>`;
+                }catch(e){ resolved += `${it.Quantity}× ${it.ItemID} — $${it.Price}<br>`; }
+              }
+              itemsDiv.innerHTML = resolved;
+            }catch(e){ console.error('Failed to resolve item names', e); }
+          })();
+        }catch(e){ console.error('appendActiveJobToDOM error', e); }
+      }
+
+      // initial load
+      loadOrders();
+      loadActiveJobs();
+      maybeCompleteJob();
+      // refresh every 15s
+      setInterval(()=>{ loadOrders(); loadActiveJobs(); }, 15000);
+    </script>
+  </body>
+</html>
