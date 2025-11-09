@@ -1,3 +1,11 @@
+--- Create SystemAdmin Table
+CREATE TABLE SystemAdmin (
+    AdminID TEXT PRIMARY KEY,
+    Name TEXT NOT NULL,
+    Email TEXT NOT NULL UNIQUE,
+    Phone TEXT,
+    PasswordHash TEXT NOT NULL
+);
 --- Create Customer Table
 CREATE TABLE Customer (
     CustomerID TEXT PRIMARY KEY,
