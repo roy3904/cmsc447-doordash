@@ -1,5 +1,6 @@
-import { getRestaurants, getMenuItemsByRestaurantId, createOrder, getCart as dbGetCart, addToCart as dbAddToCart, removeFromCart as dbRemoveFromCart, clearCart as dbClearCart, getMenuItem as dbGetMenuItem, getPlacedOrders, assignOrderToWorker, completeDeliveryJob, getWorkers, createWorker, declineOrderByWorker, deleteWorker } from '../database.js';
+import { getRestaurants, getMenuItemsByRestaurantId, createOrder, getCart as dbGetCart, addToCart as dbAddToCart, removeFromCart as dbRemoveFromCart, clearCart as dbClearCart, getMenuItem as dbGetMenuItem, getPlacedOrders, assignOrderToWorker, completeDeliveryJob, getWorkers, createWorker, declineOrderByWorker, deleteWorker, getSystemAdmin} from '../database.js';
 import { getJobsForWorker } from '../database.js';
+import argon2 from 'argon2';
 
 export const getAllRestaurants = async (req, res) => {
   // #swagger.tags = ['Restaurants']
@@ -195,3 +196,33 @@ export const getMenuItem = async (req, res) => {
     res.status(500).json({ error: 'Failed to get menu item' });
   }
 };
+
+export async function loginAdminUser(req, res){
+  console.log("BUTTON CLICKED");
+  console.log("Data from front end: ", req.body);
+
+  const email = req.body.email;
+  const password = req.body.password;
+
+  const emailVerifier = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if(!emailVerifier.test(email)){
+    return res.status(400).send("Please Enter a Valid Email");
+  }
+
+  const fetchedUser = await getSystemAdmin(email);
+  
+  if(fetchedUser === undefined){
+    return res.status(401).send("Invalid Email or Password");
+  }
+
+  const correctPassword = await argon2.verify(fetchedUser.PasswordHash, password);
+
+  if(!correctPassword){
+    return res.status(401).send("Invalid Email or Password");
+  }
+
+  res.json({
+    authenticated: true,
+  });
+  return res.status(200).send("Successful Login Attempt");
+}

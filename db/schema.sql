@@ -25,6 +25,14 @@ CREATE TABLE RestaurantStaff (
     RestaurantID TEXT,
     FOREIGN KEY (RestaurantID) REFERENCES Restaurant(RestaurantID)
 );
+--- Create SystemAdmin Table
+CREATE TABLE SystemAdmin (
+    AdminID TEXT PRIMARY KEY,
+    Name TEXT NOT NULL,
+    Email TEXT NOT NULL UNIQUE,
+    Phone TEXT,
+    PasswordHash TEXT NOT NULL
+);
 --- Create Restaurant Table
 CREATE TABLE Restaurant (
     RestaurantID TEXT PRIMARY KEY,
