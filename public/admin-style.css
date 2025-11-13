@@ -356,11 +356,19 @@ input{
     height: 30px;
     margin-bottom: 20px;
     border: 1px solid black;
+    background-color: rgb(243, 243, 243);
 }
 
 input:focus{
     border: 1px solid black;
     outline: 1px solid black;
+    background-color:white;
+}
+
+.incorrect-login-text{
+    font-size: 12px;
+    margin-top: 0px;
+    color: rgb(189, 0, 0);
 }
 
 .login-button{

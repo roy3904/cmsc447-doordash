@@ -1,5 +1,6 @@
 import { getRestaurants, getMenuItemsByRestaurantId, createOrder, getCart as dbGetCart, addToCart as dbAddToCart, removeFromCart as dbRemoveFromCart, clearCart as dbClearCart, getMenuItem as dbGetMenuItem, getPlacedOrders, assignOrderToWorker, completeDeliveryJob, getWorkers, createWorker, declineOrderByWorker, deleteWorker } from '../database.js';
 import { getJobsForWorker } from '../database.js';
+import argon2 from 'argon2';
 
 export const getAllRestaurants = async (req, res) => {
   // #swagger.tags = ['Restaurants']
@@ -195,3 +196,21 @@ export const getMenuItem = async (req, res) => {
     res.status(500).json({ error: 'Failed to get menu item' });
   }
 };
+
+export async function loginAdminUser(req, res){
+  console.log("BUTTON CLICKED");
+  console.log("Data from front end: ", req.body);
+
+  const email = req.body.email;
+  const password = req.body.password;
+
+  const correctPassword = await argon2.hash("peepeefart");
+
+  const hashPassword = await argon2.verify(correctPassword, password);
+
+  if(!hashPassword){
+    return res.status(401).send("Invalid Email or Password");
+  }
+
+  return res.status(200).send("Successful Login Attempt");
+}
