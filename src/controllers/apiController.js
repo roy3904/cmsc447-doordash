@@ -1,4 +1,4 @@
-import { getRestaurants, getMenuItemsByRestaurantId, createOrder, getCart as dbGetCart, addToCart as dbAddToCart, removeFromCart as dbRemoveFromCart, clearCart as dbClearCart, getMenuItem as dbGetMenuItem, getPlacedOrders, assignOrderToWorker, completeDeliveryJob, getWorkers, createWorker, declineOrderByWorker, deleteWorker } from '../database.js';
+import { getRestaurants, getMenuItemsByRestaurantId, createOrder, getCart as dbGetCart, addToCart as dbAddToCart, removeFromCart as dbRemoveFromCart, clearCart as dbClearCart, getMenuItem as dbGetMenuItem, getPlacedOrders, assignOrderToWorker, completeDeliveryJob, getWorkers, createWorker, declineOrderByWorker, deleteWorker, getSystemAdmin} from '../database.js';
 import { getJobsForWorker } from '../database.js';
 import argon2 from 'argon2';
 
@@ -204,13 +204,25 @@ export async function loginAdminUser(req, res){
   const email = req.body.email;
   const password = req.body.password;
 
-  const correctPassword = await argon2.hash("peepeefart");
+  const emailVerifier = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if(!emailVerifier.test(email)){
+    return res.status(400).send("Please Enter a Valid Email");
+  }
 
-  const hashPassword = await argon2.verify(correctPassword, password);
-
-  if(!hashPassword){
+  const fetchedUser = await getSystemAdmin(email);
+  
+  if(fetchedUser === undefined){
     return res.status(401).send("Invalid Email or Password");
   }
 
+  const correctPassword = await argon2.verify(fetchedUser.PasswordHash, password);
+
+  if(!correctPassword){
+    return res.status(401).send("Invalid Email or Password");
+  }
+
+  res.json({
+    authenticated: true,
+  });
   return res.status(200).send("Successful Login Attempt");
 }

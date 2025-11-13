@@ -1,3 +1,6 @@
+if(sessionStorage.getItem('logged_in') !== 'true'){
+    window.location.href = 'admin-login.html';
+}
 export const customers = [
     {
         name: "Joe Biden",

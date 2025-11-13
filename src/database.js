@@ -466,3 +466,20 @@ export async function getMenuItem(itemId) {
     }
   }
 }
+
+export async function getSystemAdmin(adminEmail) {
+  let db;
+  try {
+    db = await openDb();
+    const admin = await db.get('SELECT * FROM SystemAdmin WHERE Email = ?', adminEmail);
+    
+    return admin;
+  } catch (error) {
+    console.error('Error fetching admin user:', error);
+    throw error;
+  } finally {
+    if (db) {
+      await db.close();
+    }
+  }
+}
