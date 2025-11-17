@@ -27,6 +27,10 @@ export const customers = [
 
 export let restaurants = [];
 
+export function setRestaurants(restaurantList){
+    restaurants = restaurantList;
+}
+
 async function fetchRestaurants() {
     try {
         const response = await fetch('/api/restaurants');
@@ -206,18 +210,19 @@ export function removeCustomer(id){
 }
 
 export function changeRestaurantName(id, name){
-    findRestaurant(id).name = name;
+    findRestaurant(id).Name = name;
 }
 export function changeLocation(id, location){
-    findRestaurant(id).location = location;
+    findRestaurant(id).Location = location;
 }
 export function changeHours(id, hours){
-    findRestaurant(id).hours = hours;
+    findRestaurant(id).OperatingHours = hours;
 }
 
 export function findRestaurant(restaurantId){
+    console.log(restaurants.length);
     for(let i = 0; i < restaurants.length; i++){
-        if(restaurants[i].id === restaurantId){
+        if(restaurants[i].RestaurantID === restaurantId){
             return restaurants[i];
         }
     }
