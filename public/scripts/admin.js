@@ -209,6 +209,41 @@ export function removeCustomer(id){
     }
 }
 
+export async function findWorker(id){
+    const workerList = await fetchWorkersFromServer();
+    for(let i = 0; i < workerList.length; ++i){
+        if(workerList[i].WorkerID === id){
+            return workerList[i];
+        }
+    }
+    return null;
+}
+
+export function changeWorkerName(id, name){
+    findWorker(id).Name = name;
+}
+export function changeWorkerPhone(id, phone){
+    findWorker(id).Phone = phone;
+}
+export function changeWorkerEmail(id, email){
+    findWorker(id).Email = email;
+}
+export function changeWorkerPassword(id, password){
+    findCustomer(id).PasswordHash = password;
+}
+export function changeWorkerHours(id, hours){
+    findWorker(id).AvailabilityStatus = hours;
+}
+
+export function removeWorker(id){
+    for(let i = 0; i < customers.length; i++){
+        if(customers[i].id === id){
+            customers.splice(i, 1);
+            break;
+        }
+    }
+}
+
 export function changeRestaurantName(id, name){
     findRestaurant(id).Name = name;
 }
@@ -278,7 +313,7 @@ if(window.location.href.includes('admin.html')){
 }
 
 // Worker management
-async function fetchWorkersFromServer(){
+export async function fetchWorkersFromServer(){
     try{
         const resp = await fetch('/api/workers');
         if(!resp.ok) return [];
@@ -290,30 +325,25 @@ async function fetchWorkersFromServer(){
 function renderWorkerList(workers){
     let html = '';
     workers.forEach(w => {
+        console.log(w);
         html += `
         <div class="database-item worker-item">
             <p class="worker-name">${w.Name}</p>
             <p class="worker-id">${w.WorkerID}</p>
+            <p class="worker-phone">${w.Phone}</p>
             <p class="worker-email">${w.Email}</p>
             <p class="worker-availability">${w.AvailabilityStatus || ''}</p>
-                        <div style="margin-top:8px">
-                            <button class="modify-button js-delete-worker" data-id="${w.WorkerID}">Delete</button>
-                        </div>
+            <button class="modify-button js-modify-worker" data-worker-id="${w.WorkerID}">Modify</button>
         </div>
         `;
     });
     document.querySelector('.js-worker-list-content').innerHTML = html || '<p class="not-found-text">No workers</p>';
 
-    // attach delete handlers
-    document.querySelectorAll('.js-delete-worker').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            const id = btn.dataset.id;
-            if(!confirm(`Delete worker ${id}? This cannot be undone.`)) return;
-            try{
-                const resp = await fetch(`/api/workers/${encodeURIComponent(id)}`, { method: 'DELETE' });
-                if(!resp.ok) throw new Error('Failed to delete');
-                const workers = await fetchWorkersFromServer(); renderWorkerList(workers);
-            }catch(e){ alert('Failed to delete worker'); console.error(e); }
+    const modifyButtons = document.querySelectorAll('.js-modify-worker');
+    modifyButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            const workerId = button.dataset.workerId;
+            window.location.href = `worker-info.html?id=${workerId}`
         });
     });
 }
