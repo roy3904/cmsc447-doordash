@@ -466,3 +466,127 @@ export async function getMenuItem(itemId) {
     }
   }
 }
+
+// =======================================
+// Customer Management Functions
+// =======================================
+
+// Get all customers
+export async function getCustomers() {
+  let db;
+  try {
+    db = await openDb();
+    const customers = await db.all('SELECT * FROM Customer');
+    return customers;
+  } catch (error) {
+    console.error('Error getting customers:', error);
+    throw error;
+  } finally {
+    if (db) {
+      await db.close();
+    }
+  }
+}
+
+// Get a single customer by ID
+export async function getCustomerById(customerId) {
+  let db;
+  try {
+    db = await openDb();
+    const customer = await db.get('SELECT * FROM Customer WHERE CustomerID = ?', customerId);
+    return customer;
+  } catch (error) {
+    console.error('Error getting customer:', error);
+    throw error;
+  } finally {
+    if (db) {
+      await db.close();
+    }
+  }
+}
+
+// Create a new customer
+export async function createCustomer(customer) {
+  let db;
+  try {
+    db = await openDb();
+    await db.run(
+      'INSERT INTO Customer (CustomerID, Name, Email, Phone, PasswordHash) VALUES (?, ?, ?, ?, ?)',
+      [
+        customer.CustomerID,
+        customer.Name,
+        customer.Email,
+        customer.Phone || '',
+        customer.PasswordHash || ''
+      ]
+    );
+    return true;
+  } catch (error) {
+    console.error('Error creating customer:', error);
+    throw error;
+  } finally {
+    if (db) {
+      await db.close();
+    }
+  }
+}
+
+// Update customer information
+export async function updateCustomer(customerId, updates) {
+  let db;
+  try {
+    db = await openDb();
+    const fields = [];
+    const values = [];
+
+    if (updates.Name !== undefined) {
+      fields.push('Name = ?');
+      values.push(updates.Name);
+    }
+    if (updates.Email !== undefined) {
+      fields.push('Email = ?');
+      values.push(updates.Email);
+    }
+    if (updates.Phone !== undefined) {
+      fields.push('Phone = ?');
+      values.push(updates.Phone);
+    }
+    if (updates.PasswordHash !== undefined) {
+      fields.push('PasswordHash = ?');
+      values.push(updates.PasswordHash);
+    }
+
+    if (fields.length === 0) {
+      return true;
+    }
+
+    values.push(customerId);
+    const query = `UPDATE Customer SET ${fields.join(', ')} WHERE CustomerID = ?`;
+    await db.run(query, values);
+    return true;
+  } catch (error) {
+    console.error('Error updating customer:', error);
+    throw error;
+  } finally {
+    if (db) {
+      await db.close();
+    }
+  }
+}
+
+// Delete a customer
+export async function deleteCustomer(customerId) {
+  let db;
+  try {
+    db = await openDb();
+    await db.run('DELETE FROM Customer WHERE CustomerID = ?', customerId);
+    return true;
+  } catch (error) {
+    console.error('Error deleting customer:', error);
+    throw error;
+  } finally {
+    if (db) {
+      await db.close();
+    }
+  }
+}
