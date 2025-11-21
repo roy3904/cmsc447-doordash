@@ -235,10 +235,11 @@ export function changeWorkerHours(id, hours){
     findWorker(id).AvailabilityStatus = hours;
 }
 
-export function removeWorker(id){
-    for(let i = 0; i < customers.length; i++){
-        if(customers[i].id === id){
-            customers.splice(i, 1);
+export async function removeWorker(id){
+    const workerList = await fetchWorkersFromServer();
+    for(let i = 0; i < workerList.length; ++i){
+        if(workerList[i].WorkerID === id){
+            workerList.splice(i, 1);
             break;
         }
     }

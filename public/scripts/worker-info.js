@@ -1,4 +1,4 @@
-import {findWorker, changeWorkerName, changeWorkerPhone, changeWorkerEmail, changeWorkerPassword, changeWorkerHours} from './admin.js';
+import {findWorker, changeWorkerName, changeWorkerPhone, changeWorkerEmail, changeWorkerPassword, changeWorkerHours, removeWorker} from './admin.js';
 
 const params = new URLSearchParams(window.location.search);
 const workerID = params.get('id');
@@ -21,7 +21,7 @@ function renderWorkerInfo(){
                     <p class="title-name">${currWorker.Name}</p>
                 </div>
                 
-                <button class="delete-user-button">Delete Restaurant</button>
+                <button class="delete-user-button">Delete Worker</button>
                 
             </div> 
             <div class="info-body js-restaurant-info-body">
