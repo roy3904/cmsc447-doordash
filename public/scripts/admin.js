@@ -1,28 +1,18 @@
-export const customers = [
-    {
-        name: "Joe Biden",
-        id: "123456",
-        phone: "123-456-7890",
-        email: "jbiden1@umbc.edu",
-        password: "encrypted-password",
-    }, 
-    {
-        name: "Donald Trump",
-        id: "987654",
-        phone: "492-958-3984",
-        email: "dtrump1@umbc.edu",
-        password: "encrypted-password",
-    }, 
-    {
-        name: "Barack Obama",
-        id: "024681",
-        phone: "948-391-8347",
-        email: "bobama1@umbc.edu",
-        password: "encrypted-password",
-    } 
-];
+export let customers = [];
 
 export let restaurants = [];
+
+async function fetchCustomers() {
+    try {
+        const response = await fetch('/api/customers');
+        const data = await response.json();
+        customers = data.customers;
+        renderCustomerList();
+    } catch (error) {
+        console.error('Failed to fetch customers:', error);
+        customers = [];
+    }
+}
 
 async function fetchRestaurants() {
     try {
@@ -38,11 +28,11 @@ async function fetchRestaurants() {
 function renderCustomerList(){
     let customerListHTML = '';
     customers.forEach((customer) => {
-        const name = customer.name;
-        const id = customer.id;
-        const phone = customer.phone;
-        const email = customer.email;
-        const password = customer.password;
+        const name = customer.Name;
+        const id = customer.CustomerID;
+        const phone = customer.Phone;
+        const email = customer.Email;
+        const password = customer.PasswordHash;
 
         customerListHTML += `
         <div class="database-item student-item">
@@ -100,11 +90,11 @@ function searchCustomerList(){
 
     const input = document.querySelector('.js-search-customers').value;
     customers.forEach((customer) => {
-        const name = customer.name;
-        const id = customer.id;
-        const phone = customer.phone;
-        const email = customer.email;
-        const password = customer.password;
+        const name = customer.Name;
+        const id = customer.CustomerID;
+        const phone = customer.Phone;
+        const email = customer.Email;
+        const password = customer.PasswordHash;
 
         if(name.toLowerCase().includes(input.toLowerCase()) || id.toLowerCase().includes(input.toLowerCase())){
             customerListHTML += `
@@ -119,7 +109,7 @@ function searchCustomerList(){
         `
         }
     })
-    
+
     if(customerListHTML === ''){
         customerListHTML = '<p class="not-found-text">Sorry, there were no users found with that information!</p>'
     }
@@ -173,7 +163,7 @@ function searchRestaurantList(){
 
 export function findCustomer(customerId){
     for(let i = 0; i < customers.length; i++){
-        if(customers[i].id === customerId){
+        if(customers[i].CustomerID === customerId){
             return customers[i];
         }
     }
@@ -181,21 +171,21 @@ export function findCustomer(customerId){
 }
 
 export function changeCustomerName(id, name){
-    findCustomer(id).name = name;
+    findCustomer(id).Name = name;
 }
 export function changePhone(id, phone){
-    findCustomer(id).phone = phone;
+    findCustomer(id).Phone = phone;
 }
 export function changeEmail(id, email){
-    findCustomer(id).email = email;
+    findCustomer(id).Email = email;
 }
 export function changePassword(id, password){
-    findCustomer(id).password = password;
+    findCustomer(id).PasswordHash = password;
 }
 
 export function removeCustomer(id){
     for(let i = 0; i < customers.length; i++){
-        if(customers[i].id === id){
+        if(customers[i].CustomerID === id){
             customers.splice(i, 1);
             break;
         }
@@ -231,9 +221,8 @@ export function removeRestaurant(id){
 }
 
 if(window.location.href.includes('admin.html')){
+    fetchCustomers();
     fetchRestaurants();
-    renderCustomerList();
-    renderRestaurantList();
     const customerSearchInput = document.querySelector('.js-search-customers');
     customerSearchInput.addEventListener('keyup', (event) => {
         if(event.key === 'Enter'){
