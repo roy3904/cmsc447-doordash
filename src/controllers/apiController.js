@@ -1,4 +1,4 @@
-import { getRestaurants, getMenuItemsByRestaurantId, createOrder, getCart as dbGetCart, addToCart as dbAddToCart, removeFromCart as dbRemoveFromCart, clearCart as dbClearCart, getMenuItem as dbGetMenuItem, getPlacedOrders, assignOrderToWorker, completeDeliveryJob, getWorkers, createWorker, declineOrderByWorker, deleteWorker } from '../database.js';
+import { getRestaurants, getMenuItemsByRestaurantId, createOrder, getCart as dbGetCart, addToCart as dbAddToCart, removeFromCart as dbRemoveFromCart, clearCart as dbClearCart, getMenuItem as dbGetMenuItem, getPlacedOrders, assignOrderToWorker, completeDeliveryJob, getWorkers, createWorker, declineOrderByWorker, deleteWorker, getCustomers as dbGetCustomers, getCustomerById as dbGetCustomerById, createCustomer as dbCreateCustomer, updateCustomer as dbUpdateCustomer, deleteCustomer as dbDeleteCustomer } from '../database.js';
 import { getJobsForWorker } from '../database.js';
 
 export const getAllRestaurants = async (req, res) => {
@@ -193,5 +193,79 @@ export const getMenuItem = async (req, res) => {
   } catch (error) {
     console.error('Failed to get menu item:', error);
     res.status(500).json({ error: 'Failed to get menu item' });
+  }
+};
+
+// =======================================
+// Customer Controllers
+// =======================================
+
+export const getAllCustomers = async (req, res) => {
+  try {
+    const customers = await dbGetCustomers();
+    res.json({ customers });
+  } catch (error) {
+    console.error('Failed to get customers:', error);
+    res.status(500).json({ error: 'Failed to get customers' });
+  }
+};
+
+export const getCustomer = async (req, res) => {
+  try {
+    const customerId = req.params.id;
+    if (!customerId) {
+      return res.status(400).json({ error: 'Customer ID required' });
+    }
+    const customer = await dbGetCustomerById(customerId);
+    if (!customer) {
+      return res.status(404).json({ error: 'Customer not found' });
+    }
+    res.json({ customer });
+  } catch (error) {
+    console.error('Failed to get customer:', error);
+    res.status(500).json({ error: 'Failed to get customer' });
+  }
+};
+
+export const addCustomer = async (req, res) => {
+  try {
+    const customer = req.body;
+    if (!customer || !customer.CustomerID) {
+      return res.status(400).json({ error: 'Customer data missing or CustomerID required' });
+    }
+    await dbCreateCustomer(customer);
+    res.status(201).json({ message: 'Customer created' });
+  } catch (error) {
+    console.error('Failed to create customer:', error);
+    res.status(500).json({ error: 'Failed to create customer' });
+  }
+};
+
+export const modifyCustomer = async (req, res) => {
+  try {
+    const customerId = req.params.id;
+    const updates = req.body;
+    if (!customerId) {
+      return res.status(400).json({ error: 'Customer ID required' });
+    }
+    await dbUpdateCustomer(customerId, updates);
+    res.json({ message: 'Customer updated' });
+  } catch (error) {
+    console.error('Failed to update customer:', error);
+    res.status(500).json({ error: 'Failed to update customer' });
+  }
+};
+
+export const removeCustomer = async (req, res) => {
+  try {
+    const customerId = req.params.id;
+    if (!customerId) {
+      return res.status(400).json({ error: 'Customer ID required' });
+    }
+    await dbDeleteCustomer(customerId);
+    res.json({ message: 'Customer deleted' });
+  } catch (error) {
+    console.error('Failed to delete customer:', error);
+    res.status(500).json({ error: 'Failed to delete customer' });
   }
 };
