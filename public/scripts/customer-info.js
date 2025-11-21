@@ -1,14 +1,52 @@
-import {customers, findCustomer, changeCustomerName, changePhone, changeEmail, changePassword, removeCustomer} from './admin.js';
-
 const params = new URLSearchParams(window.location.search);
 const userId = params.get('id');
 
-const cancel = document.getElements
+let currCustomer = null;
 
+async function fetchCustomer() {
+    try {
+        const response = await fetch(`/api/customers/${userId}`);
+        const data = await response.json();
+        currCustomer = data.customer;
+        renderCustomerInfo();
+    } catch (error) {
+        console.error('Failed to fetch customer:', error);
+        currCustomer = null;
+        renderCustomerInfo();
+    }
+}
+
+async function updateCustomer(updates) {
+    try {
+        const response = await fetch(`/api/customers/${userId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(updates)
+        });
+        if (!response.ok) throw new Error('Failed to update');
+        await fetchCustomer();
+    } catch (error) {
+        console.error('Failed to update customer:', error);
+        alert('Failed to update customer');
+    }
+}
+
+async function deleteCustomer() {
+    try {
+        const response = await fetch(`/api/customers/${userId}`, {
+            method: 'DELETE'
+        });
+        if (!response.ok) throw new Error('Failed to delete');
+        window.location.href = "admin.html";
+    } catch (error) {
+        console.error('Failed to delete customer:', error);
+        alert('Failed to delete customer');
+    }
+}
 
 function renderCustomerInfo(){
-    const currCustomer = findCustomer(userId);
-
     let customerInfoHTML = '';
 
     if(currCustomer === null){
@@ -17,43 +55,43 @@ function renderCustomerInfo(){
     else{
         customerInfoHTML += `
             <div class="info-header">
-                    
+
                 <div class="info-header-leftside">
                     <img class="profile-picture" src="./images/retriever-profile-picture.png">
-                    <p class="title-name">${currCustomer.name}</p>
+                    <p class="title-name">${currCustomer.Name}</p>
                 </div>
-                
+
                 <button class="delete-user-button">Delete User</button>
-                
-            </div> 
+
+            </div>
             <div class="info-body js-customer-info-body">
                 <div class="entity-info js-id-info">
-                    <p class="entity-info-text js-id-text">ID: ${currCustomer.id}</p>
+                    <p class="entity-info-text js-id-text">ID: ${currCustomer.CustomerID}</p>
                 </div>
                 <div class="entity-info js-name-info">
-                    <p class="entity-info-text js-name-text">Name: ${currCustomer.name}</p>
+                    <p class="entity-info-text js-name-text">Name: ${currCustomer.Name}</p>
                     <button class="entity-edit-button js-edit-name-button">Edit</button>
                 </div>
                 <div class="entity-info js-phone-info">
-                    <p class="entity-info-text js-phone-text">Phone: ${currCustomer.phone}</p>
+                    <p class="entity-info-text js-phone-text">Phone: ${currCustomer.Phone}</p>
                     <button class="entity-edit-button js-edit-phone-button">Edit</button>
                 </div>
                 <div class="entity-info js-email-info">
-                    <p class="entity-info-text js-email-text">Email: ${currCustomer.email}</p>
+                    <p class="entity-info-text js-email-text">Email: ${currCustomer.Email}</p>
                     <button class="entity-edit-button js-edit-email-button">Edit</button>
                 </div>
                 <div class="entity-info js-password-info">
-                    <p class="entity-info-text js-password-text">Password: ${currCustomer.password}</p>
+                    <p class="entity-info-text js-password-text">Password: ${currCustomer.PasswordHash}</p>
                     <button class="entity-edit-button js-edit-password-button">Edit</button>
                 </div>
             </div>
         `
     }
-    
+
     document.querySelector('.js-customer-info-container').innerHTML = customerInfoHTML;
 
     renderButtons();
-    
+
 }
 
 function renderButtons(){
@@ -66,8 +104,7 @@ function renderButtons(){
     })
 
     document.querySelector('.js-delete-accept-button').addEventListener('click', () => {
-        removeCustomer(userId);
-        window.location.href="admin.html";
+        deleteCustomer();
     })
 
     document.querySelector('.js-name-info').addEventListener('click', (event) => {
@@ -88,10 +125,9 @@ function renderButtons(){
         if(event.target.classList.contains('js-cancel-edit-button')){
             renderCustomerInfo();
         }
-        
+
         if(event.target.classList.contains('js-confirm-edit-button')){
-            changeCustomerName(userId, document.querySelector('.js-name-input').value);
-            renderCustomerInfo();
+            updateCustomer({ Name: document.querySelector('.js-name-input').value });
         }
     });
 
@@ -135,7 +171,7 @@ function renderButtons(){
         if(event.target.classList.contains('js-cancel-edit-button')){
             renderCustomerInfo();
         }
-        
+
         if(event.target.classList.contains('js-confirm-edit-button')){
             if(document.querySelector('.js-phone-input').value.length !== 12){
                 document.querySelector('.js-edit-phone-buttons').innerHTML = `
@@ -145,8 +181,7 @@ function renderButtons(){
                 `
             }
             else{
-                changePhone(userId, document.querySelector('.js-phone-input').value);
-                renderCustomerInfo();
+                updateCustomer({ Phone: document.querySelector('.js-phone-input').value });
             }
         }
     });
@@ -169,14 +204,13 @@ function renderButtons(){
         if(event.target.classList.contains('js-cancel-edit-button')){
             renderCustomerInfo();
         }
-        
+
         if(event.target.classList.contains('js-confirm-edit-button')){
             const input = document.querySelector('.js-email-input').value;
             const emailVerifier = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
             if(emailVerifier.test(input)){
-                changeEmail(userId, document.querySelector('.js-email-input').value);
-                renderCustomerInfo();
+                updateCustomer({ Email: document.querySelector('.js-email-input').value });
             }
             else{
                 document.querySelector('.js-edit-email-buttons').innerHTML = `
@@ -185,7 +219,7 @@ function renderButtons(){
                     <button class="confirm-edit-button js-confirm-edit-button">Confirm Changes</button>
                 `
             }
-            
+
         }
     });
 
@@ -207,7 +241,7 @@ function renderButtons(){
         if(event.target.classList.contains('js-cancel-edit-button')){
             renderCustomerInfo();
         }
-        
+
         if(event.target.classList.contains('js-confirm-edit-button')){
             const input = document.querySelector('.js-password-input').value;
 
@@ -226,14 +260,13 @@ function renderButtons(){
                 `
             }
             else{
-                changePassword(userId, document.querySelector('.js-password-input').value);
-                renderCustomerInfo();
-            } 
+                updateCustomer({ PasswordHash: document.querySelector('.js-password-input').value });
+            }
         }
     });
 }
 
-renderCustomerInfo();
+fetchCustomer();
 
 
 
