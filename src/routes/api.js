@@ -1,6 +1,6 @@
 
 import express from 'express';
-import { getAllRestaurants, getMenuItems, placeOrder, getCart, addToCart, removeFromCart, clearCart, getMenuItem, getOrdersPlaced, acceptOrder, declineOrder, completeOrder, getAllWorkers, addWorker, getWorkerJobs, removeWorker } from '../controllers/apiController.js';
+import { getAllRestaurants, getMenuItems, placeOrder, getCart, addToCart, removeFromCart, clearCart, getMenuItem, getOrdersPlaced, acceptOrder, declineOrder, completeOrder, getAllWorkers, addWorker, getWorkerJobs, removeWorker, getAllCustomers, getCustomer, addCustomer, modifyCustomer, removeCustomer } from '../controllers/apiController.js';
 
 const router = express.Router();
 
@@ -48,5 +48,12 @@ router.get('/workers', getAllWorkers);
 router.post('/workers', addWorker);
 // Delete a worker
 router.delete('/workers/:id', removeWorker);
+
+// Customers
+router.get('/customers', getAllCustomers);
+router.get('/customers/:id', getCustomer);
+router.post('/customers', addCustomer);
+router.put('/customers/:id', modifyCustomer);
+router.delete('/customers/:id', removeCustomer);
 
 export default router;
