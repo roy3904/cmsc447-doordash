@@ -406,6 +406,89 @@ export async function getJobsForWorker(workerId) {
 }
 
 // =======================================
+// Worker Application Functions
+// =======================================
+
+// Create new worker application
+export async function createWorkerApplication(application) {
+  let db;
+  try {
+    db = await openDb();
+    const applicationId = 'APP-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8).toUpperCase();
+    await db.run(
+      'INSERT INTO WorkerApplication (ApplicationID, WorkerID, Name, Email, Phone, Availability, PasswordHash, Status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [applicationId, application.WorkerID, application.Name, application.Email, application.Phone || '', application.Availability || '', application.PasswordHash, 'Pending']
+    );
+    return applicationId;
+  } catch (error) {
+    console.error('Error creating worker application:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
+// Get all worker applications
+export async function getWorkerApplications() {
+  let db;
+  try {
+    db = await openDb();
+    const applications = await db.all('SELECT * FROM WorkerApplication ORDER BY SubmittedAt DESC');
+    return applications;
+  } catch (error) {
+    console.error('Error getting worker applications:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
+// Get worker application by ID
+export async function getWorkerApplicationById(applicationId) {
+  let db;
+  try {
+    db = await openDb();
+    const application = await db.get('SELECT * FROM WorkerApplication WHERE ApplicationID = ?', applicationId);
+    return application;
+  } catch (error) {
+    console.error('Error getting worker application:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
+// Update worker application status
+export async function updateWorkerApplicationStatus(applicationId, status) {
+  let db;
+  try {
+    db = await openDb();
+    await db.run('UPDATE WorkerApplication SET Status = ? WHERE ApplicationID = ?', [status, applicationId]);
+    return true;
+  } catch (error) {
+    console.error('Error updating worker application status:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
+// Delete worker application
+export async function deleteWorkerApplication(applicationId) {
+  let db;
+  try {
+    db = await openDb();
+    await db.run('DELETE FROM WorkerApplication WHERE ApplicationID = ?', applicationId);
+    return true;
+  } catch (error) {
+    console.error('Error deleting worker application:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
+// =======================================
 // Get Cart for a Customer
 // =======================================
 export async function getCart(customerId) {

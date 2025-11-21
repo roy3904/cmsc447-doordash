@@ -1,4 +1,4 @@
-import { getRestaurants, getRestaurantById as dbGetRestaurantById, createRestaurant as dbCreateRestaurant, updateRestaurant as dbUpdateRestaurant, deleteRestaurant as dbDeleteRestaurant, getMenuItemsByRestaurantId, createOrder, getCart as dbGetCart, addToCart as dbAddToCart, removeFromCart as dbRemoveFromCart, clearCart as dbClearCart, getMenuItem as dbGetMenuItem, getPlacedOrders, assignOrderToWorker, completeDeliveryJob, getWorkers, createWorker, declineOrderByWorker, deleteWorker, getCustomers as dbGetCustomers, getCustomerById as dbGetCustomerById, createCustomer as dbCreateCustomer, updateCustomer as dbUpdateCustomer, deleteCustomer as dbDeleteCustomer } from '../database.js';
+import { getRestaurants, getRestaurantById as dbGetRestaurantById, createRestaurant as dbCreateRestaurant, updateRestaurant as dbUpdateRestaurant, deleteRestaurant as dbDeleteRestaurant, getMenuItemsByRestaurantId, createOrder, getCart as dbGetCart, addToCart as dbAddToCart, removeFromCart as dbRemoveFromCart, clearCart as dbClearCart, getMenuItem as dbGetMenuItem, getPlacedOrders, assignOrderToWorker, completeDeliveryJob, getWorkers, createWorker, declineOrderByWorker, deleteWorker, createWorkerApplication as dbCreateWorkerApplication, getWorkerApplications as dbGetWorkerApplications, getWorkerApplicationById as dbGetWorkerApplicationById, updateWorkerApplicationStatus as dbUpdateWorkerApplicationStatus, deleteWorkerApplication as dbDeleteWorkerApplication, getCustomers as dbGetCustomers, getCustomerById as dbGetCustomerById, createCustomer as dbCreateCustomer, updateCustomer as dbUpdateCustomer, deleteCustomer as dbDeleteCustomer } from '../database.js';
 import { getJobsForWorker } from '../database.js';
 
 export const getAllRestaurants = async (req, res) => {
@@ -195,6 +195,115 @@ export const getWorkerJobs = async (req, res) => {
   } catch (error) {
     console.error('Failed to get worker jobs:', error);
     res.status(500).json({ error: 'Failed to get worker jobs' });
+  }
+};
+
+// =======================================
+// Worker Application Controllers
+// =======================================
+
+export const createWorkerApplication = async (req, res) => {
+  try {
+    const application = req.body;
+    if (!application || !application.WorkerID) {
+      return res.status(400).json({ error: 'Application data missing or WorkerID required' });
+    }
+    const applicationId = await dbCreateWorkerApplication(application);
+    res.status(201).json({ message: 'Application submitted', applicationId });
+  } catch (error) {
+    console.error('Failed to create worker application:', error);
+    res.status(500).json({ error: 'Failed to submit application' });
+  }
+};
+
+export const getAllWorkerApplications = async (req, res) => {
+  try {
+    const applications = await dbGetWorkerApplications();
+    res.json({ applications });
+  } catch (error) {
+    console.error('Failed to get worker applications:', error);
+    res.status(500).json({ error: 'Failed to get worker applications' });
+  }
+};
+
+export const getWorkerApplication = async (req, res) => {
+  try {
+    const applicationId = req.params.id;
+    if (!applicationId) {
+      return res.status(400).json({ error: 'Application ID required' });
+    }
+    const application = await dbGetWorkerApplicationById(applicationId);
+    if (!application) {
+      return res.status(404).json({ error: 'Application not found' });
+    }
+    res.json({ application });
+  } catch (error) {
+    console.error('Failed to get worker application:', error);
+    res.status(500).json({ error: 'Failed to get worker application' });
+  }
+};
+
+export const approveWorkerApplication = async (req, res) => {
+  try {
+    const applicationId = req.params.id;
+    if (!applicationId) {
+      return res.status(400).json({ error: 'Application ID required' });
+    }
+
+    // Get the application
+    const application = await dbGetWorkerApplicationById(applicationId);
+    if (!application) {
+      return res.status(404).json({ error: 'Application not found' });
+    }
+
+    // Create the worker
+    await createWorker({
+      WorkerID: application.WorkerID,
+      Name: application.Name,
+      Email: application.Email,
+      Phone: application.Phone,
+      AvailabilityStatus: application.Availability || 'Available',
+      PasswordHash: application.PasswordHash
+    });
+
+    // Update application status
+    await dbUpdateWorkerApplicationStatus(applicationId, 'Approved');
+
+    res.json({ message: 'Application approved and worker created' });
+  } catch (error) {
+    console.error('Failed to approve worker application:', error);
+    res.status(500).json({ error: 'Failed to approve application' });
+  }
+};
+
+export const declineWorkerApplication = async (req, res) => {
+  try {
+    const applicationId = req.params.id;
+    if (!applicationId) {
+      return res.status(400).json({ error: 'Application ID required' });
+    }
+
+    // Update application status
+    await dbUpdateWorkerApplicationStatus(applicationId, 'Declined');
+
+    res.json({ message: 'Application declined' });
+  } catch (error) {
+    console.error('Failed to decline worker application:', error);
+    res.status(500).json({ error: 'Failed to decline application' });
+  }
+};
+
+export const removeWorkerApplication = async (req, res) => {
+  try {
+    const applicationId = req.params.id;
+    if (!applicationId) {
+      return res.status(400).json({ error: 'Application ID required' });
+    }
+    await dbDeleteWorkerApplication(applicationId);
+    res.json({ message: 'Application deleted' });
+  } catch (error) {
+    console.error('Failed to delete worker application:', error);
+    res.status(500).json({ error: 'Failed to delete application' });
   }
 };
 

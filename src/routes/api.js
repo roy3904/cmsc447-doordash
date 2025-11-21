@@ -1,6 +1,6 @@
 
 import express from 'express';
-import { getAllRestaurants, getRestaurant, addRestaurant, modifyRestaurant, removeRestaurant, getMenuItems, placeOrder, getCart, addToCart, removeFromCart, clearCart, getMenuItem, getOrdersPlaced, acceptOrder, declineOrder, completeOrder, getAllWorkers, addWorker, getWorkerJobs, removeWorker, getAllCustomers, getCustomer, addCustomer, modifyCustomer, removeCustomer } from '../controllers/apiController.js';
+import { getAllRestaurants, getRestaurant, addRestaurant, modifyRestaurant, removeRestaurant, getMenuItems, placeOrder, getCart, addToCart, removeFromCart, clearCart, getMenuItem, getOrdersPlaced, acceptOrder, declineOrder, completeOrder, getAllWorkers, addWorker, getWorkerJobs, removeWorker, createWorkerApplication, getAllWorkerApplications, getWorkerApplication, approveWorkerApplication, declineWorkerApplication, removeWorkerApplication, getAllCustomers, getCustomer, addCustomer, modifyCustomer, removeCustomer } from '../controllers/apiController.js';
 
 const router = express.Router();
 
@@ -60,6 +60,14 @@ router.get('/workers', getAllWorkers);
 router.post('/workers', addWorker);
 // Delete a worker
 router.delete('/workers/:id', removeWorker);
+
+// Worker Applications
+router.post('/worker-applications', createWorkerApplication);
+router.get('/worker-applications', getAllWorkerApplications);
+router.get('/worker-applications/:id', getWorkerApplication);
+router.post('/worker-applications/:id/approve', approveWorkerApplication);
+router.post('/worker-applications/:id/decline', declineWorkerApplication);
+router.delete('/worker-applications/:id', removeWorkerApplication);
 
 // Customers
 router.get('/customers', getAllCustomers);

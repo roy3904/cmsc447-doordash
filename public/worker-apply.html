@@ -44,20 +44,45 @@
     <footer><img class="footer-logo" src="./images/gritdash-logo-1.png"></footer>
 
     <script>
-      document.getElementById('apply').addEventListener('click', () => {
+      document.getElementById('apply').addEventListener('click', async () => {
         const name = document.getElementById('name').value.trim();
         const email = document.getElementById('email').value.trim();
         const phone = document.getElementById('phone').value.trim();
         const availability = document.getElementById('availability').value.trim();
-    // generate a system worker id on submit
-    const workerid = 'W-' + Date.now().toString(36).slice(4);
+        // generate a system worker id on submit
+        const workerid = 'W-' + Date.now().toString(36).slice(4);
         const password = document.getElementById('password').value || '';
         if(!name || !email) { alert('Please provide name and UMBC email'); return; }
-  const app = { WorkerID: workerid, Name: name, Email: email, Phone: phone, Availability: availability, PasswordHash: password, status: 'Pending' };
-        const apps = JSON.parse(localStorage.getItem('worker_applications') || '[]');
-        apps.push(app);
-        localStorage.setItem('worker_applications', JSON.stringify(apps));
-        document.getElementById('msg').style.display = 'block';
+
+        const app = {
+          WorkerID: workerid,
+          Name: name,
+          Email: email,
+          Phone: phone,
+          Availability: availability,
+          PasswordHash: password
+        };
+
+        try {
+          const resp = await fetch('/api/worker-applications', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(app)
+          });
+
+          if (!resp.ok) throw new Error('Failed to submit application');
+
+          document.getElementById('msg').style.display = 'block';
+          // Clear the form
+          document.getElementById('name').value = '';
+          document.getElementById('email').value = '';
+          document.getElementById('phone').value = '';
+          document.getElementById('availability').value = '';
+          document.getElementById('password').value = '';
+        } catch (e) {
+          alert('Failed to submit application. Please try again.');
+          console.error(e);
+        }
       });
     </script>
   </body>

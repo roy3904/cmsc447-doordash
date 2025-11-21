@@ -299,19 +299,30 @@ function renderWorkerList(workers){
     });
 }
 
-function renderApplications(){
-    const apps = JSON.parse(localStorage.getItem('worker_applications') || '[]');
-    if(!apps.length){ document.querySelector('.js-worker-apps-content').innerHTML = '<p>No pending applications</p>'; return; }
+async function fetchApplications(){
+    try{
+        const resp = await fetch('/api/worker-applications');
+        if(!resp.ok) return [];
+        const data = await resp.json();
+        return data.applications || [];
+    }catch(e){ console.error(e); return []; }
+}
+
+async function renderApplications(){
+    const apps = await fetchApplications();
+    // Only show pending applications
+    const pendingApps = apps.filter(a => a.Status === 'Pending');
+    if(!pendingApps.length){ document.querySelector('.js-worker-apps-content').innerHTML = '<p>No pending applications</p>'; return; }
     let html = '';
-    apps.forEach((a, i) => {
+    pendingApps.forEach(a => {
         html += `
         <div class="database-item app-item">
             <p class="worker-name">${a.Name}</p>
             <p class="worker-id">${a.WorkerID}</p>
             <p class="worker-email">${a.Email}</p>
             <p class="worker-availability">${a.Availability || ''}</p>
-            <button class="approve js-approve" data-idx="${i}">Approve</button>
-            <button class="decline js-decline" data-idx="${i}">Decline</button>
+            <button class="approve js-approve" data-app-id="${a.ApplicationID}">Approve</button>
+            <button class="decline js-decline" data-app-id="${a.ApplicationID}">Decline</button>
         </div>
         `;
     });
@@ -319,17 +330,12 @@ function renderApplications(){
 
     document.querySelectorAll('.js-approve').forEach(btn => {
         btn.addEventListener('click', async () => {
-            const idx = parseInt(btn.dataset.idx,10);
-            const apps = JSON.parse(localStorage.getItem('worker_applications') || '[]');
-            const app = apps[idx];
-            if(!app) return;
-            // send to server to create worker
+            const appId = btn.dataset.appId;
+            if(!appId) return;
             try{
-                const resp = await fetch('/api/workers', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ WorkerID: app.WorkerID, Name: app.Name, Email: app.Email, Phone: app.Phone, AvailabilityStatus: app.Availability, PasswordHash: app.PasswordHash || '' }) });
+                const resp = await fetch(`/api/worker-applications/${encodeURIComponent(appId)}/approve`, { method: 'POST' });
                 if(!resp.ok) throw new Error('Failed');
-                apps.splice(idx,1);
-                localStorage.setItem('worker_applications', JSON.stringify(apps));
-                renderApplications();
+                await renderApplications();
                 // refresh worker list
                 const workers = await fetchWorkersFromServer(); renderWorkerList(workers);
             }catch(e){ alert('Failed to approve'); console.error(e); }
@@ -337,12 +343,14 @@ function renderApplications(){
     });
 
     document.querySelectorAll('.js-decline').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const idx = parseInt(btn.dataset.idx,10);
-            const apps = JSON.parse(localStorage.getItem('worker_applications') || '[]');
-            apps.splice(idx,1);
-            localStorage.setItem('worker_applications', JSON.stringify(apps));
-            renderApplications();
+        btn.addEventListener('click', async () => {
+            const appId = btn.dataset.appId;
+            if(!appId) return;
+            try{
+                const resp = await fetch(`/api/worker-applications/${encodeURIComponent(appId)}/decline`, { method: 'POST' });
+                if(!resp.ok) throw new Error('Failed');
+                await renderApplications();
+            }catch(e){ alert('Failed to decline'); console.error(e); }
         });
     });
 }

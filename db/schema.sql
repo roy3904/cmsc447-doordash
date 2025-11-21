@@ -23,6 +23,18 @@ CREATE TABLE Worker (
     Phone TEXT,
     PasswordHash TEXT NOT NULL
 );
+--- Create WorkerApplication Table
+CREATE TABLE WorkerApplication (
+    ApplicationID TEXT PRIMARY KEY,
+    WorkerID TEXT NOT NULL,
+    Name TEXT NOT NULL,
+    Email TEXT NOT NULL,
+    Phone TEXT,
+    Availability TEXT,
+    PasswordHash TEXT NOT NULL,
+    Status TEXT NOT NULL DEFAULT 'Pending',
+    SubmittedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+);
 --- Create RestaurantStaff Table
 CREATE TABLE RestaurantStaff (
     StaffID TEXT PRIMARY KEY,
