@@ -36,6 +36,107 @@ export async function getRestaurants() {
   }
 }
 
+// ============================================
+// Fetch Single Restaurant by ID
+// ============================================
+export async function getRestaurantById(restaurantId) {
+  let db;
+  try {
+    db = await openDb();
+    const restaurant = await db.get('SELECT * FROM Restaurant WHERE RestaurantID = ?', restaurantId);
+    return restaurant;
+  } catch (error) {
+    console.error('Error getting restaurant:', error);
+    throw error;
+  } finally {
+    if (db) {
+      await db.close();
+    }
+  }
+}
+
+// ============================================
+// Create New Restaurant
+// ============================================
+export async function createRestaurant(restaurant) {
+  let db;
+  try {
+    db = await openDb();
+    await db.run(
+      'INSERT INTO Restaurant (RestaurantID, Name, Location, OperatingHours) VALUES (?, ?, ?, ?)',
+      [restaurant.RestaurantID, restaurant.Name, restaurant.Location, restaurant.OperatingHours]
+    );
+    return true;
+  } catch (error) {
+    console.error('Error creating restaurant:', error);
+    throw error;
+  } finally {
+    if (db) {
+      await db.close();
+    }
+  }
+}
+
+// ============================================
+// Update Restaurant Information
+// ============================================
+export async function updateRestaurant(restaurantId, updates) {
+  let db;
+  try {
+    db = await openDb();
+    const fields = [];
+    const values = [];
+
+    if (updates.Name !== undefined) {
+      fields.push('Name = ?');
+      values.push(updates.Name);
+    }
+    if (updates.Location !== undefined) {
+      fields.push('Location = ?');
+      values.push(updates.Location);
+    }
+    if (updates.OperatingHours !== undefined) {
+      fields.push('OperatingHours = ?');
+      values.push(updates.OperatingHours);
+    }
+
+    if (fields.length === 0) {
+      return true;
+    }
+
+    values.push(restaurantId);
+    const query = `UPDATE Restaurant SET ${fields.join(', ')} WHERE RestaurantID = ?`;
+    await db.run(query, values);
+    return true;
+  } catch (error) {
+    console.error('Error updating restaurant:', error);
+    throw error;
+  } finally {
+    if (db) {
+      await db.close();
+    }
+  }
+}
+
+// ============================================
+// Delete Restaurant
+// ============================================
+export async function deleteRestaurant(restaurantId) {
+  let db;
+  try {
+    db = await openDb();
+    await db.run('DELETE FROM Restaurant WHERE RestaurantID = ?', restaurantId);
+    return true;
+  } catch (error) {
+    console.error('Error deleting restaurant:', error);
+    throw error;
+  } finally {
+    if (db) {
+      await db.close();
+    }
+  }
+}
+
 // ==================================================
 // Fetch Menu Items Associated with a Specific Restaurant
 // ==================================================

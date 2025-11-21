@@ -1,14 +1,26 @@
 
 import express from 'express';
-import { getAllRestaurants, getMenuItems, placeOrder, getCart, addToCart, removeFromCart, clearCart, getMenuItem, getOrdersPlaced, acceptOrder, declineOrder, completeOrder, getAllWorkers, addWorker, getWorkerJobs, removeWorker, getAllCustomers, getCustomer, addCustomer, modifyCustomer, removeCustomer } from '../controllers/apiController.js';
+import { getAllRestaurants, getRestaurant, addRestaurant, modifyRestaurant, removeRestaurant, getMenuItems, placeOrder, getCart, addToCart, removeFromCart, clearCart, getMenuItem, getOrdersPlaced, acceptOrder, declineOrder, completeOrder, getAllWorkers, addWorker, getWorkerJobs, removeWorker, getAllCustomers, getCustomer, addCustomer, modifyCustomer, removeCustomer } from '../controllers/apiController.js';
 
 const router = express.Router();
 
 // API Route to get all restaurants from the db
 router.get('/restaurants', getAllRestaurants);
 
-// API Route to get menu items for a specific restaurant
+// API Route to create a new restaurant
+router.post('/restaurants', addRestaurant);
+
+// API Route to get menu items for a specific restaurant (must be before /restaurants/:id)
 router.get('/restaurants/:id/menu', getMenuItems);
+
+// API Route to get a single restaurant
+router.get('/restaurants/:id', getRestaurant);
+
+// API Route to update a restaurant
+router.put('/restaurants/:id', modifyRestaurant);
+
+// API Route to delete a restaurant
+router.delete('/restaurants/:id', removeRestaurant);
 
 // API Route to get a single menu item
 router.get('/menuitems/:id', getMenuItem);

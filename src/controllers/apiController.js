@@ -1,4 +1,4 @@
-import { getRestaurants, getMenuItemsByRestaurantId, createOrder, getCart as dbGetCart, addToCart as dbAddToCart, removeFromCart as dbRemoveFromCart, clearCart as dbClearCart, getMenuItem as dbGetMenuItem, getPlacedOrders, assignOrderToWorker, completeDeliveryJob, getWorkers, createWorker, declineOrderByWorker, deleteWorker, getCustomers as dbGetCustomers, getCustomerById as dbGetCustomerById, createCustomer as dbCreateCustomer, updateCustomer as dbUpdateCustomer, deleteCustomer as dbDeleteCustomer } from '../database.js';
+import { getRestaurants, getRestaurantById as dbGetRestaurantById, createRestaurant as dbCreateRestaurant, updateRestaurant as dbUpdateRestaurant, deleteRestaurant as dbDeleteRestaurant, getMenuItemsByRestaurantId, createOrder, getCart as dbGetCart, addToCart as dbAddToCart, removeFromCart as dbRemoveFromCart, clearCart as dbClearCart, getMenuItem as dbGetMenuItem, getPlacedOrders, assignOrderToWorker, completeDeliveryJob, getWorkers, createWorker, declineOrderByWorker, deleteWorker, getCustomers as dbGetCustomers, getCustomerById as dbGetCustomerById, createCustomer as dbCreateCustomer, updateCustomer as dbUpdateCustomer, deleteCustomer as dbDeleteCustomer } from '../database.js';
 import { getJobsForWorker } from '../database.js';
 
 export const getAllRestaurants = async (req, res) => {
@@ -10,6 +10,74 @@ export const getAllRestaurants = async (req, res) => {
   } catch (error) {
     console.error('Failed to get restaurants:', error);
     res.status(500).json({ error: 'Failed to get restaurants' });
+  }
+};
+
+export const getRestaurant = async (req, res) => {
+  // #swagger.tags = ['Restaurants']
+  // #swagger.summary = 'Get a single restaurant'
+  try {
+    const restaurantId = req.params.id;
+    if (!restaurantId) {
+      return res.status(400).json({ error: 'Restaurant ID required' });
+    }
+    const restaurant = await dbGetRestaurantById(restaurantId);
+    if (!restaurant) {
+      return res.status(404).json({ error: 'Restaurant not found' });
+    }
+    res.json({ restaurant });
+  } catch (error) {
+    console.error('Failed to get restaurant:', error);
+    res.status(500).json({ error: 'Failed to get restaurant' });
+  }
+};
+
+export const addRestaurant = async (req, res) => {
+  // #swagger.tags = ['Restaurants']
+  // #swagger.summary = 'Create a new restaurant'
+  try {
+    const restaurant = req.body;
+    if (!restaurant || !restaurant.RestaurantID) {
+      return res.status(400).json({ error: 'Restaurant data missing or RestaurantID required' });
+    }
+    await dbCreateRestaurant(restaurant);
+    res.status(201).json({ message: 'Restaurant created' });
+  } catch (error) {
+    console.error('Failed to create restaurant:', error);
+    res.status(500).json({ error: 'Failed to create restaurant' });
+  }
+};
+
+export const modifyRestaurant = async (req, res) => {
+  // #swagger.tags = ['Restaurants']
+  // #swagger.summary = 'Update a restaurant'
+  try {
+    const restaurantId = req.params.id;
+    const updates = req.body;
+    if (!restaurantId) {
+      return res.status(400).json({ error: 'Restaurant ID required' });
+    }
+    await dbUpdateRestaurant(restaurantId, updates);
+    res.json({ message: 'Restaurant updated' });
+  } catch (error) {
+    console.error('Failed to update restaurant:', error);
+    res.status(500).json({ error: 'Failed to update restaurant' });
+  }
+};
+
+export const removeRestaurant = async (req, res) => {
+  // #swagger.tags = ['Restaurants']
+  // #swagger.summary = 'Delete a restaurant'
+  try {
+    const restaurantId = req.params.id;
+    if (!restaurantId) {
+      return res.status(400).json({ error: 'Restaurant ID required' });
+    }
+    await dbDeleteRestaurant(restaurantId);
+    res.json({ message: 'Restaurant deleted' });
+  } catch (error) {
+    console.error('Failed to delete restaurant:', error);
+    res.status(500).json({ error: 'Failed to delete restaurant' });
   }
 };
 
