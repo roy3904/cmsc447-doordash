@@ -1,4 +1,4 @@
-import { getRestaurants, getRestaurantById as dbGetRestaurantById, createRestaurant as dbCreateRestaurant, updateRestaurant as dbUpdateRestaurant, deleteRestaurant as dbDeleteRestaurant, getMenuItemsByRestaurantId, createOrder, getCart as dbGetCart, addToCart as dbAddToCart, removeFromCart as dbRemoveFromCart, clearCart as dbClearCart, getMenuItem as dbGetMenuItem, getPlacedOrders, assignOrderToWorker, completeDeliveryJob, getWorkers, createWorker, declineOrderByWorker, deleteWorker, createWorkerApplication as dbCreateWorkerApplication, getWorkerApplications as dbGetWorkerApplications, getWorkerApplicationById as dbGetWorkerApplicationById, updateWorkerApplicationStatus as dbUpdateWorkerApplicationStatus, deleteWorkerApplication as dbDeleteWorkerApplication, getCustomers as dbGetCustomers, getCustomerById as dbGetCustomerById, createCustomer as dbCreateCustomer, updateCustomer as dbUpdateCustomer, deleteCustomer as dbDeleteCustomer } from '../database.js';
+import { getRestaurants, getRestaurantById as dbGetRestaurantById, createRestaurant as dbCreateRestaurant, updateRestaurant as dbUpdateRestaurant, deleteRestaurant as dbDeleteRestaurant, getMenuItemsByRestaurantId, createOrder, getCart as dbGetCart, addToCart as dbAddToCart, removeFromCart as dbRemoveFromCart, clearCart as dbClearCart, getMenuItem as dbGetMenuItem, getPlacedOrders, assignOrderToWorker, completeDeliveryJob, getWorkers, getWorkerById as dbGetWorkerById, updateWorker as dbUpdateWorker, createWorker, declineOrderByWorker, deleteWorker, createWorkerApplication as dbCreateWorkerApplication, getWorkerApplications as dbGetWorkerApplications, getWorkerApplicationById as dbGetWorkerApplicationById, updateWorkerApplicationStatus as dbUpdateWorkerApplicationStatus, updateWorkerApplication as dbUpdateWorkerApplication, deleteWorkerApplication as dbDeleteWorkerApplication, getCustomers as dbGetCustomers, getCustomerById as dbGetCustomerById, createCustomer as dbCreateCustomer, updateCustomer as dbUpdateCustomer, deleteCustomer as dbDeleteCustomer } from '../database.js';
 import { getJobsForWorker } from '../database.js';
 
 export const getAllRestaurants = async (req, res) => {
@@ -162,6 +162,38 @@ export const getAllWorkers = async (req, res) => {
   }
 };
 
+export const getWorker = async (req, res) => {
+  try {
+    const workerId = req.params.id;
+    if (!workerId) {
+      return res.status(400).json({ error: 'Worker ID required' });
+    }
+    const worker = await dbGetWorkerById(workerId);
+    if (!worker) {
+      return res.status(404).json({ error: 'Worker not found' });
+    }
+    res.json({ worker });
+  } catch (error) {
+    console.error('Failed to get worker:', error);
+    res.status(500).json({ error: 'Failed to get worker' });
+  }
+};
+
+export const modifyWorker = async (req, res) => {
+  try {
+    const workerId = req.params.id;
+    const updates = req.body;
+    if (!workerId) {
+      return res.status(400).json({ error: 'Worker ID required' });
+    }
+    await dbUpdateWorker(workerId, updates);
+    res.json({ message: 'Worker updated' });
+  } catch (error) {
+    console.error('Failed to update worker:', error);
+    res.status(500).json({ error: 'Failed to update worker' });
+  }
+};
+
 export const addWorker = async (req, res) => {
   try {
     const worker = req.body;
@@ -218,8 +250,17 @@ export const createWorkerApplication = async (req, res) => {
 
 export const getAllWorkerApplications = async (req, res) => {
   try {
-    const applications = await dbGetWorkerApplications();
-    res.json({ applications });
+    const options = {
+      status: req.query.status,
+      search: req.query.search,
+      sortBy: req.query.sortBy,
+      sortOrder: req.query.sortOrder,
+      limit: req.query.limit ? parseInt(req.query.limit) : undefined,
+      offset: req.query.offset ? parseInt(req.query.offset) : 0
+    };
+
+    const result = await dbGetWorkerApplications(options);
+    res.json(result);
   } catch (error) {
     console.error('Failed to get worker applications:', error);
     res.status(500).json({ error: 'Failed to get worker applications' });
@@ -290,6 +331,21 @@ export const declineWorkerApplication = async (req, res) => {
   } catch (error) {
     console.error('Failed to decline worker application:', error);
     res.status(500).json({ error: 'Failed to decline application' });
+  }
+};
+
+export const modifyWorkerApplication = async (req, res) => {
+  try {
+    const applicationId = req.params.id;
+    const updates = req.body;
+    if (!applicationId) {
+      return res.status(400).json({ error: 'Application ID required' });
+    }
+    await dbUpdateWorkerApplication(applicationId, updates);
+    res.json({ message: 'Application updated' });
+  } catch (error) {
+    console.error('Failed to update worker application:', error);
+    res.status(500).json({ error: 'Failed to update application' });
   }
 };
 

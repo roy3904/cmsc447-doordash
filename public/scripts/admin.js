@@ -277,68 +277,212 @@ function renderWorkerList(workers){
             <p class="worker-id">${w.WorkerID}</p>
             <p class="worker-email">${w.Email}</p>
             <p class="worker-availability">${w.AvailabilityStatus || ''}</p>
-                        <div style="margin-top:8px">
-                            <button class="modify-button js-delete-worker" data-id="${w.WorkerID}">Delete</button>
-                        </div>
+            <button class="modify-button js-modify-worker" data-id="${w.WorkerID}">Modify</button>
         </div>
         `;
     });
     document.querySelector('.js-worker-list-content').innerHTML = html || '<p class="not-found-text">No workers</p>';
 
-    // attach delete handlers
-    document.querySelectorAll('.js-delete-worker').forEach(btn => {
-        btn.addEventListener('click', async () => {
+    // attach modify handlers
+    document.querySelectorAll('.js-modify-worker').forEach(btn => {
+        btn.addEventListener('click', () => {
             const id = btn.dataset.id;
-            if(!confirm(`Delete worker ${id}? This cannot be undone.`)) return;
-            try{
-                const resp = await fetch(`/api/workers/${encodeURIComponent(id)}`, { method: 'DELETE' });
-                if(!resp.ok) throw new Error('Failed to delete');
-                const workers = await fetchWorkersFromServer(); renderWorkerList(workers);
-            }catch(e){ alert('Failed to delete worker'); console.error(e); }
+            window.location.href = `worker-info.html?id=${id}`;
         });
     });
 }
 
+// Application state
+const appState = {
+    search: '',
+    status: 'Pending',
+    sortBy: 'SubmittedAt',
+    sortOrder: 'DESC',
+    page: 1,
+    limit: 10,
+    selectedApps: new Set()
+};
+
 async function fetchApplications(){
     try{
-        const resp = await fetch('/api/worker-applications');
-        if(!resp.ok) return [];
+        const params = new URLSearchParams({
+            search: appState.search,
+            status: appState.status,
+            sortBy: appState.sortBy,
+            sortOrder: appState.sortOrder,
+            limit: appState.limit,
+            offset: (appState.page - 1) * appState.limit
+        });
+        const resp = await fetch(`/api/worker-applications?${params}`);
+        if(!resp.ok) return { applications: [], total: 0 };
         const data = await resp.json();
-        return data.applications || [];
-    }catch(e){ console.error(e); return []; }
+        return data;
+    }catch(e){ console.error(e); return { applications: [], total: 0 }; }
 }
 
 async function renderApplications(){
-    const apps = await fetchApplications();
-    // Only show pending applications
-    const pendingApps = apps.filter(a => a.Status === 'Pending');
-    if(!pendingApps.length){ document.querySelector('.js-worker-apps-content').innerHTML = '<p>No pending applications</p>'; return; }
-    let html = '';
-    pendingApps.forEach(a => {
-        html += `
-        <div class="database-item app-item">
-            <p class="worker-name">${a.Name}</p>
-            <p class="worker-id">${a.WorkerID}</p>
-            <p class="worker-email">${a.Email}</p>
-            <p class="worker-availability">${a.Availability || ''}</p>
-            <button class="approve js-approve" data-app-id="${a.ApplicationID}">Approve</button>
-            <button class="decline js-decline" data-app-id="${a.ApplicationID}">Decline</button>
+    const data = await fetchApplications();
+    const apps = data.applications || [];
+    const total = data.total || 0;
+    const totalPages = Math.ceil(total / appState.limit);
+
+    let html = `
+        <div style="margin-bottom:1rem;">
+            <input type="text" class="js-app-search" placeholder="Search by name, email, or ID" value="${appState.search}" style="width:250px;padding:6px;margin-right:8px;">
+            <select class="js-app-status-filter" style="padding:6px;margin-right:8px;">
+                <option value="">All Status</option>
+                <option value="Pending" ${appState.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                <option value="Approved" ${appState.status === 'Approved' ? 'selected' : ''}>Approved</option>
+                <option value="Declined" ${appState.status === 'Declined' ? 'selected' : ''}>Declined</option>
+            </select>
+            <select class="js-app-sort" style="padding:6px;margin-right:8px;">
+                <option value="SubmittedAt-DESC" ${appState.sortBy === 'SubmittedAt' && appState.sortOrder === 'DESC' ? 'selected' : ''}>Newest First</option>
+                <option value="SubmittedAt-ASC" ${appState.sortBy === 'SubmittedAt' && appState.sortOrder === 'ASC' ? 'selected' : ''}>Oldest First</option>
+                <option value="Name-ASC" ${appState.sortBy === 'Name' && appState.sortOrder === 'ASC' ? 'selected' : ''}>Name (A-Z)</option>
+                <option value="Name-DESC" ${appState.sortBy === 'Name' && appState.sortOrder === 'DESC' ? 'selected' : ''}>Name (Z-A)</option>
+                <option value="Status-ASC" ${appState.sortBy === 'Status' && appState.sortOrder === 'ASC' ? 'selected' : ''}>Status (A-Z)</option>
+            </select>
+            <button class="js-bulk-approve" style="padding:6px 12px;margin-right:4px;background:#2b6cb0;color:white;border:none;border-radius:4px;cursor:pointer;">Bulk Approve</button>
+            <button class="js-bulk-decline" style="padding:6px 12px;background:#dc3545;color:white;border:none;border-radius:4px;cursor:pointer;">Bulk Decline</button>
         </div>
-        `;
-    });
+    `;
+
+    if(!apps.length){
+        html += '<p>No applications found</p>';
+    } else {
+        apps.forEach(a => {
+            const isSelected = appState.selectedApps.has(a.ApplicationID);
+            html += `
+            <div class="database-item app-item" style="position:relative;padding-left:40px;">
+                <input type="checkbox" class="js-app-checkbox" data-app-id="${a.ApplicationID}" ${isSelected ? 'checked' : ''} style="position:absolute;left:10px;top:50%;transform:translateY(-50%);">
+                <p class="worker-name">${a.Name}</p>
+                <p class="worker-id">${a.WorkerID}</p>
+                <p class="worker-email">${a.Email}</p>
+                <p class="worker-availability">${a.Availability || ''}</p>
+                <p style="font-weight:bold;color:${a.Status==='Pending'?'#f59e0b':a.Status==='Approved'?'#10b981':'#ef4444'}">${a.Status}</p>
+                <div style="margin-top:8px;">
+                    <button class="js-edit-app" data-app-id="${a.ApplicationID}" style="margin-right:4px;">Edit</button>
+                    ${a.Status === 'Pending' ? `
+                        <button class="approve js-approve" data-app-id="${a.ApplicationID}">Approve</button>
+                        <button class="decline js-decline" data-app-id="${a.ApplicationID}">Decline</button>
+                    ` : ''}
+                </div>
+            </div>
+            `;
+        });
+
+        // Pagination
+        html += `<div style="margin-top:1rem;display:flex;align-items:center;gap:8px;">
+            <button class="js-prev-page" ${appState.page === 1 ? 'disabled' : ''} style="padding:6px 12px;cursor:${appState.page === 1 ? 'not-allowed' : 'pointer'};">Previous</button>
+            <span>Page ${appState.page} of ${totalPages || 1} (${total} total)</span>
+            <button class="js-next-page" ${appState.page >= totalPages ? 'disabled' : ''} style="padding:6px 12px;cursor:${appState.page >= totalPages ? 'not-allowed' : 'pointer'};">Next</button>
+        </div>`;
+    }
+
     document.querySelector('.js-worker-apps-content').innerHTML = html;
 
+    // Attach event listeners
+    document.querySelector('.js-app-search')?.addEventListener('input', (e) => {
+        appState.search = e.target.value;
+        appState.page = 1;
+        renderApplications();
+    });
+
+    document.querySelector('.js-app-status-filter')?.addEventListener('change', (e) => {
+        appState.status = e.target.value;
+        appState.page = 1;
+        renderApplications();
+    });
+
+    document.querySelector('.js-app-sort')?.addEventListener('change', (e) => {
+        const [sortBy, sortOrder] = e.target.value.split('-');
+        appState.sortBy = sortBy;
+        appState.sortOrder = sortOrder;
+        appState.page = 1;
+        renderApplications();
+    });
+
+    document.querySelector('.js-prev-page')?.addEventListener('click', () => {
+        if(appState.page > 1) {
+            appState.page--;
+            renderApplications();
+        }
+    });
+
+    document.querySelector('.js-next-page')?.addEventListener('click', () => {
+        if(appState.page < totalPages) {
+            appState.page++;
+            renderApplications();
+        }
+    });
+
+    // Checkbox handlers
+    document.querySelectorAll('.js-app-checkbox').forEach(cb => {
+        cb.addEventListener('change', (e) => {
+            const appId = e.target.dataset.appId;
+            if(e.target.checked) {
+                appState.selectedApps.add(appId);
+            } else {
+                appState.selectedApps.delete(appId);
+            }
+        });
+    });
+
+    // Bulk approve
+    document.querySelector('.js-bulk-approve')?.addEventListener('click', async () => {
+        if(appState.selectedApps.size === 0) {
+            alert('Please select applications to approve');
+            return;
+        }
+        if(!confirm(`Approve ${appState.selectedApps.size} application(s)?`)) return;
+
+        try {
+            for(const appId of appState.selectedApps) {
+                await fetch(`/api/worker-applications/${encodeURIComponent(appId)}/approve`, { method: 'POST' });
+            }
+            appState.selectedApps.clear();
+            await renderApplications();
+            const workers = await fetchWorkersFromServer(); renderWorkerList(workers);
+            alert('Applications approved successfully');
+        } catch(e) {
+            alert('Failed to approve some applications');
+            console.error(e);
+        }
+    });
+
+    // Bulk decline
+    document.querySelector('.js-bulk-decline')?.addEventListener('click', async () => {
+        if(appState.selectedApps.size === 0) {
+            alert('Please select applications to decline');
+            return;
+        }
+        if(!confirm(`Decline ${appState.selectedApps.size} application(s)?`)) return;
+
+        try {
+            for(const appId of appState.selectedApps) {
+                await fetch(`/api/worker-applications/${encodeURIComponent(appId)}/decline`, { method: 'POST' });
+            }
+            appState.selectedApps.clear();
+            await renderApplications();
+            alert('Applications declined successfully');
+        } catch(e) {
+            alert('Failed to decline some applications');
+            console.error(e);
+        }
+    });
+
+    // Individual approve/decline
     document.querySelectorAll('.js-approve').forEach(btn => {
         btn.addEventListener('click', async () => {
             const appId = btn.dataset.appId;
             if(!appId) return;
             try{
                 const resp = await fetch(`/api/worker-applications/${encodeURIComponent(appId)}/approve`, { method: 'POST' });
-                if(!resp.ok) throw new Error('Failed');
+                if(!resp.ok) throw new Error('Failed to approve');
                 await renderApplications();
-                // refresh worker list
                 const workers = await fetchWorkersFromServer(); renderWorkerList(workers);
-            }catch(e){ alert('Failed to approve'); console.error(e); }
+                alert('Application approved successfully');
+            }catch(e){ alert('Failed to approve: ' + e.message); console.error(e); }
         });
     });
 
@@ -348,9 +492,18 @@ async function renderApplications(){
             if(!appId) return;
             try{
                 const resp = await fetch(`/api/worker-applications/${encodeURIComponent(appId)}/decline`, { method: 'POST' });
-                if(!resp.ok) throw new Error('Failed');
+                if(!resp.ok) throw new Error('Failed to decline');
                 await renderApplications();
-            }catch(e){ alert('Failed to decline'); console.error(e); }
+                alert('Application declined successfully');
+            }catch(e){ alert('Failed to decline: ' + e.message); console.error(e); }
+        });
+    });
+
+    // Edit handlers - redirect to dedicated page
+    document.querySelectorAll('.js-edit-app').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const appId = btn.dataset.appId;
+            window.location.href = `worker-application-info.html?id=${appId}`;
         });
     });
 }

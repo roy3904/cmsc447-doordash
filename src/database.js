@@ -363,6 +363,70 @@ export async function getWorkers() {
 }
 
 // =======================================
+// Get single worker by WorkerID
+// =======================================
+export async function getWorkerById(workerId) {
+  let db;
+  try {
+    db = await openDb();
+    const worker = await db.get('SELECT * FROM Worker WHERE WorkerID = ?', workerId);
+    return worker;
+  } catch (error) {
+    console.error('Error getting worker:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
+// =======================================
+// Update worker details
+// =======================================
+export async function updateWorker(workerId, updates) {
+  let db;
+  try {
+    db = await openDb();
+    const fields = [];
+    const values = [];
+
+    if (updates.Name !== undefined) {
+      fields.push('Name = ?');
+      values.push(updates.Name);
+    }
+    if (updates.Email !== undefined) {
+      fields.push('Email = ?');
+      values.push(updates.Email);
+    }
+    if (updates.Phone !== undefined) {
+      fields.push('Phone = ?');
+      values.push(updates.Phone);
+    }
+    if (updates.AvailabilityStatus !== undefined) {
+      fields.push('AvailabilityStatus = ?');
+      values.push(updates.AvailabilityStatus);
+    }
+    if (updates.PasswordHash !== undefined) {
+      fields.push('PasswordHash = ?');
+      values.push(updates.PasswordHash);
+    }
+
+    if (fields.length === 0) {
+      return true;
+    }
+
+    values.push(workerId);
+    const query = `UPDATE Worker SET ${fields.join(', ')} WHERE WorkerID = ?`;
+    await db.run(query, values);
+    return true;
+  } catch (error) {
+    console.error('Error updating worker:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
+// =======================================
 // Delete a worker by WorkerID
 // =======================================
 export async function deleteWorker(workerId) {
@@ -428,13 +492,74 @@ export async function createWorkerApplication(application) {
   }
 }
 
-// Get all worker applications
-export async function getWorkerApplications() {
+// Get all worker applications with optional filtering, sorting, and pagination
+export async function getWorkerApplications(options = {}) {
   let db;
   try {
     db = await openDb();
-    const applications = await db.all('SELECT * FROM WorkerApplication ORDER BY SubmittedAt DESC');
-    return applications;
+
+    const {
+      status,        // Filter by status (Pending, Approved, Declined)
+      search,        // Search in Name, Email, WorkerID
+      sortBy = 'SubmittedAt',  // Sort field (default: SubmittedAt)
+      sortOrder = 'DESC',      // Sort order (ASC or DESC)
+      limit,         // Pagination limit
+      offset = 0     // Pagination offset
+    } = options;
+
+    let query = 'SELECT * FROM WorkerApplication WHERE 1=1';
+    const params = [];
+
+    // Apply status filter
+    if (status) {
+      query += ' AND Status = ?';
+      params.push(status);
+    }
+
+    // Apply search filter
+    if (search) {
+      query += ' AND (Name LIKE ? OR Email LIKE ? OR WorkerID LIKE ?)';
+      const searchTerm = `%${search}%`;
+      params.push(searchTerm, searchTerm, searchTerm);
+    }
+
+    // Apply sorting
+    const validSortFields = ['Name', 'Email', 'Status', 'SubmittedAt', 'WorkerID'];
+    const sortField = validSortFields.includes(sortBy) ? sortBy : 'SubmittedAt';
+    const order = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+    query += ` ORDER BY ${sortField} ${order}`;
+
+    // Apply pagination
+    if (limit) {
+      query += ' LIMIT ? OFFSET ?';
+      params.push(limit, offset);
+    }
+
+    const applications = await db.all(query, params);
+
+    // Get total count for pagination
+    let countQuery = 'SELECT COUNT(*) as total FROM WorkerApplication WHERE 1=1';
+    const countParams = [];
+
+    if (status) {
+      countQuery += ' AND Status = ?';
+      countParams.push(status);
+    }
+
+    if (search) {
+      countQuery += ' AND (Name LIKE ? OR Email LIKE ? OR WorkerID LIKE ?)';
+      const searchTerm = `%${search}%`;
+      countParams.push(searchTerm, searchTerm, searchTerm);
+    }
+
+    const countResult = await db.get(countQuery, countParams);
+
+    return {
+      applications,
+      total: countResult.total,
+      limit: limit || countResult.total,
+      offset: offset
+    };
   } catch (error) {
     console.error('Error getting worker applications:', error);
     throw error;
@@ -467,6 +592,51 @@ export async function updateWorkerApplicationStatus(applicationId, status) {
     return true;
   } catch (error) {
     console.error('Error updating worker application status:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
+// Update worker application details
+export async function updateWorkerApplication(applicationId, updates) {
+  let db;
+  try {
+    db = await openDb();
+    const fields = [];
+    const values = [];
+
+    if (updates.Name !== undefined) {
+      fields.push('Name = ?');
+      values.push(updates.Name);
+    }
+    if (updates.Email !== undefined) {
+      fields.push('Email = ?');
+      values.push(updates.Email);
+    }
+    if (updates.Phone !== undefined) {
+      fields.push('Phone = ?');
+      values.push(updates.Phone);
+    }
+    if (updates.Availability !== undefined) {
+      fields.push('Availability = ?');
+      values.push(updates.Availability);
+    }
+    if (updates.Status !== undefined) {
+      fields.push('Status = ?');
+      values.push(updates.Status);
+    }
+
+    if (fields.length === 0) {
+      return true;
+    }
+
+    values.push(applicationId);
+    const query = `UPDATE WorkerApplication SET ${fields.join(', ')} WHERE ApplicationID = ?`;
+    await db.run(query, values);
+    return true;
+  } catch (error) {
+    console.error('Error updating worker application:', error);
     throw error;
   } finally {
     if (db) await db.close();

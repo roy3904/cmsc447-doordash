@@ -49,10 +49,62 @@
         const email = document.getElementById('email').value.trim();
         const phone = document.getElementById('phone').value.trim();
         const availability = document.getElementById('availability').value.trim();
+        const password = document.getElementById('password').value || '';
+
+        // Validation
+        if(!name) {
+          alert('Please provide your name');
+          document.getElementById('name').focus();
+          return;
+        }
+        if(name.length < 2) {
+          alert('Name must be at least 2 characters');
+          document.getElementById('name').focus();
+          return;
+        }
+
+        if(!email) {
+          alert('Please provide your UMBC email');
+          document.getElementById('email').focus();
+          return;
+        }
+        // Email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if(!emailRegex.test(email)) {
+          alert('Please provide a valid email address');
+          document.getElementById('email').focus();
+          return;
+        }
+
+        // Phone validation (if provided)
+        if(phone) {
+          const phoneRegex = /^[\d\s\-\(\)]+$/;
+          if(!phoneRegex.test(phone)) {
+            alert('Please provide a valid phone number');
+            document.getElementById('phone').focus();
+            return;
+          }
+        }
+
+        // Password validation
+        if(!password) {
+          alert('Please provide a password');
+          document.getElementById('password').focus();
+          return;
+        }
+        if(password.length < 8) {
+          alert('Password must be at least 8 characters');
+          document.getElementById('password').focus();
+          return;
+        }
+        if(password.includes(' ')) {
+          alert('Password cannot contain spaces');
+          document.getElementById('password').focus();
+          return;
+        }
+
         // generate a system worker id on submit
         const workerid = 'W-' + Date.now().toString(36).slice(4);
-        const password = document.getElementById('password').value || '';
-        if(!name || !email) { alert('Please provide name and UMBC email'); return; }
 
         const app = {
           WorkerID: workerid,
@@ -70,7 +122,10 @@
             body: JSON.stringify(app)
           });
 
-          if (!resp.ok) throw new Error('Failed to submit application');
+          if (!resp.ok) {
+            const error = await resp.json();
+            throw new Error(error.error || 'Failed to submit application');
+          }
 
           document.getElementById('msg').style.display = 'block';
           // Clear the form
@@ -80,7 +135,7 @@
           document.getElementById('availability').value = '';
           document.getElementById('password').value = '';
         } catch (e) {
-          alert('Failed to submit application. Please try again.');
+          alert('Failed to submit application: ' + e.message);
           console.error(e);
         }
       });

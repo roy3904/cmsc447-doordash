@@ -1,6 +1,6 @@
 
 import express from 'express';
-import { getAllRestaurants, getRestaurant, addRestaurant, modifyRestaurant, removeRestaurant, getMenuItems, placeOrder, getCart, addToCart, removeFromCart, clearCart, getMenuItem, getOrdersPlaced, acceptOrder, declineOrder, completeOrder, getAllWorkers, addWorker, getWorkerJobs, removeWorker, createWorkerApplication, getAllWorkerApplications, getWorkerApplication, approveWorkerApplication, declineWorkerApplication, removeWorkerApplication, getAllCustomers, getCustomer, addCustomer, modifyCustomer, removeCustomer } from '../controllers/apiController.js';
+import { getAllRestaurants, getRestaurant, addRestaurant, modifyRestaurant, removeRestaurant, getMenuItems, placeOrder, getCart, addToCart, removeFromCart, clearCart, getMenuItem, getOrdersPlaced, acceptOrder, declineOrder, completeOrder, getAllWorkers, getWorker, modifyWorker, addWorker, getWorkerJobs, removeWorker, createWorkerApplication, getAllWorkerApplications, getWorkerApplication, approveWorkerApplication, declineWorkerApplication, modifyWorkerApplication, removeWorkerApplication, getAllCustomers, getCustomer, addCustomer, modifyCustomer, removeCustomer } from '../controllers/apiController.js';
 
 const router = express.Router();
 
@@ -57,7 +57,9 @@ router.delete('/cart', clearCart);
 
 // Workers
 router.get('/workers', getAllWorkers);
+router.get('/workers/:id', getWorker);
 router.post('/workers', addWorker);
+router.put('/workers/:id', modifyWorker);
 // Delete a worker
 router.delete('/workers/:id', removeWorker);
 
@@ -65,6 +67,7 @@ router.delete('/workers/:id', removeWorker);
 router.post('/worker-applications', createWorkerApplication);
 router.get('/worker-applications', getAllWorkerApplications);
 router.get('/worker-applications/:id', getWorkerApplication);
+router.put('/worker-applications/:id', modifyWorkerApplication);
 router.post('/worker-applications/:id/approve', approveWorkerApplication);
 router.post('/worker-applications/:id/decline', declineWorkerApplication);
 router.delete('/worker-applications/:id', removeWorkerApplication);
