@@ -171,8 +171,20 @@ function renderButtons(){
         }
         
         if(event.target.classList.contains('js-confirm-edit-button')){
-            changeWorkerEmail(workerID, document.querySelector('.js-email-input').value);
-            renderWorkerInfo();
+            const input = document.querySelector('.js-email-input').value;
+            const emailVerifier = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+            if(emailVerifier.test(input)){
+                changeEmail(userId, document.querySelector('.js-email-input').value);
+                renderCustomerInfo();
+            }
+            else{
+                document.querySelector('.js-edit-email-buttons').innerHTML = `
+                    <p class="error-text">Email is Invalid.</p>
+                    <button class="cancel-edit-button js-cancel-edit-button">Cancel</button>
+                    <button class="confirm-edit-button js-confirm-edit-button">Confirm Changes</button>
+                `
+            }
         }
     });
 
