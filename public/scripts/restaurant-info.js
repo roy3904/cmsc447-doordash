@@ -1,12 +1,23 @@
 //JS file for restaurant admin page, NOT DATABASE like restaurant.js
-import {restaurants, findRestaurant, changeRestaurantName, changeLocation, changeHours, removeRestaurant} from './admin.js';
+import {restaurants, setRestaurants, findRestaurant, changeRestaurantName, changeLocation, changeHours, removeRestaurant} from './admin.js';
 
 const params = new URLSearchParams(window.location.search);
 const restaurantId = params.get('id');
 
+async function fetchRestaurants() {
+    try {
+        const response = await fetch('/api/restaurants');
+        const data = await response.json();
+        setRestaurants(data.restaurants);
+    } catch (error) {
+        console.error('Failed to fetch restaurants:', error);
+    }
+}
 
 function renderRestaurantInfo(){
     const currRestaurant = findRestaurant(restaurantId);
+
+    console.log("Current Restaurant is ", currRestaurant, " with id ", restaurantId, "ARRRR DARRRRR");
 
     let restaurantInfoHTML = '';
 
@@ -19,7 +30,7 @@ function renderRestaurantInfo(){
                     
                 <div class="info-header-leftside">
                     <img class="profile-picture" src="./images/retriever-profile-picture.png">
-                    <p class="title-name">${currRestaurant.name}</p>
+                    <p class="title-name">${currRestaurant.Name}</p>
                 </div>
                 
                 <button class="delete-user-button">Delete Restaurant</button>
@@ -27,18 +38,18 @@ function renderRestaurantInfo(){
             </div> 
             <div class="info-body js-restaurant-info-body">
                 <div class="entity-info js-id-info">
-                    <p class="entity-info-text js-id-text">ID: ${currRestaurant.id}</p>
+                    <p class="entity-info-text js-id-text">ID: ${currRestaurant.RestaurantID}</p>
                 </div>
                 <div class="entity-info js-name-info">
-                    <p class="entity-info-text js-name-text">Name: ${currRestaurant.name}</p>
+                    <p class="entity-info-text js-name-text">Name: ${currRestaurant.Name}</p>
                     <button class="entity-edit-button js-edit-name-button">Edit</button>
                 </div>
                 <div class="entity-info js-location-info">
-                    <p class="entity-info-text js-location-text">Location: ${currRestaurant.location}</p>
+                    <p class="entity-info-text js-location-text">Location: ${currRestaurant.Location}</p>
                     <button class="entity-edit-button js-edit-location-button">Edit</button>
                 </div>
                 <div class="entity-info js-hours-info">
-                    <p class="entity-info-text js-hours-text">Hours: ${currRestaurant.hours}</p>
+                    <p class="entity-info-text js-hours-text">Hours: ${currRestaurant.OperatingHours}</p>
                     <button class="entity-edit-button js-edit-hours-button">Edit</button>
                 </div>
             </div>
@@ -140,4 +151,5 @@ function renderButtons(){
     });
 }
 
+await fetchRestaurants();
 renderRestaurantInfo();
