@@ -944,3 +944,24 @@ export async function deleteCustomer(customerId) {
     }
   }
 }
+
+// =======================================
+// System Admin Management Functions
+// =======================================
+
+// Get a system admin by email
+export async function getSystemAdmin(email) {
+  let db;
+  try {
+    db = await openDb();
+    const admin = await db.get('SELECT * FROM SystemAdmin WHERE Email = ?', email);
+    return admin;
+  } catch (error) {
+    console.error('Error getting system admin:', error);
+    throw error;
+  } finally {
+    if (db) {
+      await db.close();
+    }
+  }
+}
