@@ -17,8 +17,6 @@ async function fetchRestaurants() {
 function renderRestaurantInfo(){
     const currRestaurant = findRestaurant(restaurantId);
 
-    console.log("Current Restaurant is ", currRestaurant, " with id ", restaurantId, "ARRRR DARRRRR");
-
     let restaurantInfoHTML = '';
 
     if(currRestaurant === null){

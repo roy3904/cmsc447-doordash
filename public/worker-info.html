@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>Worker-info | Gritdash</title>
+        <link rel="stylesheet" href="admin-style.css">
+    </head>
+    <body>
+        <header>
+            <p class="webpage-title">GRITDASH ADMIN</p>
+        </header>
+        <a class="return-link" href="admin.html">&lt Return to Admin Portal</a>
+        <div class="info-container js-worker-info-container">
+            
+        </div>
+        <div class="hidden delete-confirm-window">
+            <div class="delete-confirm-popup">
+                <p class="confirm-text">Are You Sure You Want to Delete this Worker? You won't be able to undo this action!</p>
+                <div class="delete-confirm-buttons">
+                    <button class="delete-confirm-button delete-accept-button js-delete-accept-button">Yes</button>
+                    <button class="delete-confirm-button delete-deny-button js-delete-deny-button">No</button>
+                </div>
+            </div>
+        </div>
+        <script type="module" src="./scripts/worker-info.js"></script>
+    </body>
+</html>
