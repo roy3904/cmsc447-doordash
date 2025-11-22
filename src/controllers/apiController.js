@@ -528,8 +528,7 @@ export async function loginAdminUser(req, res){
     return res.status(401).send("Invalid Email or Password");
   }
 
-  res.json({
+  return res.status(200).json({
     authenticated: true,
   });
-  return res.status(200).send("Successful Login Attempt");
 }
