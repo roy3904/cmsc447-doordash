@@ -1,24 +1,24 @@
 const params = new URLSearchParams(window.location.search);
-const workerId = params.get('id');
+const applicationId = params.get('id');
 
-let currWorker = null;
+let currApplication = null;
 
-async function fetchWorker() {
+async function fetchApplication() {
     try {
-        const response = await fetch(`/api/workers/${workerId}`);
+        const response = await fetch(`/api/worker-applications/${applicationId}`);
         const data = await response.json();
-        currWorker = data.worker;
-        renderWorkerInfo();
+        currApplication = data.application;
+        renderApplicationInfo();
     } catch (error) {
-        console.error('Failed to fetch worker:', error);
-        currWorker = null;
-        renderWorkerInfo();
+        console.error('Failed to fetch application:', error);
+        currApplication = null;
+        renderApplicationInfo();
     }
 }
 
-async function updateWorker(updates) {
+async function updateApplication(updates) {
     try {
-        const response = await fetch(`/api/workers/${workerId}`, {
+        const response = await fetch(`/api/worker-applications/${applicationId}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
@@ -26,73 +26,115 @@ async function updateWorker(updates) {
             body: JSON.stringify(updates)
         });
         if (!response.ok) throw new Error('Failed to update');
-        await fetchWorker();
+        await fetchApplication();
     } catch (error) {
-        console.error('Failed to update worker:', error);
-        alert('Failed to update worker');
+        console.error('Failed to update application:', error);
+        alert('Failed to update application');
     }
 }
 
-async function deleteWorker() {
+async function deleteApplication() {
     try {
-        const response = await fetch(`/api/workers/${workerId}`, {
+        const response = await fetch(`/api/worker-applications/${applicationId}`, {
             method: 'DELETE'
         });
         if (!response.ok) throw new Error('Failed to delete');
         window.location.href = "admin.html";
     } catch (error) {
-        console.error('Failed to delete worker:', error);
-        alert('Failed to delete worker');
+        console.error('Failed to delete application:', error);
+        alert('Failed to delete application');
     }
 }
 
-function renderWorkerInfo(){
-    let workerInfoHTML = '';
+async function approveApplication() {
+    try {
+        const response = await fetch(`/api/worker-applications/${applicationId}/approve`, {
+            method: 'POST'
+        });
+        if (!response.ok) throw new Error('Failed to approve');
+        alert('Application approved successfully! Worker has been created.');
+        await fetchApplication();
+    } catch (error) {
+        console.error('Failed to approve application:', error);
+        alert('Failed to approve application');
+    }
+}
 
-    if(currWorker === null){
-        workerInfoHTML = '<p class="invalid-message">This is an empty worker page!</p>';
+async function declineApplication() {
+    try {
+        const response = await fetch(`/api/worker-applications/${applicationId}/decline`, {
+            method: 'POST'
+        });
+        if (!response.ok) throw new Error('Failed to decline');
+        alert('Application declined successfully');
+        await fetchApplication();
+    } catch (error) {
+        console.error('Failed to decline application:', error);
+        alert('Failed to decline application');
+    }
+}
+
+function renderApplicationInfo(){
+    let applicationInfoHTML = '';
+
+    if(currApplication === null){
+        applicationInfoHTML = '<p class="invalid-message">This is an empty application page!</p>';
     }
     else{
-        workerInfoHTML += `
+        const statusColor = currApplication.Status === 'Pending' ? '#f59e0b' :
+                           currApplication.Status === 'Approved' ? '#10b981' : '#ef4444';
+
+        applicationInfoHTML += `
             <div class="info-header">
 
                 <div class="info-header-leftside">
                     <img class="profile-picture" src="./images/retriever-profile-picture.png">
-                    <p class="title-name">${currWorker.Name}</p>
+                    <p class="title-name">${currApplication.Name}</p>
                 </div>
 
-                <button class="delete-user-button">Delete Worker</button>
+                <div style="display:flex;gap:8px;align-items:center;">
+                    ${currApplication.Status === 'Pending' ? `
+                        <button class="approve-button" style="padding:8px 16px;background:#10b981;color:white;border:none;border-radius:4px;cursor:pointer;">Approve</button>
+                        <button class="decline-button" style="padding:8px 16px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer;">Decline</button>
+                    ` : ''}
+                    <button class="delete-user-button">Delete Application</button>
+                </div>
 
             </div>
-            <div class="info-body js-worker-info-body">
+            <div class="info-body js-application-info-body">
                 <div class="entity-info js-id-info">
-                    <p class="entity-info-text js-id-text">Worker ID: ${currWorker.WorkerID}</p>
+                    <p class="entity-info-text js-id-text">Application ID: ${currApplication.ApplicationID}</p>
+                </div>
+                <div class="entity-info js-worker-id-info">
+                    <p class="entity-info-text js-worker-id-text">Worker ID: ${currApplication.WorkerID}</p>
+                </div>
+                <div class="entity-info js-status-info">
+                    <p class="entity-info-text js-status-text" style="font-weight:bold;color:${statusColor}">Status: ${currApplication.Status}</p>
                 </div>
                 <div class="entity-info js-name-info">
-                    <p class="entity-info-text js-name-text">Name: ${currWorker.Name}</p>
+                    <p class="entity-info-text js-name-text">Name: ${currApplication.Name}</p>
                     <button class="entity-edit-button js-edit-name-button">Edit</button>
                 </div>
                 <div class="entity-info js-email-info">
-                    <p class="entity-info-text js-email-text">Email: ${currWorker.Email}</p>
+                    <p class="entity-info-text js-email-text">Email: ${currApplication.Email}</p>
                     <button class="entity-edit-button js-edit-email-button">Edit</button>
                 </div>
                 <div class="entity-info js-phone-info">
-                    <p class="entity-info-text js-phone-text">Phone: ${currWorker.Phone || 'N/A'}</p>
+                    <p class="entity-info-text js-phone-text">Phone: ${currApplication.Phone || 'N/A'}</p>
                     <button class="entity-edit-button js-edit-phone-button">Edit</button>
                 </div>
                 <div class="entity-info js-availability-info">
-                    <p class="entity-info-text js-availability-text">Availability: ${currWorker.AvailabilityStatus}</p>
+                    <p class="entity-info-text js-availability-text">Availability: ${currApplication.Availability || 'N/A'}</p>
                     <button class="entity-edit-button js-edit-availability-button">Edit</button>
                 </div>
-                <div class="entity-info js-password-info">
-                    <p class="entity-info-text js-password-text">Password: ${currWorker.PasswordHash}</p>
-                    <button class="entity-edit-button js-edit-password-button">Edit</button>
+                <div class="entity-info js-submitted-info">
+                    <p class="entity-info-text js-submitted-text">Submitted: ${new Date(currApplication.SubmittedAt).toLocaleString()}</p>
                 </div>
             </div>
         `;
     }
 
-    document.querySelector('.js-worker-info-container').innerHTML = workerInfoHTML;
+    document.querySelector('.js-application-info-container').innerHTML = applicationInfoHTML;
 
     renderButtons();
 }
@@ -107,7 +149,19 @@ function renderButtons(){
     })
 
     document.querySelector('.js-delete-accept-button')?.addEventListener('click', () => {
-        deleteWorker();
+        deleteApplication();
+    })
+
+    document.querySelector('.approve-button')?.addEventListener('click', () => {
+        if(confirm('Approve this application and create a worker account?')) {
+            approveApplication();
+        }
+    })
+
+    document.querySelector('.decline-button')?.addEventListener('click', () => {
+        if(confirm('Decline this application?')) {
+            declineApplication();
+        }
     })
 
     document.querySelector('.js-name-info')?.addEventListener('click', (event) => {
@@ -115,7 +169,7 @@ function renderButtons(){
             document.querySelector('.js-name-info').innerHTML = `
             <div class="enter-input-container">
                 <p class="info-text js-name-text">Name: </p>
-                <input class="info-input js-name-input" placeholder="Enter New Name" value="${currWorker.Name}">
+                <input class="info-input js-name-input" placeholder="Enter New Name" value="${currApplication.Name}">
             </div>
             <div class="edit-buttons js-edit-name-buttons">
                 <button class="cancel-edit-button js-cancel-edit-button">Cancel</button>
@@ -125,7 +179,7 @@ function renderButtons(){
         }
 
         if(event.target.classList.contains('js-cancel-edit-button')){
-            renderWorkerInfo();
+            renderApplicationInfo();
         }
 
         if(event.target.classList.contains('js-confirm-edit-button')){
@@ -138,7 +192,7 @@ function renderButtons(){
                 `;
                 return;
             }
-            updateWorker({ Name: newName });
+            updateApplication({ Name: newName });
         }
     });
 
@@ -147,7 +201,7 @@ function renderButtons(){
             document.querySelector('.js-email-info').innerHTML = `
             <div class="enter-input-container">
                 <p class="info-text js-email-text">Email: </p>
-                <input type="email" class="info-input js-email-input" placeholder="Enter New Email" value="${currWorker.Email}">
+                <input type="email" class="info-input js-email-input" placeholder="Enter New Email" value="${currApplication.Email}">
             </div>
             <div class="edit-buttons js-edit-email-buttons">
                 <button class="cancel-edit-button js-cancel-edit-button">Cancel</button>
@@ -157,7 +211,7 @@ function renderButtons(){
         }
 
         if(event.target.classList.contains('js-cancel-edit-button')){
-            renderWorkerInfo();
+            renderApplicationInfo();
         }
 
         if(event.target.classList.contains('js-confirm-edit-button')){
@@ -182,7 +236,7 @@ function renderButtons(){
                 return;
             }
 
-            updateWorker({ Email: input });
+            updateApplication({ Email: input });
         }
     });
 
@@ -191,7 +245,7 @@ function renderButtons(){
             document.querySelector('.js-phone-info').innerHTML = `
             <div class="enter-input-container">
                 <p class="info-text js-phone-text">Phone: </p>
-                <input class="info-input js-phone-input" type="tel" placeholder="Enter Phone Number" value="${currWorker.Phone || ''}" maxlength="12">
+                <input class="info-input js-phone-input" type="tel" placeholder="Enter Phone Number" value="${currApplication.Phone || ''}" maxlength="12">
             </div>
             <div class="edit-buttons js-edit-phone-buttons">
                 <button class="cancel-edit-button js-cancel-edit-button">Cancel</button>
@@ -221,7 +275,7 @@ function renderButtons(){
         }
 
         if(event.target.classList.contains('js-cancel-edit-button')){
-            renderWorkerInfo();
+            renderApplicationInfo();
         }
 
         if(event.target.classList.contains('js-confirm-edit-button')){
@@ -234,7 +288,7 @@ function renderButtons(){
                 `;
                 return;
             }
-            updateWorker({ Phone: phoneInput });
+            updateApplication({ Phone: phoneInput });
         }
     });
 
@@ -243,7 +297,7 @@ function renderButtons(){
             document.querySelector('.js-availability-info').innerHTML = `
             <div class="enter-input-container">
                 <p class="info-text js-availability-text">Availability: </p>
-                <input class="info-input js-availability-input" placeholder="Enter Availability Status" value="${currWorker.AvailabilityStatus}">
+                <input class="info-input js-availability-input" placeholder="Enter Availability" value="${currApplication.Availability || ''}">
             </div>
             <div class="edit-buttons js-edit-availability-buttons">
                 <button class="cancel-edit-button js-cancel-edit-button">Cancel</button>
@@ -253,55 +307,13 @@ function renderButtons(){
         }
 
         if(event.target.classList.contains('js-cancel-edit-button')){
-            renderWorkerInfo();
+            renderApplicationInfo();
         }
 
         if(event.target.classList.contains('js-confirm-edit-button')){
-            updateWorker({ AvailabilityStatus: document.querySelector('.js-availability-input').value.trim() });
-        }
-    });
-
-    document.querySelector('.js-password-info')?.addEventListener('click', (event) => {
-        if(event.target.classList.contains('js-edit-password-button')){
-            document.querySelector('.js-password-info').innerHTML = `
-            <div class="enter-input-container">
-                <p class="info-text js-password-text">Password: </p>
-                <input class="info-input js-password-input" type="password" placeholder="Enter New Password">
-            </div>
-            <div class="edit-buttons js-edit-password-buttons">
-                <button class="cancel-edit-button js-cancel-edit-button">Cancel</button>
-                <button class="confirm-edit-button js-confirm-edit-button">Confirm Changes</button>
-            </div>
-        `;
-        }
-
-        if(event.target.classList.contains('js-cancel-edit-button')){
-            renderWorkerInfo();
-        }
-
-        if(event.target.classList.contains('js-confirm-edit-button')){
-            const input = document.querySelector('.js-password-input').value;
-
-            if(input.length < 8){
-                document.querySelector('.js-edit-password-buttons').innerHTML = `
-                    <p class="error-text">Password Must Contain at Least 8 Characters.</p>
-                    <button class="cancel-edit-button js-cancel-edit-button">Cancel</button>
-                    <button class="confirm-edit-button js-confirm-edit-button">Confirm Changes</button>
-                `;
-                return;
-            }
-            if(input.includes(' ')){
-                document.querySelector('.js-edit-password-buttons').innerHTML = `
-                    <p class="error-text">Password Can't Contain Any Spaces.</p>
-                    <button class="cancel-edit-button js-cancel-edit-button">Cancel</button>
-                    <button class="confirm-edit-button js-confirm-edit-button">Confirm Changes</button>
-                `;
-                return;
-            }
-
-            updateWorker({ PasswordHash: input });
+            updateApplication({ Availability: document.querySelector('.js-availability-input').value.trim() });
         }
     });
 }
 
-fetchWorker();
+fetchApplication();

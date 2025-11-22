@@ -1,14 +1,29 @@
 
 import express from 'express';
-import { getAllRestaurants, getMenuItems, placeOrder, getCart, addToCart, removeFromCart, clearCart, getMenuItem, getOrdersPlaced, acceptOrder, declineOrder, completeOrder, getAllWorkers, addWorker, getWorkerJobs, removeWorker, loginAdminUser } from '../controllers/apiController.js';
+import { getAllRestaurants, getRestaurant, addRestaurant, modifyRestaurant, removeRestaurant, getMenuItems, placeOrder, getCart, addToCart, removeFromCart, clearCart, getMenuItem, getOrdersPlaced, acceptOrder, declineOrder, completeOrder, getAllWorkers, getWorker, modifyWorker, addWorker, getWorkerJobs, removeWorker, createWorkerApplication, getAllWorkerApplications, getWorkerApplication, approveWorkerApplication, declineWorkerApplication, modifyWorkerApplication, removeWorkerApplication, getAllCustomers, getCustomer, addCustomer, modifyCustomer, removeCustomer, loginAdminUser } from '../controllers/apiController.js';
 
 const router = express.Router();
+
+// Admin Login
+router.post('/login', loginAdminUser);
 
 // API Route to get all restaurants from the db
 router.get('/restaurants', getAllRestaurants);
 
-// API Route to get menu items for a specific restaurant
+// API Route to create a new restaurant
+router.post('/restaurants', addRestaurant);
+
+// API Route to get menu items for a specific restaurant (must be before /restaurants/:id)
 router.get('/restaurants/:id/menu', getMenuItems);
+
+// API Route to get a single restaurant
+router.get('/restaurants/:id', getRestaurant);
+
+// API Route to update a restaurant
+router.put('/restaurants/:id', modifyRestaurant);
+
+// API Route to delete a restaurant
+router.delete('/restaurants/:id', removeRestaurant);
 
 // API Route to get a single menu item
 router.get('/menuitems/:id', getMenuItem);
@@ -45,11 +60,26 @@ router.delete('/cart', clearCart);
 
 // Workers
 router.get('/workers', getAllWorkers);
+router.get('/workers/:id', getWorker);
 router.post('/workers', addWorker);
+router.put('/workers/:id', modifyWorker);
 // Delete a worker
 router.delete('/workers/:id', removeWorker);
 
-//login admin user
-router.post('/login', loginAdminUser);
+// Worker Applications
+router.post('/worker-applications', createWorkerApplication);
+router.get('/worker-applications', getAllWorkerApplications);
+router.get('/worker-applications/:id', getWorkerApplication);
+router.put('/worker-applications/:id', modifyWorkerApplication);
+router.post('/worker-applications/:id/approve', approveWorkerApplication);
+router.post('/worker-applications/:id/decline', declineWorkerApplication);
+router.delete('/worker-applications/:id', removeWorkerApplication);
+
+// Customers
+router.get('/customers', getAllCustomers);
+router.get('/customers/:id', getCustomer);
+router.post('/customers', addCustomer);
+router.put('/customers/:id', modifyCustomer);
+router.delete('/customers/:id', removeCustomer);
 
 export default router;
