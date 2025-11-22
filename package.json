@@ -23,6 +23,7 @@
   },
   "homepage": "https://github.com/roy3904/cmsc447-doordash#readme",
   "dependencies": {
+    "argon2": "^0.44.0",
     "express": "^5.1.0",
     "fs": "^0.0.1-security",
     "path": "^0.12.7",

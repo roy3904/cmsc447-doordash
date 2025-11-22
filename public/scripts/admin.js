@@ -1,6 +1,13 @@
+if(sessionStorage.getItem('logged_in') !== 'true'){
+    window.location.href = 'admin-login.html';
+}
 export let customers = [];
 
 export let restaurants = [];
+
+export function setRestaurants(restaurantList){
+    restaurants = restaurantList;
+}
 
 async function fetchCustomers() {
     try {
@@ -192,19 +199,56 @@ export function removeCustomer(id){
     }
 }
 
+export async function findWorker(id){
+    const workerList = await fetchWorkersFromServer();
+    for(let i = 0; i < workerList.length; ++i){
+        if(workerList[i].WorkerID === id){
+            return workerList[i];
+        }
+    }
+    return null;
+}
+
+export function changeWorkerName(id, name){
+    findWorker(id).Name = name;
+}
+export function changeWorkerPhone(id, phone){
+    findWorker(id).Phone = phone;
+}
+export function changeWorkerEmail(id, email){
+    findWorker(id).Email = email;
+}
+export function changeWorkerPassword(id, password){
+    findCustomer(id).PasswordHash = password;
+}
+export function changeWorkerHours(id, hours){
+    findWorker(id).AvailabilityStatus = hours;
+}
+
+export async function removeWorker(id){
+    const workerList = await fetchWorkersFromServer();
+    for(let i = 0; i < workerList.length; ++i){
+        if(workerList[i].WorkerID === id){
+            workerList.splice(i, 1);
+            break;
+        }
+    }
+}
+
 export function changeRestaurantName(id, name){
-    findRestaurant(id).name = name;
+    findRestaurant(id).Name = name;
 }
 export function changeLocation(id, location){
-    findRestaurant(id).location = location;
+    findRestaurant(id).Location = location;
 }
 export function changeHours(id, hours){
-    findRestaurant(id).hours = hours;
+    findRestaurant(id).OperatingHours = hours;
 }
 
 export function findRestaurant(restaurantId){
+    console.log(restaurants.length);
     for(let i = 0; i < restaurants.length; i++){
-        if(restaurants[i].id === restaurantId){
+        if(restaurants[i].RestaurantID === restaurantId){
             return restaurants[i];
         }
     }
@@ -259,7 +303,7 @@ if(window.location.href.includes('admin.html')){
 }
 
 // Worker management
-async function fetchWorkersFromServer(){
+export async function fetchWorkersFromServer(){
     try{
         const resp = await fetch('/api/workers');
         if(!resp.ok) return [];
@@ -271,23 +315,25 @@ async function fetchWorkersFromServer(){
 function renderWorkerList(workers){
     let html = '';
     workers.forEach(w => {
+        console.log(w);
         html += `
         <div class="database-item worker-item">
             <p class="worker-name">${w.Name}</p>
             <p class="worker-id">${w.WorkerID}</p>
+            <p class="worker-phone">${w.Phone}</p>
             <p class="worker-email">${w.Email}</p>
             <p class="worker-availability">${w.AvailabilityStatus || ''}</p>
-            <button class="modify-button js-modify-worker" data-id="${w.WorkerID}">Modify</button>
+            <button class="modify-button js-modify-worker" data-worker-id="${w.WorkerID}">Modify</button>
         </div>
         `;
     });
     document.querySelector('.js-worker-list-content').innerHTML = html || '<p class="not-found-text">No workers</p>';
 
-    // attach modify handlers
-    document.querySelectorAll('.js-modify-worker').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const id = btn.dataset.id;
-            window.location.href = `worker-info.html?id=${id}`;
+    const modifyButtons = document.querySelectorAll('.js-modify-worker');
+    modifyButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            const workerId = button.dataset.workerId;
+            window.location.href = `worker-info.html?id=${workerId}`
         });
     });
 }
