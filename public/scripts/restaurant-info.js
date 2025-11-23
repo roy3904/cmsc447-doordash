@@ -62,7 +62,6 @@ function renderRestaurantInfo(){
                 <div class="info-header-leftside">
                     <img class="profile-picture" src="./images/retriever-profile-picture.png">
                     <p class="title-name">${currRestaurant.Name}</p>
-                    <p class="title-name">${currRestaurant.Name}</p>
                 </div>
 
                 <button class="delete-user-button">Delete Restaurant</button>
@@ -71,20 +70,16 @@ function renderRestaurantInfo(){
             <div class="info-body js-restaurant-info-body">
                 <div class="entity-info js-id-info">
                     <p class="entity-info-text js-id-text">ID: ${currRestaurant.RestaurantID}</p>
-                    <p class="entity-info-text js-id-text">ID: ${currRestaurant.RestaurantID}</p>
                 </div>
                 <div class="entity-info js-name-info">
-                    <p class="entity-info-text js-name-text">Name: ${currRestaurant.Name}</p>
                     <p class="entity-info-text js-name-text">Name: ${currRestaurant.Name}</p>
                     <button class="entity-edit-button js-edit-name-button">Edit</button>
                 </div>
                 <div class="entity-info js-location-info">
                     <p class="entity-info-text js-location-text">Location: ${currRestaurant.Location}</p>
-                    <p class="entity-info-text js-location-text">Location: ${currRestaurant.Location}</p>
                     <button class="entity-edit-button js-edit-location-button">Edit</button>
                 </div>
                 <div class="entity-info js-hours-info">
-                    <p class="entity-info-text js-hours-text">Hours: ${currRestaurant.OperatingHours}</p>
                     <p class="entity-info-text js-hours-text">Hours: ${currRestaurant.OperatingHours}</p>
                     <button class="entity-edit-button js-edit-hours-button">Edit</button>
                 </div>
@@ -182,5 +177,5 @@ function renderButtons(){
     });
 }
 
-await fetchRestaurants();
+await fetchRestaurant();
 renderRestaurantInfo();
