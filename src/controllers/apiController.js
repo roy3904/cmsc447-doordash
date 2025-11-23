@@ -505,8 +505,7 @@ export const removeCustomer = async (req, res) => {
 };
 
 export async function loginAdminUser(req, res){
-  console.log("BUTTON CLICKED");
-  console.log("Data from front end: ", req.body);
+  // console.log("Data from front end: ", req.body);
 
   const email = req.body.email;
   const password = req.body.password;
