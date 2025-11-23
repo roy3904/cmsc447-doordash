@@ -5,17 +5,6 @@
     <title>Checkout | GritDash</title>
     <link rel="stylesheet" href="homepage-style.css">
     <script src="https://kit.fontawesome.com/5d92ce3398.js" crossorigin="anonymous"></script>
-    <style>
-      .checkout-container { max-width: 900px; margin:2rem auto; padding:0 1rem; }
-      .summary { border:1px solid #e6e6e6; padding:1rem; border-radius:6px; }
-      .summary h3 { margin-top:0; }
-      .line-item { display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px dashed #f0f0f0; }
-      .controls { margin-top:1rem; display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
-      .btn { background:#2b6cb0; color:white; padding:8px 12px; border:none; border-radius:4px; cursor:pointer; }
-      .input { padding:8px; border:1px solid #ddd; border-radius:4px; width:100%; }
-      .modal-backdrop { position:fixed; left:0; right:0; top:0; bottom:0; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; }
-      .modal { background:white; padding:1.5rem; border-radius:6px; max-width:460px; width:90%; }
-    </style>
   </head>
   <body>
     <header class="nav-bar">
@@ -25,16 +14,15 @@
   <a class="nav-link" href="worker-portal.html">Worker Portal</a>
         <a class="nav-link" href="admin.html">Admin Portal</a>
       </div>
-      <a href="cart.html" aria-label="Cart" id="cart-link" style="color:inherit;text-decoration:none;">
-        <i class="fa-solid fa-cart-shopping badge" style="font-size:22px;">
-          <span id="cart-count" class="badge-count">0</span>
-        </i>
+      <a href="cart.html" aria-label="Cart" class="cart-anchor">
+        <i class="fa-solid fa-cart-shopping badge"></i>
+        <p id="cart-count" class="badge-count">0</p>
       </a>
       <script src="./scripts/cart-common.js"></script>
     </header>
 
     <main class="checkout-container">
-      <h2>Checkout</h2>
+      <p class="checkout-title">Checkout</p>
       <div id="empty-warning" style="display:none;color:#666;margin-bottom:1rem;">Your cart is empty. Add items before checking out.</div>
 
       <div class="summary" id="order-summary">
