@@ -443,10 +443,6 @@ input[type='radio'] {
     .checkout-container{
         width: 800px;
     }
-
-    #building{
-        width: 800px;
-    }
 }
 
 @media screen and (max-width: 450px){
