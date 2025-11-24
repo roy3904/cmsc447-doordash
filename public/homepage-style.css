@@ -10,6 +10,9 @@ p{
     font-family: Arial, Helvetica, sans-serif;
 }
 
+.hidden{
+    display: none;
+}
 /*Style For Navigation Bar On Top of Page*/
 
 .nav-bar{
@@ -97,7 +100,7 @@ p{
     margin: 0;
 }
 
-/*Styling For HomepageZ*/
+/*Styling For Homepage*/
 
 .home-title{
     text-align: center;
@@ -251,7 +254,7 @@ footer{
 /*Checkout Page Styling*/
 
 .checkout-container{
-    max-width: 900px;
+    width: 1100px;
     margin:2rem auto;
     padding:0 1rem;
 }
@@ -261,16 +264,20 @@ footer{
     margin: 0px;
     margin-bottom: 10px;
     font-weight: bold;
+    color:rgb(0, 62, 110);
 }
 
 .summary{
     border:1px solid #e6e6e6;
     padding:1rem;
     border-radius:6px;
+    padding-bottom: 0px;
 }
 
-.summary h3{
+.summary-title{
     margin-top:0;
+    font-size: 22px;
+    font-weight: 600;
 }
 
 .line-item{
@@ -278,6 +285,28 @@ footer{
     justify-content:space-between;
     padding:6px 0;
     border-bottom:1px dashed #f0f0f0;
+}
+
+.selection-container{
+    margin-top: 40px;
+}
+
+label{
+    font-family: Arial, Helvetica, sans-serif;
+    font: arial;
+    font-size: 18px;
+}
+
+select{
+    height: 45px;
+}
+
+select:hover{
+    cursor: pointer;
+}
+
+select:focus{
+    outline: 1px solid black;
 }
 
 .controls{
@@ -294,13 +323,43 @@ footer{
     border:none; 
     border-radius:4px; 
     cursor:pointer;
+    width: 200px;
+    height: 60px;
+    font-size: 20px;
+}
+
+.btn:hover{
+    background-color: #3982d0;
 }
 
 .input{
-    padding:8px;
+    padding: 10px;
     border:1px solid #ddd;
     border-radius:4px;
     width:100%;
+    padding-right: 0px;
+}
+
+.input:focus{
+    border-left: 5px solid rgb(218, 189, 0);
+    outline: 1px solid black;
+    padding-left: 6px;
+}
+
+.payment-label{
+    font-family: Arial, Helvetica, sans-serif;
+    font: arial;
+    font-size: 18px;
+}
+
+input[type='radio'] {
+    accent-color: rgb(123, 107, 1);
+}
+
+.error-message{
+    color: rgb(199, 0, 0);
+    margin: 0px;
+    margin-top: 5px;
 }
 
 .modal-backdrop{

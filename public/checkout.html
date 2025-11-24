@@ -26,41 +26,48 @@
       <div id="empty-warning" style="display:none;color:#666;margin-bottom:1rem;">Your cart is empty. Add items before checking out.</div>
 
       <div class="summary" id="order-summary">
-        <h3>Order Summary</h3>
+        <p class="summary-title">Order Summary</p>
         <div id="items-list"></div>
         <div class="line-item" style="font-weight:700;">
-          <div>Total</div>
-          <div id="summary-total">$0.00</div>
+          <p class="total-text">Total</p>
+          <p id="summary-total" class="total-text">$0.00</p>
         </div>
       </div>
 
-      <div style="margin-top:1rem">
-        <label for="building">Delivery Address / Building</label>
+      <div class="selection-container">
+        <label for="building">Delivery Address / Building <p class="error-message js-building-error-message hidden">Please Select a Location!</p></label>
         <select id="building" class="input">
           <option value="" disabled selected>Select building or delivery location</option>
           <option value="Commons">Commons</option>
           <option value="Library">Library</option>
           <option value="ITE">ITE</option>
           <option value="Engineering">Engineering</option>
-          <option value="1000 Hilltop Cir">1000 Hilltop Cir</option>
           <option value="Student Center">Student Center</option>
-          <option value="Residence Hall">Residence Hall</option>
+          <option value="Chesapeake Hall">Chesapeake Hall</option>
+          <option value="Harbor Hall">Harbor Hall</option>
+          <option value="Susquehanna Hall">Susquehanna Hall</option>
+          <option value="Erikson Hall">Erikson Hall</option>
+          <option value="Potomac Hall">Potomac Hall</option>
+          <option value="Patapsco Hall">Patapsco Hall</option>
+          <option value="Terrace Apartments">Terrace Apartments</option>
+          <option value="West Hills Apartments">West Hills Apartments</option>
+          <option value="Walker Apartments">Walker Apartments</option>
           <option value="Administration">Administration</option>
         </select>
       </div>
 
-      <div style="margin-top:0.75rem">
+      <div class="selection-container">
         <label for="room">Room / Location (e.g., 2nd floor lounge or Room 123)</label>
         <input id="room" class="input" placeholder="Room, area, or building landmark" />
       </div>
 
-      <div style="margin-top:0.75rem">
+      <div class="selection-container">
         <label for="instructions">Special Instructions (optional)</label>
         <input id="instructions" class="input" placeholder="Leave at reception, call when outside, etc." />
       </div>
 
       <div style="margin-top:1rem">
-        <h4>Payment Method</h4>
+        <p class="payment-label">Payment Method</p>
         <label><input type="radio" name="payment" value="Card" checked/> Credit / Debit Card</label><br/>
         <label><input type="radio" name="payment" value="Cash"/> Cash on Delivery</label><br/>
         <label><input type="radio" name="payment" value="MealPlan"/> UMBC Meal Plan</label>
@@ -117,7 +124,7 @@
             const price = parseFloat(it.Price || 0) * (it.Quantity || 1);
             total += price;
             const div = document.createElement('div'); div.className='line-item';
-            div.innerHTML = `<div>${escapeHtml(name)}${it.Quantity && it.Quantity>1? ' ×'+it.Quantity:''}</div><div>$${price.toFixed(2)}</div>`;
+            div.innerHTML = `<p class="item-text">${escapeHtml(name)}${it.Quantity && it.Quantity>1? ' ×'+it.Quantity:''}</p><p class="item-text">$${price.toFixed(2)}</p>`;
             list.appendChild(div);
           }
           totalEl.textContent = '$' + total.toFixed(2);
