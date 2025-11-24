@@ -285,6 +285,63 @@ export async function getPlacedOrders() {
 }
 
 // =======================================
+// Get Orders by Restaurant ID
+// =======================================
+export async function getOrdersByRestaurantId(restaurantId, status = null) {
+  let db;
+  try {
+    db = await openDb();
+
+    let query = 'SELECT * FROM "Order" WHERE RestaurantID = ?';
+    const params = [restaurantId];
+
+    // If status is provided, filter by status
+    if (status) {
+      query += ' AND OrderStatus = ?';
+      params.push(status);
+    }
+
+    // Order by most recent first
+    query += ' ORDER BY OrderID DESC';
+
+    const orders = await db.all(query, params);
+
+    // Populate order details
+    for (const order of orders) {
+      // Get order items with menu item details
+      order.items = await db.all(`
+        SELECT oi.*, mi.Name, mi.Description
+        FROM OrderItem oi
+        LEFT JOIN MenuItem mi ON oi.ItemID = mi.ItemID
+        WHERE oi.OrderID = ?
+      `, order.OrderID);
+
+      // Parse delivery location
+      try {
+        order.delivery = JSON.parse(order.DeliveryLocation || '{}');
+      } catch (e) {
+        order.delivery = { building: order.DeliveryLocation };
+      }
+
+      // Get customer info (without password hash)
+      order.customer = await db.get(
+        'SELECT CustomerID, Name, Email, Phone FROM Customer WHERE CustomerID = ?',
+        order.CustomerID
+      );
+    }
+
+    return orders;
+  } catch (error) {
+    console.error('Error getting orders by restaurant ID:', error);
+    throw error;
+  } finally {
+    if (db) {
+      await db.close();
+    }
+  }
+}
+
+// =======================================
 // Assign an order to a worker (create DeliveryJob)
 // =======================================
 export async function assignOrderToWorker(orderId, workerId) {

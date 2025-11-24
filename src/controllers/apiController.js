@@ -1,4 +1,4 @@
-import { getRestaurants, getRestaurantById as dbGetRestaurantById, createRestaurant as dbCreateRestaurant, updateRestaurant as dbUpdateRestaurant, deleteRestaurant as dbDeleteRestaurant, getMenuItemsByRestaurantId, createOrder, getCart as dbGetCart, addToCart as dbAddToCart, removeFromCart as dbRemoveFromCart, clearCart as dbClearCart, getMenuItem as dbGetMenuItem, updateMenuItem as dbUpdateMenuItem, getPlacedOrders, assignOrderToWorker, completeDeliveryJob, updateOrderStatus as dbUpdateOrderStatus, getWorkers, getWorkerById as dbGetWorkerById, updateWorker as dbUpdateWorker, createWorker, declineOrderByWorker, deleteWorker, createWorkerApplication as dbCreateWorkerApplication, getWorkerApplications as dbGetWorkerApplications, getWorkerApplicationById as dbGetWorkerApplicationById, updateWorkerApplicationStatus as dbUpdateWorkerApplicationStatus, updateWorkerApplication as dbUpdateWorkerApplication, deleteWorkerApplication as dbDeleteWorkerApplication, getCustomers as dbGetCustomers, getCustomerById as dbGetCustomerById, createCustomer as dbCreateCustomer, updateCustomer as dbUpdateCustomer, deleteCustomer as dbDeleteCustomer, getSystemAdmin } from '../database.js';
+import { getRestaurants, getRestaurantById as dbGetRestaurantById, createRestaurant as dbCreateRestaurant, updateRestaurant as dbUpdateRestaurant, deleteRestaurant as dbDeleteRestaurant, getMenuItemsByRestaurantId, createOrder, getCart as dbGetCart, addToCart as dbAddToCart, removeFromCart as dbRemoveFromCart, clearCart as dbClearCart, getMenuItem as dbGetMenuItem, updateMenuItem as dbUpdateMenuItem, getPlacedOrders, getOrdersByRestaurantId as dbGetOrdersByRestaurantId, assignOrderToWorker, completeDeliveryJob, updateOrderStatus as dbUpdateOrderStatus, getWorkers, getWorkerById as dbGetWorkerById, updateWorker as dbUpdateWorker, createWorker, declineOrderByWorker, deleteWorker, createWorkerApplication as dbCreateWorkerApplication, getWorkerApplications as dbGetWorkerApplications, getWorkerApplicationById as dbGetWorkerApplicationById, updateWorkerApplicationStatus as dbUpdateWorkerApplicationStatus, updateWorkerApplication as dbUpdateWorkerApplication, deleteWorkerApplication as dbDeleteWorkerApplication, getCustomers as dbGetCustomers, getCustomerById as dbGetCustomerById, createCustomer as dbCreateCustomer, updateCustomer as dbUpdateCustomer, deleteCustomer as dbDeleteCustomer, getSystemAdmin } from '../database.js';
 import { getJobsForWorker } from '../database.js';
 import argon2 from 'argon2';
 
@@ -91,6 +91,25 @@ export const getMenuItems = async (req, res) => {
   } catch (error) {
     console.error(`Failed to get menu items for restaurant ${req.params.id}:`, error);
     res.status(500).json({ error: 'Failed to get menu items' });
+  }
+};
+
+export const getRestaurantOrders = async (req, res) => {
+  // #swagger.tags = ['Restaurants']
+  // #swagger.summary = 'Get orders for a specific restaurant'
+  try {
+    const restaurantId = req.params.id;
+    const status = req.query.status; // Optional status filter
+
+    if (!restaurantId) {
+      return res.status(400).json({ error: 'Restaurant ID required' });
+    }
+
+    const orders = await dbGetOrdersByRestaurantId(restaurantId, status);
+    res.json({ orders, count: orders.length });
+  } catch (error) {
+    console.error(`Failed to get orders for restaurant ${req.params.id}:`, error);
+    res.status(500).json({ error: 'Failed to get restaurant orders' });
   }
 };
 
