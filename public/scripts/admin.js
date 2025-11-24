@@ -246,7 +246,7 @@ export function changeHours(id, hours){
 }
 
 export function findRestaurant(restaurantId){
-    console.log(restaurants.length);
+    //console.log(restaurants.length);
     for(let i = 0; i < restaurants.length; i++){
         if(restaurants[i].RestaurantID === restaurantId){
             return restaurants[i];
@@ -315,7 +315,7 @@ export async function fetchWorkersFromServer(){
 function renderWorkerList(workers){
     let html = '';
     workers.forEach(w => {
-        console.log(w);
+        //console.log(w);
         html += `
         <div class="database-item worker-item">
             <p class="worker-name">${w.Name}</p>

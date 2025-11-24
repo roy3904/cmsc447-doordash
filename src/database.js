@@ -332,6 +332,39 @@ export async function completeDeliveryJob(jobId) {
 }
 
 // =======================================
+// Update Order Status
+// =======================================
+export async function updateOrderStatus(orderId, newStatus) {
+  let db;
+  try {
+    db = await openDb();
+
+    // Validate status
+    const validStatuses = ['Cart', 'Placed', 'Accepted', 'Ready for Pickup', 'Delivered'];
+    if (!validStatuses.includes(newStatus)) {
+      throw new Error(`Invalid status: ${newStatus}. Valid statuses are: ${validStatuses.join(', ')}`);
+    }
+
+    // Check if order exists
+    const order = await db.get('SELECT * FROM "Order" WHERE OrderID = ?', orderId);
+    if (!order) {
+      throw new Error('Order not found');
+    }
+
+    // Update the order status
+    await db.run('UPDATE "Order" SET OrderStatus = ? WHERE OrderID = ?', [newStatus, orderId]);
+    return true;
+  } catch (error) {
+    console.error('Error updating order status:', error);
+    throw error;
+  } finally {
+    if (db) {
+      await db.close();
+    }
+  }
+}
+
+// =======================================
 // Worker related helpers
 // =======================================
 export async function createWorker(worker) {

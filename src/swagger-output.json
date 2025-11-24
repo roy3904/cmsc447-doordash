@@ -321,6 +321,16 @@
         }
       }
     },
+    "/api/orders/{id}/status": {
+      "put": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
     "/api/jobs/{id}/complete": {
       "post": {
         "description": "",

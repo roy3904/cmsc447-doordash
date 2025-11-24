@@ -1,4 +1,4 @@
-import { getRestaurants, getRestaurantById as dbGetRestaurantById, createRestaurant as dbCreateRestaurant, updateRestaurant as dbUpdateRestaurant, deleteRestaurant as dbDeleteRestaurant, getMenuItemsByRestaurantId, createOrder, getCart as dbGetCart, addToCart as dbAddToCart, removeFromCart as dbRemoveFromCart, clearCart as dbClearCart, getMenuItem as dbGetMenuItem, updateMenuItem as dbUpdateMenuItem, getPlacedOrders, assignOrderToWorker, completeDeliveryJob, getWorkers, getWorkerById as dbGetWorkerById, updateWorker as dbUpdateWorker, createWorker, declineOrderByWorker, deleteWorker, createWorkerApplication as dbCreateWorkerApplication, getWorkerApplications as dbGetWorkerApplications, getWorkerApplicationById as dbGetWorkerApplicationById, updateWorkerApplicationStatus as dbUpdateWorkerApplicationStatus, updateWorkerApplication as dbUpdateWorkerApplication, deleteWorkerApplication as dbDeleteWorkerApplication, getCustomers as dbGetCustomers, getCustomerById as dbGetCustomerById, createCustomer as dbCreateCustomer, updateCustomer as dbUpdateCustomer, deleteCustomer as dbDeleteCustomer, getSystemAdmin } from '../database.js';
+import { getRestaurants, getRestaurantById as dbGetRestaurantById, createRestaurant as dbCreateRestaurant, updateRestaurant as dbUpdateRestaurant, deleteRestaurant as dbDeleteRestaurant, getMenuItemsByRestaurantId, createOrder, getCart as dbGetCart, addToCart as dbAddToCart, removeFromCart as dbRemoveFromCart, clearCart as dbClearCart, getMenuItem as dbGetMenuItem, updateMenuItem as dbUpdateMenuItem, getPlacedOrders, assignOrderToWorker, completeDeliveryJob, updateOrderStatus as dbUpdateOrderStatus, getWorkers, getWorkerById as dbGetWorkerById, updateWorker as dbUpdateWorker, createWorker, declineOrderByWorker, deleteWorker, createWorkerApplication as dbCreateWorkerApplication, getWorkerApplications as dbGetWorkerApplications, getWorkerApplicationById as dbGetWorkerApplicationById, updateWorkerApplicationStatus as dbUpdateWorkerApplicationStatus, updateWorkerApplication as dbUpdateWorkerApplication, deleteWorkerApplication as dbDeleteWorkerApplication, getCustomers as dbGetCustomers, getCustomerById as dbGetCustomerById, createCustomer as dbCreateCustomer, updateCustomer as dbUpdateCustomer, deleteCustomer as dbDeleteCustomer, getSystemAdmin } from '../database.js';
 import { getJobsForWorker } from '../database.js';
 import argon2 from 'argon2';
 
@@ -150,6 +150,28 @@ export const completeOrder = async (req, res) => {
   } catch (error) {
     console.error('Failed to complete job:', error);
     res.status(500).json({ error: 'Failed to complete job' });
+  }
+};
+
+export const updateOrderStatus = async (req, res) => {
+  // #swagger.tags = ['Orders']
+  // #swagger.summary = 'Update order status'
+  try {
+    const orderId = req.params.id;
+    const { status } = req.body;
+
+    if (!orderId) {
+      return res.status(400).json({ error: 'Order ID required' });
+    }
+    if (!status) {
+      return res.status(400).json({ error: 'Status required' });
+    }
+
+    await dbUpdateOrderStatus(orderId, status);
+    res.json({ message: 'Order status updated', status });
+  } catch (error) {
+    console.error('Failed to update order status:', error);
+    res.status(500).json({ error: error.message || 'Failed to update order status' });
   }
 };
 
@@ -522,8 +544,6 @@ export const removeCustomer = async (req, res) => {
 };
 
 export async function loginAdminUser(req, res){
-  console.log("BUTTON CLICKED");
-  console.log("Data from front end: ", req.body);
 
   const email = req.body.email;
   const password = req.body.password;
