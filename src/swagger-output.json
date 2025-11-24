@@ -264,6 +264,14 @@
             "description": ""
           }
         }
+      },
+      "put": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
       }
     },
     "/api/orders": {

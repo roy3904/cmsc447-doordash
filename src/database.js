@@ -822,6 +822,51 @@ export async function getMenuItem(itemId) {
 }
 
 // =======================================
+// Update Menu Item
+// =======================================
+export async function updateMenuItem(itemId, updates) {
+  let db;
+  try {
+    db = await openDb();
+    const fields = [];
+    const values = [];
+
+    if (updates.Name !== undefined) {
+      fields.push('Name = ?');
+      values.push(updates.Name);
+    }
+    if (updates.Description !== undefined) {
+      fields.push('Description = ?');
+      values.push(updates.Description);
+    }
+    if (updates.Price !== undefined) {
+      fields.push('Price = ?');
+      values.push(updates.Price);
+    }
+    if (updates.Quantity !== undefined) {
+      fields.push('Quantity = ?');
+      values.push(updates.Quantity);
+    }
+
+    if (fields.length === 0) {
+      return true;
+    }
+
+    values.push(itemId);
+    const query = `UPDATE MenuItem SET ${fields.join(', ')} WHERE ItemID = ?`;
+    await db.run(query, values);
+    return true;
+  } catch (error) {
+    console.error('Error updating menu item:', error);
+    throw error;
+  } finally {
+    if (db) {
+      await db.close();
+    }
+  }
+}
+
+// =======================================
 // Customer Management Functions
 // =======================================
 
