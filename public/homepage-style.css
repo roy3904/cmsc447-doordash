@@ -439,6 +439,16 @@ input[type='radio'] {
     width:90%;
 }
 
+@media screen and (max-width: 1920px){
+    .checkout-container{
+        width: 800px;
+    }
+
+    #building{
+        width: 800px;
+    }
+}
+
 @media screen and (max-width: 450px){
     .checkout-container{
         width: 80%;
