@@ -36,6 +36,107 @@ export async function getRestaurants() {
   }
 }
 
+// ============================================
+// Fetch Single Restaurant by ID
+// ============================================
+export async function getRestaurantById(restaurantId) {
+  let db;
+  try {
+    db = await openDb();
+    const restaurant = await db.get('SELECT * FROM Restaurant WHERE RestaurantID = ?', restaurantId);
+    return restaurant;
+  } catch (error) {
+    console.error('Error getting restaurant:', error);
+    throw error;
+  } finally {
+    if (db) {
+      await db.close();
+    }
+  }
+}
+
+// ============================================
+// Create New Restaurant
+// ============================================
+export async function createRestaurant(restaurant) {
+  let db;
+  try {
+    db = await openDb();
+    await db.run(
+      'INSERT INTO Restaurant (RestaurantID, Name, Location, OperatingHours) VALUES (?, ?, ?, ?)',
+      [restaurant.RestaurantID, restaurant.Name, restaurant.Location, restaurant.OperatingHours]
+    );
+    return true;
+  } catch (error) {
+    console.error('Error creating restaurant:', error);
+    throw error;
+  } finally {
+    if (db) {
+      await db.close();
+    }
+  }
+}
+
+// ============================================
+// Update Restaurant Information
+// ============================================
+export async function updateRestaurant(restaurantId, updates) {
+  let db;
+  try {
+    db = await openDb();
+    const fields = [];
+    const values = [];
+
+    if (updates.Name !== undefined) {
+      fields.push('Name = ?');
+      values.push(updates.Name);
+    }
+    if (updates.Location !== undefined) {
+      fields.push('Location = ?');
+      values.push(updates.Location);
+    }
+    if (updates.OperatingHours !== undefined) {
+      fields.push('OperatingHours = ?');
+      values.push(updates.OperatingHours);
+    }
+
+    if (fields.length === 0) {
+      return true;
+    }
+
+    values.push(restaurantId);
+    const query = `UPDATE Restaurant SET ${fields.join(', ')} WHERE RestaurantID = ?`;
+    await db.run(query, values);
+    return true;
+  } catch (error) {
+    console.error('Error updating restaurant:', error);
+    throw error;
+  } finally {
+    if (db) {
+      await db.close();
+    }
+  }
+}
+
+// ============================================
+// Delete Restaurant
+// ============================================
+export async function deleteRestaurant(restaurantId) {
+  let db;
+  try {
+    db = await openDb();
+    await db.run('DELETE FROM Restaurant WHERE RestaurantID = ?', restaurantId);
+    return true;
+  } catch (error) {
+    console.error('Error deleting restaurant:', error);
+    throw error;
+  } finally {
+    if (db) {
+      await db.close();
+    }
+  }
+}
+
 // ==================================================
 // Fetch Menu Items Associated with a Specific Restaurant
 // ==================================================
@@ -184,6 +285,63 @@ export async function getPlacedOrders() {
 }
 
 // =======================================
+// Get Orders by Restaurant ID
+// =======================================
+export async function getOrdersByRestaurantId(restaurantId, status = null) {
+  let db;
+  try {
+    db = await openDb();
+
+    let query = 'SELECT * FROM "Order" WHERE RestaurantID = ?';
+    const params = [restaurantId];
+
+    // If status is provided, filter by status
+    if (status) {
+      query += ' AND OrderStatus = ?';
+      params.push(status);
+    }
+
+    // Order by most recent first
+    query += ' ORDER BY OrderID DESC';
+
+    const orders = await db.all(query, params);
+
+    // Populate order details
+    for (const order of orders) {
+      // Get order items with menu item details
+      order.items = await db.all(`
+        SELECT oi.*, mi.Name, mi.Description
+        FROM OrderItem oi
+        LEFT JOIN MenuItem mi ON oi.ItemID = mi.ItemID
+        WHERE oi.OrderID = ?
+      `, order.OrderID);
+
+      // Parse delivery location
+      try {
+        order.delivery = JSON.parse(order.DeliveryLocation || '{}');
+      } catch (e) {
+        order.delivery = { building: order.DeliveryLocation };
+      }
+
+      // Get customer info (without password hash)
+      order.customer = await db.get(
+        'SELECT CustomerID, Name, Email, Phone FROM Customer WHERE CustomerID = ?',
+        order.CustomerID
+      );
+    }
+
+    return orders;
+  } catch (error) {
+    console.error('Error getting orders by restaurant ID:', error);
+    throw error;
+  } finally {
+    if (db) {
+      await db.close();
+    }
+  }
+}
+
+// =======================================
 // Assign an order to a worker (create DeliveryJob)
 // =======================================
 export async function assignOrderToWorker(orderId, workerId) {
@@ -231,6 +389,39 @@ export async function completeDeliveryJob(jobId) {
 }
 
 // =======================================
+// Update Order Status
+// =======================================
+export async function updateOrderStatus(orderId, newStatus) {
+  let db;
+  try {
+    db = await openDb();
+
+    // Validate status
+    const validStatuses = ['Cart', 'Placed', 'Accepted', 'Ready for Pickup', 'Delivered'];
+    if (!validStatuses.includes(newStatus)) {
+      throw new Error(`Invalid status: ${newStatus}. Valid statuses are: ${validStatuses.join(', ')}`);
+    }
+
+    // Check if order exists
+    const order = await db.get('SELECT * FROM "Order" WHERE OrderID = ?', orderId);
+    if (!order) {
+      throw new Error('Order not found');
+    }
+
+    // Update the order status
+    await db.run('UPDATE "Order" SET OrderStatus = ? WHERE OrderID = ?', [newStatus, orderId]);
+    return true;
+  } catch (error) {
+    console.error('Error updating order status:', error);
+    throw error;
+  } finally {
+    if (db) {
+      await db.close();
+    }
+  }
+}
+
+// =======================================
 // Worker related helpers
 // =======================================
 export async function createWorker(worker) {
@@ -255,6 +446,70 @@ export async function getWorkers() {
     return workers;
   } catch (error) {
     console.error('Error getting workers:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
+// =======================================
+// Get single worker by WorkerID
+// =======================================
+export async function getWorkerById(workerId) {
+  let db;
+  try {
+    db = await openDb();
+    const worker = await db.get('SELECT * FROM Worker WHERE WorkerID = ?', workerId);
+    return worker;
+  } catch (error) {
+    console.error('Error getting worker:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
+// =======================================
+// Update worker details
+// =======================================
+export async function updateWorker(workerId, updates) {
+  let db;
+  try {
+    db = await openDb();
+    const fields = [];
+    const values = [];
+
+    if (updates.Name !== undefined) {
+      fields.push('Name = ?');
+      values.push(updates.Name);
+    }
+    if (updates.Email !== undefined) {
+      fields.push('Email = ?');
+      values.push(updates.Email);
+    }
+    if (updates.Phone !== undefined) {
+      fields.push('Phone = ?');
+      values.push(updates.Phone);
+    }
+    if (updates.AvailabilityStatus !== undefined) {
+      fields.push('AvailabilityStatus = ?');
+      values.push(updates.AvailabilityStatus);
+    }
+    if (updates.PasswordHash !== undefined) {
+      fields.push('PasswordHash = ?');
+      values.push(updates.PasswordHash);
+    }
+
+    if (fields.length === 0) {
+      return true;
+    }
+
+    values.push(workerId);
+    const query = `UPDATE Worker SET ${fields.join(', ')} WHERE WorkerID = ?`;
+    await db.run(query, values);
+    return true;
+  } catch (error) {
+    console.error('Error updating worker:', error);
     throw error;
   } finally {
     if (db) await db.close();
@@ -298,6 +553,195 @@ export async function getJobsForWorker(workerId) {
     return jobs;
   } catch (error) {
     console.error('Error getting jobs for worker:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
+// =======================================
+// Worker Application Functions
+// =======================================
+
+// Create new worker application
+export async function createWorkerApplication(application) {
+  let db;
+  try {
+    db = await openDb();
+    const applicationId = 'APP-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8).toUpperCase();
+    await db.run(
+      'INSERT INTO WorkerApplication (ApplicationID, WorkerID, Name, Email, Phone, Availability, PasswordHash, Status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [applicationId, application.WorkerID, application.Name, application.Email, application.Phone || '', application.Availability || '', application.PasswordHash, 'Pending']
+    );
+    return applicationId;
+  } catch (error) {
+    console.error('Error creating worker application:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
+// Get all worker applications with optional filtering, sorting, and pagination
+export async function getWorkerApplications(options = {}) {
+  let db;
+  try {
+    db = await openDb();
+
+    const {
+      status,        // Filter by status (Pending, Approved, Declined)
+      search,        // Search in Name, Email, WorkerID
+      sortBy = 'SubmittedAt',  // Sort field (default: SubmittedAt)
+      sortOrder = 'DESC',      // Sort order (ASC or DESC)
+      limit,         // Pagination limit
+      offset = 0     // Pagination offset
+    } = options;
+
+    let query = 'SELECT * FROM WorkerApplication WHERE 1=1';
+    const params = [];
+
+    // Apply status filter
+    if (status) {
+      query += ' AND Status = ?';
+      params.push(status);
+    }
+
+    // Apply search filter
+    if (search) {
+      query += ' AND (Name LIKE ? OR Email LIKE ? OR WorkerID LIKE ?)';
+      const searchTerm = `%${search}%`;
+      params.push(searchTerm, searchTerm, searchTerm);
+    }
+
+    // Apply sorting
+    const validSortFields = ['Name', 'Email', 'Status', 'SubmittedAt', 'WorkerID'];
+    const sortField = validSortFields.includes(sortBy) ? sortBy : 'SubmittedAt';
+    const order = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+    query += ` ORDER BY ${sortField} ${order}`;
+
+    // Apply pagination
+    if (limit) {
+      query += ' LIMIT ? OFFSET ?';
+      params.push(limit, offset);
+    }
+
+    const applications = await db.all(query, params);
+
+    // Get total count for pagination
+    let countQuery = 'SELECT COUNT(*) as total FROM WorkerApplication WHERE 1=1';
+    const countParams = [];
+
+    if (status) {
+      countQuery += ' AND Status = ?';
+      countParams.push(status);
+    }
+
+    if (search) {
+      countQuery += ' AND (Name LIKE ? OR Email LIKE ? OR WorkerID LIKE ?)';
+      const searchTerm = `%${search}%`;
+      countParams.push(searchTerm, searchTerm, searchTerm);
+    }
+
+    const countResult = await db.get(countQuery, countParams);
+
+    return {
+      applications,
+      total: countResult.total,
+      limit: limit || countResult.total,
+      offset: offset
+    };
+  } catch (error) {
+    console.error('Error getting worker applications:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
+// Get worker application by ID
+export async function getWorkerApplicationById(applicationId) {
+  let db;
+  try {
+    db = await openDb();
+    const application = await db.get('SELECT * FROM WorkerApplication WHERE ApplicationID = ?', applicationId);
+    return application;
+  } catch (error) {
+    console.error('Error getting worker application:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
+// Update worker application status
+export async function updateWorkerApplicationStatus(applicationId, status) {
+  let db;
+  try {
+    db = await openDb();
+    await db.run('UPDATE WorkerApplication SET Status = ? WHERE ApplicationID = ?', [status, applicationId]);
+    return true;
+  } catch (error) {
+    console.error('Error updating worker application status:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
+// Update worker application details
+export async function updateWorkerApplication(applicationId, updates) {
+  let db;
+  try {
+    db = await openDb();
+    const fields = [];
+    const values = [];
+
+    if (updates.Name !== undefined) {
+      fields.push('Name = ?');
+      values.push(updates.Name);
+    }
+    if (updates.Email !== undefined) {
+      fields.push('Email = ?');
+      values.push(updates.Email);
+    }
+    if (updates.Phone !== undefined) {
+      fields.push('Phone = ?');
+      values.push(updates.Phone);
+    }
+    if (updates.Availability !== undefined) {
+      fields.push('Availability = ?');
+      values.push(updates.Availability);
+    }
+    if (updates.Status !== undefined) {
+      fields.push('Status = ?');
+      values.push(updates.Status);
+    }
+
+    if (fields.length === 0) {
+      return true;
+    }
+
+    values.push(applicationId);
+    const query = `UPDATE WorkerApplication SET ${fields.join(', ')} WHERE ApplicationID = ?`;
+    await db.run(query, values);
+    return true;
+  } catch (error) {
+    console.error('Error updating worker application:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
+// Delete worker application
+export async function deleteWorkerApplication(applicationId) {
+  let db;
+  try {
+    db = await openDb();
+    await db.run('DELETE FROM WorkerApplication WHERE ApplicationID = ?', applicationId);
+    return true;
+  } catch (error) {
+    console.error('Error deleting worker application:', error);
     throw error;
   } finally {
     if (db) await db.close();
@@ -467,15 +911,188 @@ export async function getMenuItem(itemId) {
   }
 }
 
-export async function getSystemAdmin(adminEmail) {
+// =======================================
+// Update Menu Item
+// =======================================
+export async function updateMenuItem(itemId, updates) {
   let db;
   try {
     db = await openDb();
-    const admin = await db.get('SELECT * FROM SystemAdmin WHERE Email = ?', adminEmail);
-    
+    const fields = [];
+    const values = [];
+
+    if (updates.Name !== undefined) {
+      fields.push('Name = ?');
+      values.push(updates.Name);
+    }
+    if (updates.Description !== undefined) {
+      fields.push('Description = ?');
+      values.push(updates.Description);
+    }
+    if (updates.Price !== undefined) {
+      fields.push('Price = ?');
+      values.push(updates.Price);
+    }
+    if (updates.Quantity !== undefined) {
+      fields.push('Quantity = ?');
+      values.push(updates.Quantity);
+    }
+
+    if (fields.length === 0) {
+      return true;
+    }
+
+    values.push(itemId);
+    const query = `UPDATE MenuItem SET ${fields.join(', ')} WHERE ItemID = ?`;
+    await db.run(query, values);
+    return true;
+  } catch (error) {
+    console.error('Error updating menu item:', error);
+    throw error;
+  } finally {
+    if (db) {
+      await db.close();
+    }
+  }
+}
+
+// =======================================
+// Customer Management Functions
+// =======================================
+
+// Get all customers
+export async function getCustomers() {
+  let db;
+  try {
+    db = await openDb();
+    const customers = await db.all('SELECT * FROM Customer');
+    return customers;
+  } catch (error) {
+    console.error('Error getting customers:', error);
+    throw error;
+  } finally {
+    if (db) {
+      await db.close();
+    }
+  }
+}
+
+// Get a single customer by ID
+export async function getCustomerById(customerId) {
+  let db;
+  try {
+    db = await openDb();
+    const customer = await db.get('SELECT * FROM Customer WHERE CustomerID = ?', customerId);
+    return customer;
+  } catch (error) {
+    console.error('Error getting customer:', error);
+    throw error;
+  } finally {
+    if (db) {
+      await db.close();
+    }
+  }
+}
+
+// Create a new customer
+export async function createCustomer(customer) {
+  let db;
+  try {
+    db = await openDb();
+    await db.run(
+      'INSERT INTO Customer (CustomerID, Name, Email, Phone, PasswordHash) VALUES (?, ?, ?, ?, ?)',
+      [
+        customer.CustomerID,
+        customer.Name,
+        customer.Email,
+        customer.Phone || '',
+        customer.PasswordHash || ''
+      ]
+    );
+    return true;
+  } catch (error) {
+    console.error('Error creating customer:', error);
+    throw error;
+  } finally {
+    if (db) {
+      await db.close();
+    }
+  }
+}
+
+// Update customer information
+export async function updateCustomer(customerId, updates) {
+  let db;
+  try {
+    db = await openDb();
+    const fields = [];
+    const values = [];
+
+    if (updates.Name !== undefined) {
+      fields.push('Name = ?');
+      values.push(updates.Name);
+    }
+    if (updates.Email !== undefined) {
+      fields.push('Email = ?');
+      values.push(updates.Email);
+    }
+    if (updates.Phone !== undefined) {
+      fields.push('Phone = ?');
+      values.push(updates.Phone);
+    }
+    if (updates.PasswordHash !== undefined) {
+      fields.push('PasswordHash = ?');
+      values.push(updates.PasswordHash);
+    }
+
+    if (fields.length === 0) {
+      return true;
+    }
+
+    values.push(customerId);
+    const query = `UPDATE Customer SET ${fields.join(', ')} WHERE CustomerID = ?`;
+    await db.run(query, values);
+    return true;
+  } catch (error) {
+    console.error('Error updating customer:', error);
+    throw error;
+  } finally {
+    if (db) {
+      await db.close();
+    }
+  }
+}
+
+// Delete a customer
+export async function deleteCustomer(customerId) {
+  let db;
+  try {
+    db = await openDb();
+    await db.run('DELETE FROM Customer WHERE CustomerID = ?', customerId);
+    return true;
+  } catch (error) {
+    console.error('Error deleting customer:', error);
+    throw error;
+  } finally {
+    if (db) {
+      await db.close();
+    }
+  }
+}
+
+// =======================================
+// System Admin Management Functions
+// =======================================
+
+// Get a system admin by email
+export async function getSystemAdmin(email) {
+  let db;
+  try {
+    db = await openDb();
+    const admin = await db.get('SELECT * FROM SystemAdmin WHERE Email = ?', email);
     return admin;
   } catch (error) {
-    console.error('Error fetching admin user:', error);
+    console.error('Error getting system admin:', error);
     throw error;
   } finally {
     if (db) {
