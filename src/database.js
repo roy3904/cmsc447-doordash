@@ -285,6 +285,63 @@ export async function getPlacedOrders() {
 }
 
 // =======================================
+// Get Orders by Restaurant ID
+// =======================================
+export async function getOrdersByRestaurantId(restaurantId, status = null) {
+  let db;
+  try {
+    db = await openDb();
+
+    let query = 'SELECT * FROM "Order" WHERE RestaurantID = ?';
+    const params = [restaurantId];
+
+    // If status is provided, filter by status
+    if (status) {
+      query += ' AND OrderStatus = ?';
+      params.push(status);
+    }
+
+    // Order by most recent first
+    query += ' ORDER BY OrderID DESC';
+
+    const orders = await db.all(query, params);
+
+    // Populate order details
+    for (const order of orders) {
+      // Get order items with menu item details
+      order.items = await db.all(`
+        SELECT oi.*, mi.Name, mi.Description
+        FROM OrderItem oi
+        LEFT JOIN MenuItem mi ON oi.ItemID = mi.ItemID
+        WHERE oi.OrderID = ?
+      `, order.OrderID);
+
+      // Parse delivery location
+      try {
+        order.delivery = JSON.parse(order.DeliveryLocation || '{}');
+      } catch (e) {
+        order.delivery = { building: order.DeliveryLocation };
+      }
+
+      // Get customer info (without password hash)
+      order.customer = await db.get(
+        'SELECT CustomerID, Name, Email, Phone FROM Customer WHERE CustomerID = ?',
+        order.CustomerID
+      );
+    }
+
+    return orders;
+  } catch (error) {
+    console.error('Error getting orders by restaurant ID:', error);
+    throw error;
+  } finally {
+    if (db) {
+      await db.close();
+    }
+  }
+}
+
+// =======================================
 // Assign an order to a worker (create DeliveryJob)
 // =======================================
 export async function assignOrderToWorker(orderId, workerId) {
@@ -328,6 +385,39 @@ export async function completeDeliveryJob(jobId) {
     throw error;
   } finally {
     if (db) await db.close();
+  }
+}
+
+// =======================================
+// Update Order Status
+// =======================================
+export async function updateOrderStatus(orderId, newStatus) {
+  let db;
+  try {
+    db = await openDb();
+
+    // Validate status
+    const validStatuses = ['Cart', 'Placed', 'Accepted', 'Ready for Pickup', 'Delivered'];
+    if (!validStatuses.includes(newStatus)) {
+      throw new Error(`Invalid status: ${newStatus}. Valid statuses are: ${validStatuses.join(', ')}`);
+    }
+
+    // Check if order exists
+    const order = await db.get('SELECT * FROM "Order" WHERE OrderID = ?', orderId);
+    if (!order) {
+      throw new Error('Order not found');
+    }
+
+    // Update the order status
+    await db.run('UPDATE "Order" SET OrderStatus = ? WHERE OrderID = ?', [newStatus, orderId]);
+    return true;
+  } catch (error) {
+    console.error('Error updating order status:', error);
+    throw error;
+  } finally {
+    if (db) {
+      await db.close();
+    }
   }
 }
 
@@ -813,6 +903,51 @@ export async function getMenuItem(itemId) {
     return menuItem;
   } catch (error) {
     console.error('Error getting menu item:', error);
+    throw error;
+  } finally {
+    if (db) {
+      await db.close();
+    }
+  }
+}
+
+// =======================================
+// Update Menu Item
+// =======================================
+export async function updateMenuItem(itemId, updates) {
+  let db;
+  try {
+    db = await openDb();
+    const fields = [];
+    const values = [];
+
+    if (updates.Name !== undefined) {
+      fields.push('Name = ?');
+      values.push(updates.Name);
+    }
+    if (updates.Description !== undefined) {
+      fields.push('Description = ?');
+      values.push(updates.Description);
+    }
+    if (updates.Price !== undefined) {
+      fields.push('Price = ?');
+      values.push(updates.Price);
+    }
+    if (updates.Quantity !== undefined) {
+      fields.push('Quantity = ?');
+      values.push(updates.Quantity);
+    }
+
+    if (fields.length === 0) {
+      return true;
+    }
+
+    values.push(itemId);
+    const query = `UPDATE MenuItem SET ${fields.join(', ')} WHERE ItemID = ?`;
+    await db.run(query, values);
+    return true;
+  } catch (error) {
+    console.error('Error updating menu item:', error);
     throw error;
   } finally {
     if (db) {
