@@ -131,6 +131,7 @@ function attachOrderActionListeners(orderId, currentStatus) {
     buttons.forEach(btn => {
         btn.addEventListener('click', async () => {
             const action = btn.dataset.action;
+            const orderIdFromBtn = btn.dataset.order; // Get orderId from button data attribute
             let newStatus = '';
 
             if (action === 'preparing') {
@@ -139,8 +140,8 @@ function attachOrderActionListeners(orderId, currentStatus) {
                 newStatus = 'Ready for Pickup';
             }
 
-            if (newStatus) {
-                await updateOrderStatus(orderId, newStatus);
+            if (newStatus && orderIdFromBtn) {
+                await updateOrderStatus(orderIdFromBtn, newStatus);
             }
         });
     });
@@ -148,6 +149,12 @@ function attachOrderActionListeners(orderId, currentStatus) {
 
 // Update order status
 async function updateOrderStatus(orderId, newStatus) {
+    // Validate inputs
+    if (!orderId) {
+        console.error('Cannot update order: orderId is null or undefined');
+        return;
+    }
+
     try {
         const response = await fetch(`/api/orders/${orderId}/status`, {
             method: 'PUT',
