@@ -99,6 +99,16 @@
         }
       }
     },
+    "/api/restaurant-staff/login": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
     "/api/restaurants": {
       "get": {
         "tags": [

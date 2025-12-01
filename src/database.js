@@ -1100,3 +1100,24 @@ export async function getSystemAdmin(email) {
     }
   }
 }
+
+// =======================================
+// Restaurant Staff Management Functions
+// =======================================
+
+// Get restaurant staff by email
+export async function getRestaurantStaffByEmail(email) {
+  let db;
+  try {
+    db = await openDb();
+    const staff = await db.get('SELECT * FROM RestaurantStaff WHERE Email = ?', email);
+    return staff;
+  } catch (error) {
+    console.error('Error getting restaurant staff:', error);
+    throw error;
+  } finally {
+    if (db) {
+      await db.close();
+    }
+  }
+}
