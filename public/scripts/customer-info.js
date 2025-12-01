@@ -108,7 +108,7 @@ function renderButtons(){
     })
 
     document.querySelector('.js-name-info').addEventListener('click', (event) => {
-        console.log(event.target.classList);
+        //console.log(event.target.classList);
         if(event.target.classList.contains('js-edit-name-button')){
             document.querySelector('.js-name-info').innerHTML = `
             <div class="enter-input-container">
@@ -132,7 +132,7 @@ function renderButtons(){
     });
 
     document.querySelector('.js-phone-info').addEventListener('click', (event) => {
-        console.log(event.target.classList);
+        //(event.target.classList);
         if(event.target.classList.contains('js-edit-phone-button')){
             document.querySelector('.js-phone-info').innerHTML = `
             <div class="enter-input-container">

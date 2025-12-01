@@ -1,6 +1,6 @@
 
 import express from 'express';
-import { getAllRestaurants, getRestaurant, addRestaurant, modifyRestaurant, removeRestaurant, getMenuItems, placeOrder, getCart, addToCart, removeFromCart, clearCart, getMenuItem, getOrdersPlaced, acceptOrder, declineOrder, completeOrder, getAllWorkers, getWorker, modifyWorker, addWorker, getWorkerJobs, removeWorker, createWorkerApplication, getAllWorkerApplications, getWorkerApplication, approveWorkerApplication, declineWorkerApplication, modifyWorkerApplication, removeWorkerApplication, getAllCustomers, getCustomer, addCustomer, modifyCustomer, removeCustomer, loginAdminUser } from '../controllers/apiController.js';
+import { getAllRestaurants, getRestaurant, addRestaurant, modifyRestaurant, removeRestaurant, getMenuItems, getRestaurantOrders, placeOrder, getCart, addToCart, removeFromCart, clearCart, getMenuItem, modifyMenuItem, getOrdersPlaced, acceptOrder, declineOrder, completeOrder, updateOrderStatus, getAllWorkers, getWorker, modifyWorker, addWorker, getWorkerJobs, removeWorker, createWorkerApplication, getAllWorkerApplications, getWorkerApplication, approveWorkerApplication, declineWorkerApplication, modifyWorkerApplication, removeWorkerApplication, getAllCustomers, getCustomer, addCustomer, modifyCustomer, removeCustomer, loginAdminUser } from '../controllers/apiController.js';
 
 const router = express.Router();
 
@@ -16,6 +16,9 @@ router.post('/restaurants', addRestaurant);
 // API Route to get menu items for a specific restaurant (must be before /restaurants/:id)
 router.get('/restaurants/:id/menu', getMenuItems);
 
+// API Route to get orders for a specific restaurant (must be before /restaurants/:id)
+router.get('/restaurants/:id/orders', getRestaurantOrders);
+
 // API Route to get a single restaurant
 router.get('/restaurants/:id', getRestaurant);
 
@@ -28,6 +31,9 @@ router.delete('/restaurants/:id', removeRestaurant);
 // API Route to get a single menu item
 router.get('/menuitems/:id', getMenuItem);
 
+// API Route to update a menu item
+router.put('/menuitems/:id', modifyMenuItem);
+
 // API Route to place an order
 router.post('/orders', placeOrder);
 
@@ -39,6 +45,9 @@ router.post('/orders/:id/accept', acceptOrder);
 
 // Worker declines an order (record decline)
 router.post('/orders/:id/decline', declineOrder);
+
+// Update order status
+router.put('/orders/:id/status', updateOrderStatus);
 
 // Complete a delivery job
 router.post('/jobs/:id/complete', completeOrder);

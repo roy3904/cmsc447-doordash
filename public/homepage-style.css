@@ -10,6 +10,11 @@ p{
     font-family: Arial, Helvetica, sans-serif;
 }
 
+.hidden{
+    display: none;
+}
+/*Style For Navigation Bar On Top of Page*/
+
 .nav-bar{
     display: flex;
     background-color: black;
@@ -54,42 +59,105 @@ p{
     border-radius: 10px;
 }
 
+.cart-anchor{
+    display: flex;
+    text-decoration: none;
+    align-items: center;
+    gap: 8px;
+    height: 40px;
+    align-self: center;
+    padding: 10px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    border-radius: 10px;
+}
+
+.cart-anchor:hover{
+    cursor: pointer;
+    color: rgb(255, 222, 0);
+    background-color: rgb(52, 52, 52);
+    text-decoration: none;
+}
+
+.cart-anchor:hover .badge{
+    color: rgb(255, 222, 0);
+}
+
 .fa-cart-shopping{
     color: white;
-    font-size: 30px;
+    font-size: 28px;
     justify-self: end;
     padding: 10px;
     border-radius: 8px;
     align-self: center;
-    margin-right: 30px;
-}
-
-.fa-cart-shopping:hover{
-    cursor: pointer;
-    color: rgb(255, 222, 0);
-    background-color: rgb(52, 52, 52);
-}
-
-/* Cart badge (small number) shown near cart icon */
-.badge{
-    position: relative;
-    display: inline-block;
 }
 
 .badge-count{
-    position: absolute;
-    left: calc(100% + 8px); /* place to the right of the icon */
-    top: 50%;
-    transform: translateY(-50%);
-    background: rgba(0,0,0,0.9); /* dark background to work on light/dark pages */
-    color: rgb(255, 222, 0); /* gold number to match page accents */
-    font-weight: 700;
-    font-size: 12px;
-    padding: 4px 7px;
-    border-radius: 999px;
-    border: 1px solid rgba(255, 222, 0, 0.12);
-    white-space: nowrap;
+    text-decoration: none;
+    color: rgb(255, 222, 0);
+    font-size: 18px;
+    font-weight: bold;
+    margin: 0;
 }
+
+
+.menu-icon{
+    display: none;
+}
+
+.header-dropdown{
+    display: none;
+}
+
+@media screen and (max-width: 450px){
+    .nav-link{
+        display: none;
+    }
+    .nav-logo{
+        height: 40px;
+    }
+    .menu-icon{
+        color: white;
+        font-size: 25px;
+        display: block;
+    }
+    .header-dropdown{
+        position: absolute;
+        top: 100%;
+        right: 0;
+        padding: 0px;
+        flex-direction: column;
+        display: flex;
+        background-color: rgb(241, 241, 241);
+        box-shadow: 0px 0px 5px black;
+        font-size: 20px;
+        gap: 0px;
+    }
+
+    .dropdown-selection{
+        border-bottom: 1px solid black;
+        text-decoration: none;
+        color: rgb(123, 107, 1);
+        font: arial;
+        font-family: Arial, Helvetica, sans-serif;
+        text-align: center;
+        padding: 20px;
+    }
+
+    .hidden{
+        display: none;
+    }
+
+    .header-container{
+        position: relative;
+    }
+
+    footer{
+        display: none;
+    }
+}
+
+/*Styling For Homepage*/
 
 .home-title{
     text-align: center;
@@ -151,7 +219,7 @@ p{
     cursor: pointer;
 }
 
-
+/*Styling For Restaurant Ordering Page*/
 
 .food-title{
     font-size: 100px;
@@ -238,4 +306,158 @@ footer{
 
 .footer-logo{
     width: 500px;
+}
+
+/*Checkout Page Styling*/
+
+.checkout-container{
+    width: 1100px;
+    margin:2rem auto;
+    padding:0 1rem;
+}
+
+.checkout-title{
+    font-size: 35px;
+    margin: 0px;
+    margin-bottom: 10px;
+    font-weight: bold;
+    color:rgb(0, 62, 110);
+}
+
+.summary{
+    border:1px solid #e6e6e6;
+    padding:1rem;
+    border-radius:6px;
+    padding-bottom: 0px;
+}
+
+.summary-title{
+    margin-top:0;
+    font-size: 22px;
+    font-weight: 600;
+}
+
+.line-item{
+    display:flex;
+    justify-content:space-between;
+    padding:6px 0;
+    border-bottom:1px dashed #f0f0f0;
+}
+
+.selection-container{
+    margin-top: 40px;
+}
+
+label{
+    font-family: Arial, Helvetica, sans-serif;
+    font: arial;
+    font-size: 18px;
+}
+
+select{
+    height: 45px;
+}
+
+select:hover{
+    cursor: pointer;
+}
+
+select:focus{
+    outline: 1px solid black;
+}
+
+.controls{
+    margin-top:1rem;
+    display:flex;
+    justify-content: space-between;
+    grid-template-columns:1fr 1fr; 
+    gap:1rem;
+}
+
+.btn{
+    background:#2b6cb0;
+    color:white; 
+    padding:8px 12px; 
+    border:none; 
+    border-radius:4px; 
+    cursor:pointer;
+    width: 200px;
+    height: 60px;
+    font-size: 20px;
+}
+
+.btn:hover{
+    background-color: #3982d0;
+}
+
+.input{
+    padding: 10px;
+    border:1px solid #ddd;
+    border-radius:4px;
+    width:100%;
+    padding-right: 0px;
+}
+
+.input:focus{
+    border-left: 5px solid rgb(218, 189, 0);
+    outline: 1px solid black;
+    padding-left: 6px;
+}
+
+.payment-label{
+    font-family: Arial, Helvetica, sans-serif;
+    font: arial;
+    font-size: 18px;
+}
+
+input[type='radio'] {
+    accent-color: rgb(123, 107, 1);
+}
+
+.error-message{
+    color: rgb(199, 0, 0);
+    margin: 0px;
+    margin-top: 5px;
+}
+
+.modal-backdrop{
+    position:fixed;
+    left:0;
+    right:0;
+    top:0;
+    bottom:0;
+    background:rgba(0,0,0,0.4);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+
+.modal{background:white;
+    padding:1.5rem;
+    border-radius:6px;
+    max-width:460px;
+    width:90%;
+}
+
+@media screen and (max-width: 1920px){
+    .checkout-container{
+        width: 800px;
+    }
+}
+
+@media screen and (max-width: 450px){
+    .checkout-container{
+        width: 80%;
+    }
+
+    .controls{
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-start;
+    }
+
+    option{
+        font-size: 16px;
+    }
 }
