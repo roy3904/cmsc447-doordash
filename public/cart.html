@@ -2,29 +2,59 @@
 <html>
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Cart | GritDash</title>
     <link rel="stylesheet" href="homepage-style.css">
     <script src="https://kit.fontawesome.com/5d92ce3398.js" crossorigin="anonymous"></script>
     <style>
       /* Minimal page-specific styling */
+      td{ font-family:Arial, Helvetica, sans-serif; font: arial; font-size: 14px; }
+      th{ font-family:Arial, Helvetica, sans-serif; font: arial; font-size: 14px; font-weight: bold; }
+      .cart-title { font-size: 22px; font-weight: bold; font-family: Arial, Helvetica, sans-serif; font: arial; }
       .cart-container { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
       .cart-list { width: 100%; border-collapse: collapse; }
       .cart-list th, .cart-list td { padding: 0.75rem; border-bottom: 1px solid #e0e0e0; text-align: left; }
-      .cart-actions { display:flex; gap:1rem; justify-content:flex-end; margin-top:1rem; }
+      .cart-actions { display:flex; gap:1rem; justify-content:flex-end; margin-top:5rem; }
       .empty { text-align:center; color:#666; margin: 2rem 0; }
-  .badge { position: relative; }
-      .cart-total { text-align:right; font-weight:700; margin-top:1rem; font-size:1.1rem; }
+      .badge { position: relative; }
+      .cart-total { text-align:right; font-weight:700; margin-top:1rem; font-size:1.1rem; font-family:Arial, Helvetica, sans-serif; font: arial}
       .btn { background:#2b6cb0; color:white; padding:8px 12px; border:none; border-radius:4px; cursor:pointer; }
       .btn.secondary { background:#e53e3e; }
-      .remove-button { background:transparent; border:1px solid #ddd; padding:6px 8px; border-radius:4px; cursor:pointer; }
+      .btn.secondary:hover { background:rgb(250, 88, 88); }
+      .remove-button { background-color:rgb(255, 212, 212); border:1px solid #ddd; padding:6px 8px; border-radius:4px; cursor:pointer; transition: background-color .15s ease;}
+      .remove-button:hover { background-color: rgb(255, 155, 155);}
+
+      @media screen and (max-width: 450px){
+        .cart-container{
+          width: 80%;
+          min-height: 100vh;
+          height: 100%;
+        }
+        .cart-actions{
+          margin-top: 1rem;
+          
+        }
+        .btn{
+          width: 120px;
+          height: 50px;
+          font-size: 16px;
+        }
+      }
     </style>
   </head>
   <body>
     <header class="nav-bar">
       <div class="header-container">
         <img class="nav-logo" src="./images/gritdash-logo-1.png" alt="GritDash logo">
+        <i class="fa-solid fa-bars menu-icon"></i>
+        <div class="header-dropdown hidden">
+          <a class="dropdown-selection" href="homepage.html">Home</a>
+          <a class="dropdown-selection" href="worker-portal.html">Worker Portal</a>
+          <a class="dropdown-selection" href="restaurant-staff-portal.html">Restaurant Staff</a>
+          <a class="dropdown-selection" href="admin.html">Admin Portal</a>
+        </div>
         <a class="nav-link" href="homepage.html">Home</a>
-                <a class="nav-link" href="worker-portal.html">Worker Portal</a>
+        <a class="nav-link" href="worker-portal.html">Worker Portal</a>
         <a class="nav-link" href="restaurant-staff-portal.html">Restaurant Staff</a>
         <a class="nav-link" href="admin.html">Admin Portal</a>
       </div>
@@ -36,7 +66,7 @@
     </header>
 
     <main class="cart-container">
-      <h2>Your Cart</h2>
+      <p class="cart-title">Your Cart</p>
 
       <div id="cart-area">
         <p class="empty" id="empty-msg">Your cart is empty. Start ordering from the restaurants!</p>
@@ -166,6 +196,9 @@
 
       // initial render
       renderCart();
+      
     </script>
+    <script src="./scripts/dropdown-menu.js"></script>
+
   </body>
 </html>
