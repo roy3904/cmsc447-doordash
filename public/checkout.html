@@ -170,9 +170,11 @@
           }
           const totalCost = total + tipVal;
 
+          const currentCustomer = localStorage.getItem('current_customer');
+          const parsedCustomer = currentCustomer ? JSON.parse(currentCustomer) : null;
           const order = {
             id: cart.OrderID || generateOrderId(),
-            customerId: cart.CustomerID || 'CUST-123',
+            customerId: parsedCustomer ? parsedCustomer.CustomerID : (cart.CustomerID || 'CUST-123'),
             restaurantId: cart.RestaurantID,
             delivery: { building, room, instructions },
             items: items,

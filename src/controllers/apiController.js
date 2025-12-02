@@ -1,4 +1,5 @@
 import { getRestaurants, getRestaurantById as dbGetRestaurantById, createRestaurant as dbCreateRestaurant, updateRestaurant as dbUpdateRestaurant, deleteRestaurant as dbDeleteRestaurant, getMenuItemsByRestaurantId, createOrder, getCart as dbGetCart, addToCart as dbAddToCart, removeFromCart as dbRemoveFromCart, clearCart as dbClearCart, getMenuItem as dbGetMenuItem, updateMenuItem as dbUpdateMenuItem, getPlacedOrders, getOrdersByRestaurantId as dbGetOrdersByRestaurantId, assignOrderToWorker, completeDeliveryJob, updateOrderStatus as dbUpdateOrderStatus, getWorkers, getWorkerById as dbGetWorkerById, updateWorker as dbUpdateWorker, createWorker, declineOrderByWorker, deleteWorker, createWorkerApplication as dbCreateWorkerApplication, getWorkerApplications as dbGetWorkerApplications, getWorkerApplicationById as dbGetWorkerApplicationById, updateWorkerApplicationStatus as dbUpdateWorkerApplicationStatus, updateWorkerApplication as dbUpdateWorkerApplication, deleteWorkerApplication as dbDeleteWorkerApplication, getCustomers as dbGetCustomers, getCustomerById as dbGetCustomerById, createCustomer as dbCreateCustomer, updateCustomer as dbUpdateCustomer, deleteCustomer as dbDeleteCustomer, getSystemAdmin, getRestaurantStaffByEmail } from '../database.js';
+import { getRestaurants, getRestaurantById as dbGetRestaurantById, createRestaurant as dbCreateRestaurant, updateRestaurant as dbUpdateRestaurant, deleteRestaurant as dbDeleteRestaurant, getMenuItemsByRestaurantId, createOrder, getCart as dbGetCart, addToCart as dbAddToCart, removeFromCart as dbRemoveFromCart, clearCart as dbClearCart, getMenuItem as dbGetMenuItem, updateMenuItem as dbUpdateMenuItem, getPlacedOrders, getOrdersByRestaurantId as dbGetOrdersByRestaurantId, getOrdersByCustomerId as dbGetOrdersByCustomerId, getFeedbackForWorker as dbGetFeedbackForWorker, deleteFeedback as dbDeleteFeedback, assignOrderToWorker, completeDeliveryJob, updateOrderStatus as dbUpdateOrderStatus, getWorkers, getWorkerById as dbGetWorkerById, updateWorker as dbUpdateWorker, createWorker, declineOrderByWorker, deleteWorker, createWorkerApplication as dbCreateWorkerApplication, getWorkerApplications as dbGetWorkerApplications, getWorkerApplicationById as dbGetWorkerApplicationById, updateWorkerApplicationStatus as dbUpdateWorkerApplicationStatus, updateWorkerApplication as dbUpdateWorkerApplication, deleteWorkerApplication as dbDeleteWorkerApplication, getCustomers as dbGetCustomers, getCustomerById as dbGetCustomerById, createCustomer as dbCreateCustomer, updateCustomer as dbUpdateCustomer, deleteCustomer as dbDeleteCustomer, getCustomerByEmail as dbGetCustomerByEmail, addFeedback as dbAddFeedback, getFeedbackByOrder as dbGetFeedbackByOrder, getSystemAdmin } from '../database.js';
 import { getJobsForWorker } from '../database.js';
 import argon2 from 'argon2';
 
@@ -125,6 +126,56 @@ export const placeOrder = async (req, res) => {
   }
 };
 
+// Customer login (simple email/password check)
+export const loginCustomer = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+    const customer = await dbGetCustomerByEmail(email);
+    if (!customer) return res.status(401).json({ error: 'Invalid credentials' });
+    // NOTE: PasswordHash may be plain or hashed in DB. This project currently stores raw/password-hash inconsistently.
+    // For now compare directly; in a real app use proper hashing + verification (argon2.verify).
+    if (customer.PasswordHash !== password) return res.status(401).json({ error: 'Invalid credentials' });
+    // return minimal customer info
+    res.json({ customer: { CustomerID: customer.CustomerID, Name: customer.Name, Email: customer.Email } });
+  } catch (error) {
+    console.error('Customer login failed:', error);
+    res.status(500).json({ error: 'Login failed' });
+  }
+};
+
+// Feedback endpoints
+export const postFeedback = async (req, res) => {
+  try {
+    const { orderId, customerId, rating, comment } = req.body;
+    if (!orderId || !customerId || !rating) return res.status(400).json({ error: 'orderId, customerId and rating required' });
+    const feedback = {
+      FeedbackID: 'FB-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,8).toUpperCase(),
+      OrderID: orderId,
+      CustomerID: customerId,
+      Rating: parseInt(rating, 10),
+      Comment: comment || ''
+    };
+    await dbAddFeedback(feedback);
+    res.status(201).json({ message: 'Feedback submitted' });
+  } catch (error) {
+    console.error('Failed to submit feedback:', error);
+    res.status(500).json({ error: 'Failed to submit feedback' });
+  }
+};
+
+export const getFeedback = async (req, res) => {
+  try {
+    const orderId = req.params.id;
+    if (!orderId) return res.status(400).json({ error: 'Order ID required' });
+    const feedback = await dbGetFeedbackByOrder(orderId);
+    res.json({ feedback });
+  } catch (error) {
+    console.error('Failed to get feedback:', error);
+    res.status(500).json({ error: 'Failed to get feedback' });
+  }
+};
+
 export const getOrdersPlaced = async (req, res) => {
   try {
     const orders = await getPlacedOrders();
@@ -132,6 +183,42 @@ export const getOrdersPlaced = async (req, res) => {
   } catch (error) {
     console.error('Failed to get placed orders:', error);
     res.status(500).json({ error: 'Failed to get placed orders' });
+  }
+};
+
+export const getWorkerFeedback = async (req, res) => {
+  try {
+    const workerId = req.params.id;
+    if (!workerId) return res.status(400).json({ error: 'workerId required' });
+    const feedbacks = await dbGetFeedbackForWorker(workerId);
+    res.json({ feedbacks });
+  } catch (error) {
+    console.error('Failed to get worker feedback:', error);
+    res.status(500).json({ error: 'Failed to get worker feedback' });
+  }
+};
+
+export const acknowledgeFeedback = async (req, res) => {
+  try {
+    const feedbackId = req.params.id;
+    if (!feedbackId) return res.status(400).json({ error: 'Feedback ID required' });
+    await dbDeleteFeedback(feedbackId);
+    res.json({ message: 'Feedback acknowledged and removed' });
+  } catch (error) {
+    console.error('Failed to acknowledge feedback:', error);
+    res.status(500).json({ error: 'Failed to acknowledge feedback' });
+  }
+};
+
+export const getCustomerOrders = async (req, res) => {
+  try {
+    const customerId = req.query.customerId || req.params.id;
+    if (!customerId) return res.status(400).json({ error: 'customerId required' });
+    const orders = await dbGetOrdersByCustomerId(customerId);
+    res.json({ orders, count: orders.length });
+  } catch (error) {
+    console.error('Failed to get customer orders:', error);
+    res.status(500).json({ error: 'Failed to get customer orders' });
   }
 };
 
@@ -409,7 +496,8 @@ export const getCart = async (req, res) => {
   // #swagger.tags = ['Cart']
   // #swagger.summary = 'Get the current user\'s cart'
   try {
-    const customerId = 'CUST-123'; // Hardcoded for now
+    // allow client to pass customerId as query param (e.g., /api/cart?customerId=...)
+    const customerId = req.query.customerId || 'CUST-123'; // Hardcoded fallback
     const cart = await dbGetCart(customerId);
     res.json({ cart });
   } catch (error) {
@@ -422,8 +510,8 @@ export const addToCart = async (req, res) => {
   // #swagger.tags = ['Cart']
   // #swagger.summary = 'Add an item to the cart'
   try {
-    const customerId = 'CUST-123'; // Hardcoded for now
-    const { itemId, quantity } = req.body;
+    const customerId = req.body.customerId || 'CUST-123'; // use provided customer id when available
+    const { itemId, quantity = 1 } = req.body;
     await dbAddToCart(customerId, itemId, quantity);
     res.json({ message: 'Item added to cart successfully' });
   } catch (error) {
@@ -436,8 +524,8 @@ export const removeFromCart = async (req, res) => {
   // #swagger.tags = ['Cart']
   // #swagger.summary = 'Remove an item from the cart'
   try {
-    const customerId = 'CUST-123'; // Hardcoded for now
-    const { itemId, quantity } = req.body;
+    const customerId = req.body.customerId || 'CUST-123'; // use provided customer id when available
+    const { itemId, quantity = 1 } = req.body;
     await dbRemoveFromCart(customerId, itemId, quantity);
     res.json({ message: 'Item removed from cart successfully' });
   } catch (error) {
