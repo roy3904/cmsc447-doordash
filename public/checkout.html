@@ -31,6 +31,10 @@
     </header>
 
     <main class="checkout-container">
+      <div id="customer-bar" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
+        <div id="signed-in-customer" style="color:#333;"></div>
+        <div><button id="customer-signout" class="btn" style="background:#e53e3e;padding:6px 10px;">Sign Out</button></div>
+      </div>
       <p class="checkout-title">Checkout</p>
       <div id="empty-warning" style="display:none;color:#666;margin-bottom:1rem;">Your cart is empty. Add items before checking out.</div>
 
@@ -107,6 +111,26 @@
     </div>
 
     <script>
+      // Show signed-in customer and sign out button
+      (function(){
+        function renderCustomerBar(){
+          const container = document.getElementById('signed-in-customer');
+          const btn = document.getElementById('customer-signout');
+          const raw = localStorage.getItem('current_customer');
+          if(!raw){ container.innerHTML = '<em>Not signed in</em>'; btn.style.display = 'none'; return; }
+          try{ const cust = JSON.parse(raw); container.innerHTML = `Signed in as <strong>${escapeHtml(cust.Name||cust.Email||cust.CustomerID)}</strong>`; btn.style.display='inline-block'; }catch(e){ container.innerHTML = '<em>Signed in</em>'; btn.style.display='none'; }
+        }
+        document.getElementById('customer-signout').addEventListener('click', () => {
+          localStorage.removeItem('current_customer');
+          // redirect to cart so user can see cart as guest or sign in again
+          window.location.href = 'cart.html';
+        });
+        // initial
+        renderCustomerBar();
+        // react to changes in other tabs
+        window.addEventListener('storage', (e) => { if(e.key==='current_customer') renderCustomerBar(); });
+      })();
+
       // Use server-backed cart APIs (cart-common.js provides getCart/updateCartBadge/getMenuItem)
       async function updateBadge(){
         if(typeof window.updateCartBadge === 'function'){
@@ -170,9 +194,11 @@
           }
           const totalCost = total + tipVal;
 
+          const currentCustomer = localStorage.getItem('current_customer');
+          const parsedCustomer = currentCustomer ? JSON.parse(currentCustomer) : null;
           const order = {
             id: cart.OrderID || generateOrderId(),
-            customerId: cart.CustomerID || 'CUST-123',
+            customerId: parsedCustomer ? parsedCustomer.CustomerID : (cart.CustomerID || 'CUST-123'),
             restaurantId: cart.RestaurantID,
             delivery: { building, room, instructions },
             items: items,
@@ -192,6 +218,7 @@
           // show confirmation modal
           document.getElementById('conf-text').innerHTML = `Your order <strong>${order.id}</strong> was placed. Estimated delivery: <strong>20-35 minutes</strong> to ${escapeHtml(building)} ${escapeHtml(room)}.`;
           document.getElementById('confirmation').style.display = 'flex';
+          localStorage.removeItem('current_customer');
         }catch(e){ console.error(e); alert('There was an error placing your order. Please try again.'); }
       });
 

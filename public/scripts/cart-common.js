@@ -1,7 +1,9 @@
 (function(){
   async function getCart() {
     try {
-      const response = await fetch('/api/cart');
+      const currentCustomer = window.localStorage && JSON.parse(localStorage.getItem('current_customer') || 'null');
+      const query = currentCustomer && currentCustomer.CustomerID ? `?customerId=${encodeURIComponent(currentCustomer.CustomerID)}` : '';
+      const response = await fetch('/api/cart' + query);
       if (!response.ok) {
         throw new Error('Failed to get cart');
       }
@@ -15,14 +17,20 @@
 
   async function addToCart(item) {
     try {
+      const currentCustomer = window.localStorage && JSON.parse(localStorage.getItem('current_customer') || 'null');
+      const body = { itemId: item.id, quantity: item.quantity || 1 };
+      if (currentCustomer && currentCustomer.CustomerID) body.customerId = currentCustomer.CustomerID;
+      console.log('addToCart body ->', body);
       const response = await fetch('/api/cart/item', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ itemId: item.id, quantity: item.quantity })
+        body: JSON.stringify(body)
       });
       if (!response.ok) {
+        const text = await response.text().catch(()=>null);
+        console.error('Failed to add item to cart response:', response.status, text);
         throw new Error('Failed to add item to cart');
       }
       window.dispatchEvent(new Event('cart_updated'));
@@ -33,14 +41,20 @@
 
   async function removeFromCart(item) {
     try {
+      const currentCustomer = window.localStorage && JSON.parse(localStorage.getItem('current_customer') || 'null');
+      const body = { itemId: item.id, quantity: item.quantity || 1 };
+      if (currentCustomer && currentCustomer.CustomerID) body.customerId = currentCustomer.CustomerID;
+      console.log('removeFromCart body ->', body);
       const response = await fetch('/api/cart/item', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ itemId: item.id, quantity: item.quantity })
+        body: JSON.stringify(body)
       });
       if (!response.ok) {
+        const text = await response.text().catch(()=>null);
+        console.error('Failed to remove item from cart response:', response.status, text);
         throw new Error('Failed to remove item from cart');
       }
       window.dispatchEvent(new Event('cart_updated'));
@@ -51,7 +65,7 @@
 
   async function updateBadge(){
     const cart = await getCart();
-    const count = cart ? cart.items.reduce((s, it) => s + (it.quantity || 1), 0) : 0;
+    const count = cart ? cart.items.reduce((s, it) => s + ((it.Quantity || it.quantity) || 1), 0) : 0;
     // update any element with id cart-count
     document.querySelectorAll('#cart-count').forEach(el => {
       if(count>0){ el.style.display = 'inline-block'; el.textContent = count; }

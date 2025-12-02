@@ -4,10 +4,28 @@ import { open } from 'sqlite';
 // Open Database Connection
 async function openDb() {
   // Open connection to local SQLite database file
-  return open({
+  const db = await open({
     filename: './db/gritdash.db',
     driver: sqlite3.Database
   });
+  try {
+    // Wait up to 5s for locks before returning SQLITE_BUSY
+    await db.run('PRAGMA busy_timeout = 5000');
+    // Ensure Feedback table exists to avoid runtime errors when submitting feedback
+    await db.run(`CREATE TABLE IF NOT EXISTS Feedback (
+      FeedbackID TEXT PRIMARY KEY,
+      OrderID TEXT,
+      CustomerID TEXT,
+      Rating INTEGER CHECK(Rating >= 1 AND Rating <= 5),
+      Comment TEXT,
+      CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (OrderID) REFERENCES "Order"(OrderID),
+      FOREIGN KEY (CustomerID) REFERENCES Customer(CustomerID)
+    )`);
+  } catch (e) {
+    // ignore
+  }
+  return db;
 }
 
 // ============================================
@@ -341,6 +359,34 @@ export async function getOrdersByRestaurantId(restaurantId, status = null) {
     if (db) {
       await db.close();
     }
+  }
+}
+
+// =======================================
+// Get Orders by Customer ID (exclude cart)
+// =======================================
+export async function getOrdersByCustomerId(customerId) {
+  let db;
+  try {
+    db = await openDb();
+    const orders = await db.all('SELECT * FROM "Order" WHERE CustomerID = ? AND OrderStatus != ?', [customerId, 'Cart']);
+    for (const order of orders) {
+      order.items = await db.all(`
+        SELECT oi.*, mi.Name, mi.Description
+        FROM OrderItem oi
+        LEFT JOIN MenuItem mi ON oi.ItemID = mi.ItemID
+        WHERE oi.OrderID = ?
+      `, order.OrderID);
+      try { order.delivery = JSON.parse(order.DeliveryLocation || '{}'); } catch (e) { order.delivery = { building: order.DeliveryLocation }; }
+      order.restaurant = await db.get('SELECT * FROM Restaurant WHERE RestaurantID = ?', order.RestaurantID);
+      order.customer = await db.get('SELECT CustomerID, Name, Email, Phone FROM Customer WHERE CustomerID = ?', order.CustomerID);
+    }
+    return orders;
+  } catch (error) {
+    console.error('Error getting orders by customer ID:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
   }
 }
 
@@ -829,34 +875,45 @@ export async function addToCart(customerId, itemId, quantity) {
 // Remove Item from Cart
 // =======================================
 export async function removeFromCart(customerId, itemId, quantity) {
-  let db;
-  try {
-    db = await openDb();
-    await db.run('BEGIN TRANSACTION');
+  const maxAttempts = 8;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    let db;
+    try {
+      db = await openDb();
+      await db.run('BEGIN TRANSACTION');
 
-    const cart = await db.get('SELECT * FROM "Order" WHERE CustomerID = ? AND OrderStatus = \'Cart\'', customerId);
-    if (cart) {
-      const existingItem = await db.get('SELECT * FROM OrderItem WHERE OrderID = ? AND ItemID = ?', [cart.OrderID, itemId]);
-      if (existingItem) {
-        if (existingItem.Quantity > quantity) {
-          await db.run('UPDATE OrderItem SET Quantity = Quantity - ? WHERE OrderID = ? AND ItemID = ?', [quantity, cart.OrderID, itemId]);
-        } else {
-          await db.run('DELETE FROM OrderItem WHERE OrderID = ? AND ItemID = ?', [cart.OrderID, itemId]);
+      const cart = await db.get('SELECT * FROM "Order" WHERE CustomerID = ? AND OrderStatus = \'Cart\'', customerId);
+      if (cart) {
+        const existingItem = await db.get('SELECT * FROM OrderItem WHERE OrderID = ? AND ItemID = ?', [cart.OrderID, itemId]);
+        if (existingItem) {
+          if (existingItem.Quantity > quantity) {
+            await db.run('UPDATE OrderItem SET Quantity = Quantity - ? WHERE OrderID = ? AND ItemID = ?', [quantity, cart.OrderID, itemId]);
+          } else {
+            await db.run('DELETE FROM OrderItem WHERE OrderID = ? AND ItemID = ?', [cart.OrderID, itemId]);
+          }
+          await db.run('UPDATE MenuItem SET Quantity = Quantity + ? WHERE ItemID = ?', [quantity, itemId]);
         }
-        await db.run('UPDATE MenuItem SET Quantity = Quantity + ? WHERE ItemID = ?', [quantity, itemId]);
       }
-    }
 
-    await db.run('COMMIT');
-  } catch (error) {
-    if (db) {
-      await db.run('ROLLBACK');
-    }
-    console.error('Error removing from cart:', error);
-    throw error;
-  } finally {
-    if (db) {
-      await db.close();
+      await db.run('COMMIT');
+      // success
+      return;
+    } catch (error) {
+      if (db) {
+        try { await db.run('ROLLBACK'); } catch (e) { /* ignore */ }
+      }
+      // retry on SQLITE_BUSY
+      if (error && (error.code === 'SQLITE_BUSY' || (error.errno === 5)) && attempt < maxAttempts) {
+        const backoff = 100 * attempt;
+        await new Promise(r => setTimeout(r, backoff));
+        continue;
+      }
+      console.error('Error removing from cart:', error);
+      throw error;
+    } finally {
+      if (db) {
+        try { await db.close(); } catch (e) { /* ignore */ }
+      }
     }
   }
 }
@@ -1024,6 +1081,111 @@ export async function createCustomer(customer) {
     if (db) {
       await db.close();
     }
+  }
+}
+
+// Get a single customer by email (for login)
+export async function getCustomerByEmail(email) {
+  let db;
+  try {
+    db = await openDb();
+    const customer = await db.get('SELECT * FROM Customer WHERE Email = ?', email);
+    return customer;
+  } catch (error) {
+    console.error('Error getting customer by email:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
+// Add feedback for an order
+export async function addFeedback(feedback) {
+  let db;
+  try {
+    db = await openDb();
+    await db.run(
+      'INSERT INTO Feedback (FeedbackID, OrderID, CustomerID, Rating, Comment) VALUES (?, ?, ?, ?, ?)',
+      [feedback.FeedbackID, feedback.OrderID, feedback.CustomerID, feedback.Rating, feedback.Comment || '']
+    );
+    return true;
+  } catch (error) {
+    console.error('Error adding feedback:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
+export async function getFeedbackByOrder(orderId) {
+  let db;
+  try {
+    db = await openDb();
+    const feedback = await db.get('SELECT * FROM Feedback WHERE OrderID = ?', orderId);
+    return feedback;
+  } catch (error) {
+    console.error('Error getting feedback by order:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
+// =======================================
+// Delete a feedback entry by its ID
+// =======================================
+export async function deleteFeedback(feedbackId) {
+  let db;
+  try {
+    db = await openDb();
+    await db.run('DELETE FROM Feedback WHERE FeedbackID = ?', feedbackId);
+    return true;
+  } catch (error) {
+    console.error('Error deleting feedback:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
+// =======================================
+// Get Feedback entries for a given worker (by DeliveryJob)
+// =======================================
+export async function getFeedbackForWorker(workerId) {
+  let db;
+  try {
+    db = await openDb();
+    // Only include feedback for orders that have a completed delivery job for this worker
+    const rows = await db.all(`
+      SELECT f.FeedbackID, f.OrderID, f.CustomerID, f.Rating, f.Comment, f.CreatedAt
+      FROM Feedback f
+      WHERE EXISTS (
+        SELECT 1
+        FROM DeliveryJob dj
+        JOIN "Order" o ON o.OrderID = dj.OrderID
+        WHERE dj.OrderID = f.OrderID
+          AND dj.WorkerID = ?
+          AND (
+            dj.JobStatus IN (?, ?) -- job explicitly completed
+            OR o.OrderStatus = 'Delivered' -- or the order is marked delivered even if job status wasn't updated
+          )
+      )
+      ORDER BY f.CreatedAt DESC
+    `, [workerId, 'Completed', 'Delivered']);
+
+    for (const r of rows) {
+      r.customer = await db.get('SELECT CustomerID, Name, Email FROM Customer WHERE CustomerID = ?', r.CustomerID);
+      // attach restaurant via the order record
+      const ord = await db.get('SELECT RestaurantID FROM "Order" WHERE OrderID = ?', r.OrderID);
+      r.restaurant = ord ? await db.get('SELECT RestaurantID, Name FROM Restaurant WHERE RestaurantID = ?', ord.RestaurantID) : null;
+    }
+
+    return rows;
+  } catch (error) {
+    console.error('Error getting feedback for worker:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
   }
 }
 

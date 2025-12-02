@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Feedback | GritDash</title>
+    <link rel="stylesheet" href="homepage-style.css">
+    <style>.feedback-box{max-width:520px;margin:2rem auto;padding:1rem;border:1px solid #eee;border-radius:8px}</style>
+  </head>
+  <body>
+    <main class="feedback-box">
+      <h2>Leave Feedback</h2>
+      <p>Order ID</p>
+      <input id="order-id" class="input" placeholder="Order ID" readonly style="background:#f5f5f5;border:1px solid #e0e0e0;padding:8px;border-radius:4px;" />
+      <p>Rating</p>
+      <select id="rating" class="input"><option value="5">5 - Excellent</option><option value="4">4 - Good</option><option value="3">3 - OK</option><option value="2">2 - Poor</option><option value="1">1 - Terrible</option></select>
+      <p>Comments (optional)</p>
+      <textarea id="comment" class="input" rows="4"></textarea>
+      <div style="text-align:right;margin-top:8px"><button id="submit-feedback" class="btn">Submit</button></div>
+      <p id="fb-msg" style="display:none"></p>
+    </main>
+    <script>
+      // Pre-fill order id from query param if present and remember it for redirect
+      const _fb_urlParams = new URLSearchParams(window.location.search);
+      const _fb_initialOrderId = _fb_urlParams.get('orderId');
+      if (_fb_initialOrderId) {
+        document.getElementById('order-id').value = _fb_initialOrderId;
+      }
+      document.getElementById('submit-feedback').addEventListener('click', async () => {
+        const btn = document.getElementById('submit-feedback');
+        const orderId = document.getElementById('order-id').value.trim();
+        const rating = document.getElementById('rating').value;
+        const comment = document.getElementById('comment').value.trim();
+        const currentCustomer = localStorage.getItem('current_customer');
+        const parsed = currentCustomer ? JSON.parse(currentCustomer) : null;
+        const msg = document.getElementById('fb-msg'); msg.style.display='none';
+        if(!orderId || !rating){ msg.textContent='Order ID and rating required'; msg.style.display='block'; return; }
+        const payload = { orderId, rating: parseInt(rating,10), comment, customerId: parsed? parsed.CustomerID : 'CUST-123' };
+        try{
+          btn.disabled = true;
+          btn.textContent = 'Submitting...';
+          const res = await fetch('/api/feedback', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+          let body;
+          try { body = await res.json(); } catch(e) { body = { error: await res.text().catch(()=>String(e)) }; }
+          if(!res.ok){
+            console.error('Feedback submission failed', res.status, body);
+            msg.textContent = body && body.error ? String(body.error) : 'Failed to submit feedback';
+            msg.style.display='block';
+            btn.disabled = false;
+            btn.textContent = 'Submit';
+            return;
+          }
+          msg.textContent='Thanks — feedback submitted.'; msg.style.display='block';
+          // After submitting feedback, take the user to their Past Orders page
+          window.location.replace('past-orders.html');
+        }catch(e){ console.error('Feedback submit error', e); msg.textContent='Failed to submit feedback: '+String(e); msg.style.display='block'; btn.disabled = false; btn.textContent = 'Submit'; }
+      });
+    </script>
+  </body>
+</html>

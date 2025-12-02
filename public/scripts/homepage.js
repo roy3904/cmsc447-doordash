@@ -36,10 +36,19 @@
                         restaurantButton.className = 'restaurant-button';
                         restaurantButton.textContent = 'Pick Restaurant';
 
-                        // Redirect to restaurant menu page on click
-                        restaurantButton.addEventListener('click', () => {
-                            window.location.href = `restaurant.html?restaurantId=${restaurant.RestaurantID}`;
-                        });
+                                                // Redirect to restaurant menu page on click. If user is not signed in, prompt to sign in first.
+                                                restaurantButton.addEventListener('click', () => {
+                                                        try {
+                                                            const raw = localStorage.getItem('current_customer');
+                                                            if (!raw) {
+                                                                // encode the target URL so customer-login can redirect back
+                                                                const target = encodeURIComponent(`restaurant.html?restaurantId=${restaurant.RestaurantID}`);
+                                                                window.location.href = `customer-login.html?redirect=${target}`;
+                                                                return;
+                                                            }
+                                                        } catch (e) { /* ignore */ }
+                                                        window.location.href = `restaurant.html?restaurantId=${restaurant.RestaurantID}`;
+                                                });
 
                         // Append button + info
                         restaurantInfo.appendChild(restaurantButton);

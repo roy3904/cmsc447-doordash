@@ -116,20 +116,30 @@ document.addEventListener('DOMContentLoaded', async () => {
             const addButton = document.createElement('button');
             addButton.className = 'food-button';
             addButton.textContent = 'Add to Cart';
-            addButton.dataset.quantity = item.Quantity;
-            addButton.addEventListener('click', () => {
-                if(typeof addToCart === 'function'){
-                    addToCart({ id: item.ItemID, quantity: 1 });
-                } else {
-                    console.error('addToCart function not found');
-                }
-            });
+            addButton.type = 'button';
+            addButton.setAttribute('data-item-id', item.ItemID);
+            addButton.setAttribute('data-quantity', '1');
 
             addToCartDiv.appendChild(addButton);
             foodItem.appendChild(addToCartDiv);
 
             // Attach to DOM
             container.appendChild(foodItem);
+        });
+
+        // Event delegation for Add to Cart buttons - more robust than per-button closures
+        container.addEventListener('click', (e) => {
+            const btn = e.target.closest('.food-button');
+            if (!btn) return;
+            const itemId = btn.getAttribute('data-item-id');
+            const qty = parseInt(btn.getAttribute('data-quantity') || '1', 10) || 1;
+            if (window && typeof window.addToCart === 'function') {
+                window.addToCart({ id: itemId, quantity: qty }).catch(err => console.error('Add to cart failed', err));
+            } else if (typeof addToCart === 'function') {
+                addToCart({ id: itemId, quantity: qty }).catch(err => console.error('Add to cart failed', err));
+            } else {
+                console.error('addToCart function not found');
+            }
         });
     } catch (error) {
         console.error('Failed to load menu:', error);

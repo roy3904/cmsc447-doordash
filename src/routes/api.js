@@ -1,6 +1,6 @@
 
 import express from 'express';
-import { getAllRestaurants, getRestaurant, addRestaurant, modifyRestaurant, removeRestaurant, getMenuItems, getRestaurantOrders, placeOrder, getCart, addToCart, removeFromCart, clearCart, getMenuItem, modifyMenuItem, getOrdersPlaced, acceptOrder, declineOrder, completeOrder, updateOrderStatus, getAllWorkers, getWorker, modifyWorker, addWorker, getWorkerJobs, removeWorker, createWorkerApplication, getAllWorkerApplications, getWorkerApplication, approveWorkerApplication, declineWorkerApplication, modifyWorkerApplication, removeWorkerApplication, getAllCustomers, getCustomer, addCustomer, modifyCustomer, removeCustomer, loginAdminUser, loginRestaurantStaff } from '../controllers/apiController.js';
+import { getAllRestaurants, getRestaurant, addRestaurant, modifyRestaurant, removeRestaurant, getMenuItems, getRestaurantOrders, placeOrder, getCart, addToCart, removeFromCart, clearCart, getMenuItem, modifyMenuItem, getOrdersPlaced, acceptOrder, declineOrder, completeOrder, updateOrderStatus, getAllWorkers, getWorker, modifyWorker, addWorker, getWorkerJobs, removeWorker, createWorkerApplication, getAllWorkerApplications, getWorkerApplication, approveWorkerApplication, declineWorkerApplication, modifyWorkerApplication, removeWorkerApplication, getAllCustomers, getCustomer, addCustomer, modifyCustomer, removeCustomer, loginAdminUser, loginCustomer, postFeedback, getFeedback, getCustomerOrders, getWorkerFeedback, acknowledgeFeedback, loginRestaurantStaff, mergeCart } from '../controllers/apiController.js';
 
 const router = express.Router();
 
@@ -61,6 +61,9 @@ router.get('/jobs/worker/:id', getWorkerJobs);
 // API Route to get the user\'s cart
 router.get('/cart', getCart);
 
+// API Route to merge guest cart into a customer's cart
+router.post('/cart/merge', mergeCart);
+
 // API Route to add an item to the cart
 router.post('/cart/item', addToCart);
 
@@ -70,9 +73,23 @@ router.delete('/cart/item', removeFromCart);
 // API Route to clear the cart
 router.delete('/cart', clearCart);
 
+// Get past orders for a customer (query param: customerId)
+router.get('/orders/customer', getCustomerOrders);
+
+// Customer login
+router.post('/customers/login', loginCustomer);
+
+// Feedback
+router.post('/feedback', postFeedback);
+router.get('/feedback/:id', getFeedback);
+
 // Workers
 router.get('/workers', getAllWorkers);
 router.get('/workers/:id', getWorker);
+// Get feedback for a worker (feedback left on orders delivered by this worker)
+router.get('/workers/:id/feedback', getWorkerFeedback);
+// Acknowledge (delete) a feedback entry
+router.delete('/feedback/:id', acknowledgeFeedback);
 router.post('/workers', addWorker);
 router.put('/workers/:id', modifyWorker);
 // Delete a worker
