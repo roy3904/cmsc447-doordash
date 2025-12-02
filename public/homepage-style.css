@@ -3,6 +3,7 @@ body{
     display: flex;
     flex-direction: column;
     height: 100%;
+    min-height: 100vh;
 }
 
 p{
@@ -298,7 +299,7 @@ p{
 }
 
 footer{
-    margin-top: 100px;
+    margin-top: auto;
     background-color: black;
     align-content: center;
     padding: 30px;
