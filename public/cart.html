@@ -56,6 +56,7 @@
           <div class="cart-total" id="cart-total"></div>
           <div class="cart-actions">
             <button id="clear-cart" class="btn secondary">Clear Cart</button>
+            <button id="past-orders-footer" class="btn">Past Orders</button>
             <button id="checkout" class="btn">Proceed to Checkout</button>
           </div>
         </div>
@@ -80,7 +81,11 @@
         if (!cart || !cart.items || !cart.items.length) {
           table.style.display = 'none';
           emptyMsg.style.display = 'block';
-          footer.style.display = 'none';
+          // keep footer visible so Past Orders button is always accessible
+          footer.style.display = 'block';
+          try { document.getElementById('clear-cart').style.display = 'none'; } catch(e) {}
+          try { document.getElementById('checkout').style.display = 'none'; } catch(e) {}
+          try { document.getElementById('past-orders-footer').style.display = 'inline-block'; } catch(e) {}
           updateCartBadge();
           return;
         }
@@ -100,7 +105,7 @@
             <td>${escapeHtml(menuItem.restaurant.Name || '')}</td>
             <td>${escapeHtml(menuItem.Name || '')}${item.Quantity && item.Quantity > 1 ? ' <small>×' + item.Quantity + '</small>' : ''}</td>
             <td>$${price.toFixed(2)}</td>
-            <td><button class="remove-button" data-item-id="${item.ItemID}">Remove</button></td>
+            <td><button class="remove-button" data-item-id="${item.ItemID}" data-quantity="1">Remove</button></td>
           `;
           body.appendChild(tr);
         }
@@ -112,14 +117,16 @@
         document.querySelectorAll('.remove-button').forEach(btn => {
           btn.addEventListener('click', (e) => {
             const itemId = e.currentTarget.getAttribute('data-item-id');
-            removeItem(itemId);
+            const qty = parseInt(e.currentTarget.getAttribute('data-quantity') || '1', 10);
+            removeItem(itemId, qty);
           });
         });
       }
 
-      async function removeItem(itemId) {
-        await removeFromCart({ id: itemId, quantity: 1 });
-        renderCart();
+      async function removeItem(itemId, quantity) {
+        // removeFromCart dispatches 'cart_updated' when complete which triggers renderCart.
+        // Avoid calling renderCart() here directly to prevent overlapping renders.
+        await removeFromCart({ id: itemId, quantity: quantity || 1 });
       }
 
       async function clearCart() {
@@ -136,8 +143,27 @@
 
       document.getElementById('clear-cart').addEventListener('click', clearCart);
       document.getElementById('checkout').addEventListener('click', () => {
+        const currentCustomer = localStorage.getItem('current_customer');
+        if (!currentCustomer) {
+          // redirect to customer login and return to checkout after login
+          window.location.href = 'customer-login.html?redirect=checkout.html';
+          return;
+        }
         window.location.href = 'checkout.html';
       });
+
+      function goToPastOrders(){
+        const currentCustomer = localStorage.getItem('current_customer');
+        if (!currentCustomer) {
+          window.location.href = 'customer-login.html?redirect=past-orders.html';
+          return;
+        }
+        window.location.href = 'past-orders.html';
+      }
+
+      // bind handler to footer Past Orders button
+      const btnFooter = document.getElementById('past-orders-footer');
+      if (btnFooter) btnFooter.addEventListener('click', goToPastOrders);
 
       // custom event for same-tab updates
       window.addEventListener('cart_updated', () => renderCart());

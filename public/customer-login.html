@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Customer Login | GritDash</title>
+    <link rel="stylesheet" href="homepage-style.css">
+    <style>
+      .login-container{ max-width:360px; margin:4rem auto; padding:1.5rem; border:1px solid #eee; border-radius:8px; }
+      .login-input{ width:100%; padding:8px; margin:8px 0; }
+    </style>
+  </head>
+  <body>
+    <main class="login-container">
+      <h2>Customer Login</h2>
+      <p id="login-error" style="color:#c00;display:none"></p>
+      <input id="email" class="login-input" placeholder="Email" />
+      <input id="password" class="login-input" placeholder="Password" type="password" />
+      <div style="text-align:right;margin-top:8px">
+        <button id="login-btn" class="btn">Login</button>
+      </div>
+    </main>
+    <script>
+      function qs(name){ const params = new URLSearchParams(window.location.search); return params.get(name); }
+      document.getElementById('login-btn').addEventListener('click', async () => {
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const err = document.getElementById('login-error'); err.style.display='none';
+        try{
+          const res = await fetch('/api/customers/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email, password }) });
+          if(!res.ok){ const data = await res.json().catch(()=>({})); err.textContent = data.error || 'Invalid credentials'; err.style.display='block'; return; }
+          const data = await res.json();
+          const customer = data.customer;
+          if(customer){ localStorage.setItem('current_customer', JSON.stringify(customer)); const redirect = qs('redirect') || 'homepage.html'; window.location.href = redirect; }
+        }catch(e){ err.textContent='Login failed'; err.style.display='block'; }
+      });
+    </script>
+  </body>
+</html>

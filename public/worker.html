@@ -4,7 +4,7 @@
     <title>Worker Dashboard | GritDash</title>
     <link rel="stylesheet" href="homepage-style.css">
     <style>
-      .dashboard { max-width:900px;margin:2rem auto;padding:1rem }
+      .dashboard { max-width:900px;margin:2rem auto;padding:1rem; position: relative; }
       .order { border:1px solid #e6e6e6;padding:0.75rem;margin-bottom:0.75rem;border-radius:6px;}
       .order h4{margin:0 0 0.5rem 0}
       .btn{background:#2b6cb0;color:#fff;padding:6px 10px;border-radius:4px;border:none;cursor:pointer}
@@ -23,12 +23,16 @@
     </header>
 
     <main class="dashboard">
-      <h2>Your Available Orders</h2>
-  <p id="worker-info"></p>
-  <div style="text-align:right;margin-bottom:0.5rem;"><button id="signout" class="btn" style="background:#e53e3e">Sign Out</button></div>
+        <h2>Your Available Orders</h2>
+    <p id="worker-info"></p>
+    <div id="worker-actions" style="margin-top:0.5rem;">
+      <button id="signout" class="btn" style="background:#e53e3e">Sign Out</button>
+    </div>
       <div id="orders-list">Loading pending orders...</div>
       <h3 style="margin-top:1.5rem">Your Active Jobs</h3>
       <div id="active-jobs">Loading active jobs...</div>
+      <h3 style="margin-top:1.5rem">Customer Feedback</h3>
+      <div id="feedback-list">Loading feedback...</div>
     </main>
 
     <footer><img class="footer-logo" src="./images/gritdash-logo-1.png"></footer>
@@ -44,6 +48,8 @@
         localStorage.removeItem('current_worker');
         window.location.href = 'worker-signin.html';
       });
+
+      
 
       // small helper to escape user-provided text when inserting into innerHTML
       function escapeHtml(unsafe){
@@ -177,11 +183,49 @@
               const jobId = btn.dataset.id;
               if(!confirm('Confirm you have delivered this order?')) return;
               const r = await fetch(`/api/jobs/${jobId}/complete`, { method: 'POST' });
-              if(r.ok){ alert('Job completed.'); await loadActiveJobs(); await loadOrders(); }
+              if(r.ok){ alert('Job completed.'); window.location.reload(); }
               else alert('Failed to complete job');
             });
           });
         }catch(e){ console.error(e); document.getElementById('active-jobs').innerHTML = '<p>Error loading active jobs</p>'; }
+      }
+
+      // Load feedback left by customers for jobs this worker completed
+      async function loadWorkerFeedback(){
+        try{
+          const fbEl = document.getElementById('feedback-list');
+          fbEl.innerHTML = 'Loading feedback...';
+          const res = await fetch(`/api/workers/${currentWorker.WorkerID}/feedback`);
+          if(!res.ok){ fbEl.innerHTML = '<p>Failed to load feedback</p>'; return; }
+          const data = await res.json();
+          const feedbacks = data.feedbacks || [];
+          if(!feedbacks.length){ fbEl.innerHTML = '<p>No feedback yet.</p>'; return; }
+          fbEl.innerHTML = '';
+          for(const f of feedbacks){
+            const div = document.createElement('div'); div.className='order';
+            const who = f.customer ? (f.customer.Name || f.customer.Email) : f.CustomerID;
+            const rest = f.restaurant ? f.restaurant.Name : '';
+            div.innerHTML = `<div><strong>Order:</strong> ${escapeHtml(f.OrderID)} <span class="small">(${escapeHtml(f.CreatedAt)})</span></div>
+              <div><strong>Customer:</strong> ${escapeHtml(who)}</div>
+              <div><strong>Restaurant:</strong> ${escapeHtml(rest)}</div>
+              <div><strong>Rating:</strong> ${escapeHtml(f.Rating)}</div>
+              <div><strong>Comment:</strong> ${escapeHtml(f.Comment || '')}</div>
+              <div style="margin-top:8px"><button class="btn ack-btn" data-feedback-id="${escapeHtml(f.FeedbackID)}">Acknowledge</button></div>`;
+            fbEl.appendChild(div);
+          }
+
+          // attach acknowledge handlers
+          fbEl.querySelectorAll('.ack-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+              const id = e.currentTarget.getAttribute('data-feedback-id');
+              if(!confirm('Acknowledge and remove this feedback?')) return;
+              const r = await fetch('/api/feedback/' + encodeURIComponent(id), { method: 'DELETE' });
+              if(!r.ok){ alert('Failed to remove feedback'); return; }
+              // refresh the page so the list stays in sync
+              window.location.reload();
+            });
+          });
+        }catch(e){ console.error(e); document.getElementById('feedback-list').innerHTML = '<p>Error loading feedback</p>'; }
       }
 
       // Append a single active job to the Active Jobs DOM (used for optimistic UI)
@@ -238,9 +282,8 @@
       // initial load
       loadOrders();
       loadActiveJobs();
+      loadWorkerFeedback();
       maybeCompleteJob();
-      // refresh every 15s
-      setInterval(()=>{ loadOrders(); loadActiveJobs(); }, 15000);
     </script>
   </body>
 </html>

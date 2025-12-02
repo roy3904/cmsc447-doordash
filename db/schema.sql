@@ -103,3 +103,15 @@ CREATE TABLE DeliveryJob (
     FOREIGN KEY (OrderID) REFERENCES "Order"(OrderID),
     FOREIGN KEY (WorkerID) REFERENCES Worker(WorkerID)
 );
+
+--- Create Feedback Table
+CREATE TABLE IF NOT EXISTS Feedback (
+    FeedbackID TEXT PRIMARY KEY,
+    OrderID TEXT,
+    CustomerID TEXT,
+    Rating INTEGER CHECK(Rating >= 1 AND Rating <= 5),
+    Comment TEXT,
+    CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (OrderID) REFERENCES "Order"(OrderID),
+    FOREIGN KEY (CustomerID) REFERENCES Customer(CustomerID)
+);
