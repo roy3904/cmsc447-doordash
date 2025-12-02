@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Restaurant | Gritdash</title>
     <link rel="stylesheet" href="homepage-style.css">
     <script src="https://kit.fontawesome.com/5d92ce3398.js" crossorigin="anonymous"></script>
@@ -10,7 +12,14 @@
     <main>
         <header class="nav-bar">
             <div class="header-container">
-                <img class="nav-logo" src="./images/gritdash-logo-1.png">
+                <img class="nav-logo" src="./images/gritdash-logo-1.png" alt="GritDash logo">
+                <i class="fa-solid fa-bars menu-icon"></i>
+                <div class="header-dropdown hidden">
+                    <a class="dropdown-selection" href="homepage.html">Home</a>
+                    <a class="dropdown-selection" href="worker-portal.html">Worker Portal</a>
+                    <a class="dropdown-selection" href="restaurant-staff-portal.html">Restaurant Staff</a>
+                    <a class="dropdown-selection" href="admin.html">Admin Portal</a>
+                </div>
                 <a class="nav-link" href="homepage.html">Home</a>
                 <a class="nav-link" href="worker-portal.html">Worker Portal</a>
                 <a class="nav-link" href="restaurant-staff-portal.html">Restaurant Staff</a>
@@ -20,6 +29,8 @@
                 <i class="fa-solid fa-cart-shopping badge"></i>
                 <p id="cart-count" class="badge-count">0</p>
             </a>
+        <script src="./scripts/cart-common.js"></script>
+        <script src="./scripts/dropdown-menu.js"></script>
         </header>
 
         <p class="food-title" id="restaurant-name">Restaurant</p>
