@@ -26,6 +26,7 @@
         document.getElementById('order-id').value = _fb_initialOrderId;
       }
       document.getElementById('submit-feedback').addEventListener('click', async () => {
+        const btn = document.getElementById('submit-feedback');
         const orderId = document.getElementById('order-id').value.trim();
         const rating = document.getElementById('rating').value;
         const comment = document.getElementById('comment').value.trim();
@@ -35,14 +36,23 @@
         if(!orderId || !rating){ msg.textContent='Order ID and rating required'; msg.style.display='block'; return; }
         const payload = { orderId, rating: parseInt(rating,10), comment, customerId: parsed? parsed.CustomerID : 'CUST-123' };
         try{
+          btn.disabled = true;
+          btn.textContent = 'Submitting...';
           const res = await fetch('/api/feedback', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-          if(!res.ok) throw new Error('Failed');
-          msg.textContent='Thanks — feedback submitted.'; msg.style.display='block';
-          // If this feedback was opened from a specific order link, immediately return the user to the cart
-          if (_fb_initialOrderId) {
-            window.location.replace('cart.html');
+          let body;
+          try { body = await res.json(); } catch(e) { body = { error: await res.text().catch(()=>String(e)) }; }
+          if(!res.ok){
+            console.error('Feedback submission failed', res.status, body);
+            msg.textContent = body && body.error ? String(body.error) : 'Failed to submit feedback';
+            msg.style.display='block';
+            btn.disabled = false;
+            btn.textContent = 'Submit';
+            return;
           }
-        }catch(e){ msg.textContent='Failed to submit feedback'; msg.style.display='block'; }
+          msg.textContent='Thanks — feedback submitted.'; msg.style.display='block';
+          // After submitting feedback, take the user to their Past Orders page
+          window.location.replace('past-orders.html');
+        }catch(e){ console.error('Feedback submit error', e); msg.textContent='Failed to submit feedback: '+String(e); msg.style.display='block'; btn.disabled = false; btn.textContent = 'Submit'; }
       });
     </script>
   </body>

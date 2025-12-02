@@ -144,12 +144,7 @@
 
       document.getElementById('clear-cart').addEventListener('click', clearCart);
       document.getElementById('checkout').addEventListener('click', () => {
-        const currentCustomer = localStorage.getItem('current_customer');
-        if (!currentCustomer) {
-          // redirect to customer login and return to checkout after login
-          window.location.href = 'customer-login.html?redirect=checkout.html';
-          return;
-        }
+        // Always proceed to checkout page (no forced sign-in from cart)
         window.location.href = 'checkout.html';
       });
 

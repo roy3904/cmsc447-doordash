@@ -30,7 +30,23 @@
           if(!res.ok){ const data = await res.json().catch(()=>({})); err.textContent = data.error || 'Invalid credentials'; err.style.display='block'; return; }
           const data = await res.json();
           const customer = data.customer;
-          if(customer){ localStorage.setItem('current_customer', JSON.stringify(customer)); const redirect = qs('redirect') || 'homepage.html'; window.location.href = redirect; }
+          if(customer){
+            // Only merge guest cart when requested (e.g., coming from checkout)
+            const shouldMerge = qs('merge');
+            if (shouldMerge && (shouldMerge === '1' || shouldMerge.toLowerCase() === 'true')) {
+              try {
+                await fetch('/api/cart/merge', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ customerId: customer.CustomerID })
+                });
+              } catch (e) { console.warn('Cart merge failed', e); }
+            }
+
+            localStorage.setItem('current_customer', JSON.stringify(customer));
+            const redirect = qs('redirect') || 'homepage.html';
+            window.location.href = redirect;
+          }
         }catch(e){ err.textContent='Login failed'; err.style.display='block'; }
       });
     </script>

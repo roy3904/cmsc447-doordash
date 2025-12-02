@@ -1160,10 +1160,18 @@ export async function getFeedbackForWorker(workerId) {
       SELECT f.FeedbackID, f.OrderID, f.CustomerID, f.Rating, f.Comment, f.CreatedAt
       FROM Feedback f
       WHERE EXISTS (
-        SELECT 1 FROM DeliveryJob dj WHERE dj.OrderID = f.OrderID AND dj.WorkerID = ? AND dj.JobStatus = ?
+        SELECT 1
+        FROM DeliveryJob dj
+        JOIN "Order" o ON o.OrderID = dj.OrderID
+        WHERE dj.OrderID = f.OrderID
+          AND dj.WorkerID = ?
+          AND (
+            dj.JobStatus IN (?, ?) -- job explicitly completed
+            OR o.OrderStatus = 'Delivered' -- or the order is marked delivered even if job status wasn't updated
+          )
       )
       ORDER BY f.CreatedAt DESC
-    `, [workerId, 'Completed']);
+    `, [workerId, 'Completed', 'Delivered']);
 
     for (const r of rows) {
       r.customer = await db.get('SELECT CustomerID, Name, Email FROM Customer WHERE CustomerID = ?', r.CustomerID);

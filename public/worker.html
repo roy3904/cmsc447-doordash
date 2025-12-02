@@ -218,6 +218,7 @@
                 updateWorkerStatus();
                 loadActiveJobs();
                 loadOrders();
+                loadWorkerFeedback();
             });
           });
           document.querySelectorAll('.js-decline').forEach(btn => {
@@ -258,21 +259,22 @@
           activeEl.innerHTML = '';
           for(const job of jobs){
             const div = document.createElement('div'); div.className = 'order';
+            const order = job.order || {};
             let itemsHtml = '';
-            for(const it of job.items){
+            for(const it of job.items || []){
               try{
                 const menuItem = (typeof window.getMenuItem === 'function') ? await window.getMenuItem(it.ItemID) : null;
                 const name = menuItem ? menuItem.Name : it.ItemID;
                 itemsHtml += `${it.Quantity}× ${name} — $${(it.Price||0).toFixed? (it.Price||0).toFixed(2) : (it.Price||0)}<br>`;
               }catch(e){ itemsHtml += `${it.Quantity}× ${it.ItemID} — $${it.Price}<br>`; }
             }
-            const delivery = job.order && job.order.delivery ? job.order.delivery : {};
-            div.innerHTML = `<h4>Job ${job.JobID} — Order ${job.order ? job.order.OrderID : job.OrderID}</h4>
-              <div><strong>Restaurant:</strong> ${job.order && job.order.restaurant ? job.order.restaurant.Name : ''}</div>
+            const delivery = order.delivery || {};
+            div.innerHTML = `<h4>Job ${escapeHtml(job.JobID)} — Order ${escapeHtml(order.OrderID || job.OrderID || '')}</h4>
+              <div><strong>Restaurant:</strong> ${order.restaurant ? escapeHtml(order.restaurant.Name) : ''}</div>
               <div><strong>Items:</strong><div>${itemsHtml}</div></div>
-              <div><strong>Deliver to:</strong> ${delivery.building || job.order.DeliveryLocation} ${delivery.room || ''}</div>
+              <div><strong>Deliver to:</strong> ${escapeHtml(delivery.building || order.DeliveryLocation || '')} ${escapeHtml(delivery.room || '')}</div>
               <div><strong>Instructions:</strong> ${delivery.instructions ? escapeHtml(delivery.instructions) : 'None'}</div>
-              <div style="margin-top:0.5rem"><button class="btn js-complete" data-id="${job.JobID}">Mark Delivered</button></div>`;
+              <div style="margin-top:0.5rem"><button class="btn js-complete" data-id="${escapeHtml(job.JobID)}">Mark Delivered</button></div>`;
             activeEl.appendChild(div);
           }
 
@@ -293,13 +295,21 @@
         try{
           const fbEl = document.getElementById('feedback-list');
           fbEl.innerHTML = 'Loading feedback...';
+          // fetch worker jobs (to ensure feedbacks belong to this worker)
+          const jobsResp = await fetch(`/api/jobs/worker/${currentWorker.WorkerID}`);
+          const jobsData = jobsResp && jobsResp.ok ? await jobsResp.json().catch(()=>({jobs:[]})) : { jobs: [] };
+          const jobOrderIds = new Set((jobsData.jobs || []).map(j => (j.OrderID || (j.order && j.order.OrderID))));
+
           const res = await fetch(`/api/workers/${currentWorker.WorkerID}/feedback`);
           if(!res.ok){ fbEl.innerHTML = '<p>Failed to load feedback</p>'; return; }
           const data = await res.json();
           const feedbacks = data.feedbacks || [];
-          if(!feedbacks.length){ fbEl.innerHTML = '<p>No feedback yet.</p>'; return; }
+          // Filter feedbacks to only those that correspond to orders this worker handled (defensive)
+          const filtered = feedbacks.filter(f => jobOrderIds.has(f.OrderID));
+          if (filtered.length !== feedbacks.length) console.debug('Filtered out feedback entries not belonging to this worker', feedbacks.map(f=>f.OrderID), Array.from(jobOrderIds));
+          if(!filtered.length){ fbEl.innerHTML = '<p>No feedback yet.</p>'; return; }
           fbEl.innerHTML = '';
-          for(const f of feedbacks){
+          for(const f of filtered){
             const div = document.createElement('div'); div.className='order';
             const who = f.customer ? (f.customer.Name || f.customer.Email) : f.CustomerID;
             const rest = f.restaurant ? f.restaurant.Name : '';
@@ -335,17 +345,18 @@
           const div = document.createElement('div'); div.className = 'order';
           let itemsHtml = '';
           // show item ids immediately; names will be filled in asynchronously
-          for(const it of job.items){
+          for(const it of job.items || []){
             const priceStr = (it.Price||0).toFixed ? (it.Price||0).toFixed(2) : (it.Price||0);
             itemsHtml += `${it.Quantity}× ${it.ItemID} — $${priceStr}<br>`;
           }
-          const delivery = job.order && job.order.delivery ? job.order.delivery : {};
-          div.innerHTML = `<h4>Job ${job.JobID} — Order ${job.order ? job.order.OrderID : job.OrderID}</h4>
-            <div><strong>Restaurant:</strong> ${job.order && job.order.restaurant ? job.order.restaurant.Name : ''}</div>
+          const order = job.order || {};
+          const delivery = order.delivery || {};
+          div.innerHTML = `<h4>Job ${escapeHtml(job.JobID)} — Order ${escapeHtml(order.OrderID || job.OrderID || '')}</h4>
+            <div><strong>Restaurant:</strong> ${order.restaurant ? escapeHtml(order.restaurant.Name) : ''}</div>
             <div><strong>Items:</strong><div class="job-items">${itemsHtml}</div></div>
-            <div><strong>Deliver to:</strong> ${delivery.building || (job.order && job.order.DeliveryLocation) || ''} ${delivery.room || ''}</div>
+            <div><strong>Deliver to:</strong> ${escapeHtml(delivery.building || order.DeliveryLocation || '')} ${escapeHtml(delivery.room || '')}</div>
             <div><strong>Instructions:</strong> ${delivery.instructions ? escapeHtml(delivery.instructions) : 'None'}</div>
-            <div style="margin-top:0.5rem"><button class="btn js-complete" data-id="${job.JobID}">Mark Delivered</button></div>`;
+            <div style="margin-top:0.5rem"><button class="btn js-complete" data-id="${escapeHtml(job.JobID)}">Mark Delivered</button></div>`;
           activeEl.prepend(div);
 
           // attach complete handler
@@ -353,7 +364,7 @@
             const jobId = job.JobID;
             if(!confirm('Confirm you have delivered this order?')) return;
             const r = await fetch(`/api/jobs/${jobId}/complete`, { method: 'POST' });
-            if(r.ok){ alert('Job completed.'); await updateWorkerStatus(); await loadActiveJobs(); await loadOrders(); }
+            if(r.ok){ alert('Job completed.'); await updateWorkerStatus(); await loadActiveJobs(); await loadOrders(); await loadWorkerFeedback(); }
             else alert('Failed to complete job');
           });
 
@@ -378,13 +389,13 @@
       }
 
       // initial load
-      updateWorkerStatus();
+        updateWorkerStatus();
       loadOrders();
       loadActiveJobs();
       loadWorkerFeedback();
       maybeCompleteJob();
-      // refresh every 15s
-      setInterval(()=>{ updateWorkerStatus(); loadOrders(); loadActiveJobs(); }, 15000);
+      // refresh every 15s (also refresh feedback so workers see new feedback promptly)
+      setInterval(()=>{ updateWorkerStatus(); loadOrders(); loadActiveJobs(); loadWorkerFeedback(); }, 15000);
     </script>
   </body>
 </html>

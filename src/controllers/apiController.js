@@ -221,6 +221,26 @@ export const getCustomerOrders = async (req, res) => {
   }
 };
 
+// Merge guest cart into a customer's cart (server-side atomic merge)
+export const mergeCart = async (req, res) => {
+  try {
+    const { customerId } = req.body;
+    if (!customerId) return res.status(400).json({ error: 'customerId required' });
+    const guestCustomerId = 'CUST-123';
+    const guestCart = await dbGetCart(guestCustomerId);
+    if (guestCart && Array.isArray(guestCart.items) && guestCart.items.length > 0) {
+      for (const it of guestCart.items) {
+        await dbAddToCart(customerId, it.ItemID, it.Quantity || 1);
+      }
+      await dbClearCart(guestCustomerId);
+    }
+    res.json({ message: 'Cart merged' });
+  } catch (error) {
+    console.error('Failed to merge cart:', error);
+    res.status(500).json({ error: 'Failed to merge cart' });
+  }
+};
+
 export const acceptOrder = async (req, res) => {
   try {
     const orderId = req.params.id;
