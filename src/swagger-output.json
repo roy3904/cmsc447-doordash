@@ -401,6 +401,13 @@
         ],
         "summary": "Get the current user\\'s cart",
         "description": "",
+        "parameters": [
+          {
+            "name": "customerId",
+            "in": "query",
+            "type": "string"
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK"
@@ -433,6 +440,9 @@
             "schema": {
               "type": "object",
               "properties": {
+                "customerId": {
+                  "example": "any"
+                },
                 "itemId": {
                   "example": "any"
                 },
@@ -449,6 +459,54 @@
           },
           "500": {
             "description": "Internal Server Error"
+          }
+        }
+      },
+      "delete": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/orders/customer": {
+      "get": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/customers/login": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/feedback": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/feedback/{id}": {
+      "get": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
           }
         }
       },
@@ -497,6 +555,16 @@
         }
       },
       "delete": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/workers/{id}/feedback": {
+      "get": {
         "description": "",
         "responses": {
           "default": {
