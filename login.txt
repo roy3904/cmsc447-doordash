@@ -1,0 +1,7 @@
+Restaurant Staff:
+staff@coffeeshoppe.com | password123
+staff@chickfila.com | password123
+
+Admin:
+admin@mail.com | admin
+
