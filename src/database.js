@@ -180,16 +180,19 @@ export async function createOrder(order) {
     // Open database connection
     db = await openDb();
 
+    // Generate OrderID if not provided
+    const orderId = order.id || 'ORD-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8).toUpperCase();
+
     // Begin transaction
     // Check if an order with this ID already exists (e.g., a Cart)
-    const existing = await db.get('SELECT * FROM "Order" WHERE OrderID = ?', order.id);
+    const existing = await db.get('SELECT * FROM "Order" WHERE OrderID = ?', orderId);
     const deliveryStr = JSON.stringify(order.delivery || {});
     if (existing && existing.OrderStatus === 'Cart') {
       // Transition existing cart to placed order
       await db.run('BEGIN TRANSACTION');
-      await db.run('UPDATE "Order" SET DeliveryLocation = ?, OrderStatus = ?, TotalCost = ?, Tip = ? WHERE OrderID = ?', [deliveryStr, 'Placed', order.totalCost, order.tip, order.id]);
+      await db.run('UPDATE "Order" SET DeliveryLocation = ?, OrderStatus = ?, TotalCost = ?, Tip = ? WHERE OrderID = ?', [deliveryStr, 'Placed', order.totalCost, order.tip, orderId]);
       await db.run('COMMIT');
-      return order.id;
+      return orderId;
     }
 
     // Otherwise create a fresh placed order
@@ -197,7 +200,7 @@ export async function createOrder(order) {
     const orderResult = await db.run(
       'INSERT INTO "Order" (OrderID, CustomerID, RestaurantID, DeliveryLocation, OrderStatus, TotalCost, Tip) VALUES (?, ?, ?, ?, ?, ?, ?)',
       [
-        order.id,
+        orderId,
         order.customerId,
         order.restaurantId,
         deliveryStr,
@@ -214,8 +217,8 @@ export async function createOrder(order) {
 
     // Loop through each ordered item, decrement quantity, and insert into OrderItem table
     for (const item of order.items) {
-      await db.run('UPDATE MenuItem SET Quantity = Quantity - ? WHERE ItemID = ?', [item.quantity, item.id]);
-      await stmt.run(order.id, item.id, item.quantity, item.price);
+      await db.run('UPDATE MenuItem SET Quantity = Quantity - ? WHERE ItemID = ?', [item.quantity, item.id || item.itemId]);
+      await stmt.run(orderId, item.id || item.itemId, item.quantity, item.price);
     }
 
     // Commit transaction once all inserts succeed
@@ -223,7 +226,7 @@ export async function createOrder(order) {
     await db.run('COMMIT');
 
     // Return ID of newly created order
-    return orderResult.lastID || order.id;
+    return orderId;
   } catch (error) {
     // Roll back transaction if an error occurs
     if (db) {
@@ -353,6 +356,8 @@ export async function assignOrderToWorker(orderId, workerId) {
     const now = new Date().toISOString();
     await db.run('INSERT INTO DeliveryJob (JobID, OrderID, WorkerID, AcceptTime, JobStatus) VALUES (?, ?, ?, ?, ?)', [jobId, orderId, workerId, now, 'Accepted']);
     await db.run('UPDATE "Order" SET OrderStatus = ? WHERE OrderID = ?', ['Accepted', orderId]);
+    // Auto-update worker availability status to "On Delivery"
+    await db.run('UPDATE Worker SET AvailabilityStatus = ? WHERE WorkerID = ?', ['On Delivery', workerId]);
     await db.run('COMMIT');
     return jobId;
   } catch (error) {
@@ -377,6 +382,8 @@ export async function completeDeliveryJob(jobId) {
     await db.run('BEGIN TRANSACTION');
     await db.run('UPDATE DeliveryJob SET CompletionTime = ?, JobStatus = ? WHERE JobID = ?', [now, 'Completed', jobId]);
     await db.run('UPDATE "Order" SET OrderStatus = ? WHERE OrderID = ?', ['Delivered', job.OrderID]);
+    // Auto-update worker availability status to "Available"
+    await db.run('UPDATE Worker SET AvailabilityStatus = ? WHERE WorkerID = ?', ['Available', job.WorkerID]);
     await db.run('COMMIT');
     return true;
   } catch (error) {
@@ -397,7 +404,7 @@ export async function updateOrderStatus(orderId, newStatus) {
     db = await openDb();
 
     // Validate status
-    const validStatuses = ['Cart', 'Placed', 'Accepted', 'Ready for Pickup', 'Delivered'];
+    const validStatuses = ['Cart', 'Placed', 'Accepted', 'Preparing', 'Ready for Pickup', 'Delivered'];
     if (!validStatuses.includes(newStatus)) {
       throw new Error(`Invalid status: ${newStatus}. Valid statuses are: ${validStatuses.join(', ')}`);
     }
@@ -1093,6 +1100,27 @@ export async function getSystemAdmin(email) {
     return admin;
   } catch (error) {
     console.error('Error getting system admin:', error);
+    throw error;
+  } finally {
+    if (db) {
+      await db.close();
+    }
+  }
+}
+
+// =======================================
+// Restaurant Staff Management Functions
+// =======================================
+
+// Get restaurant staff by email
+export async function getRestaurantStaffByEmail(email) {
+  let db;
+  try {
+    db = await openDb();
+    const staff = await db.get('SELECT * FROM RestaurantStaff WHERE Email = ?', email);
+    return staff;
+  } catch (error) {
+    console.error('Error getting restaurant staff:', error);
     throw error;
   } finally {
     if (db) {

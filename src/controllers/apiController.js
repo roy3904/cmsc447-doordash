@@ -1,4 +1,4 @@
-import { getRestaurants, getRestaurantById as dbGetRestaurantById, createRestaurant as dbCreateRestaurant, updateRestaurant as dbUpdateRestaurant, deleteRestaurant as dbDeleteRestaurant, getMenuItemsByRestaurantId, createOrder, getCart as dbGetCart, addToCart as dbAddToCart, removeFromCart as dbRemoveFromCart, clearCart as dbClearCart, getMenuItem as dbGetMenuItem, updateMenuItem as dbUpdateMenuItem, getPlacedOrders, getOrdersByRestaurantId as dbGetOrdersByRestaurantId, assignOrderToWorker, completeDeliveryJob, updateOrderStatus as dbUpdateOrderStatus, getWorkers, getWorkerById as dbGetWorkerById, updateWorker as dbUpdateWorker, createWorker, declineOrderByWorker, deleteWorker, createWorkerApplication as dbCreateWorkerApplication, getWorkerApplications as dbGetWorkerApplications, getWorkerApplicationById as dbGetWorkerApplicationById, updateWorkerApplicationStatus as dbUpdateWorkerApplicationStatus, updateWorkerApplication as dbUpdateWorkerApplication, deleteWorkerApplication as dbDeleteWorkerApplication, getCustomers as dbGetCustomers, getCustomerById as dbGetCustomerById, createCustomer as dbCreateCustomer, updateCustomer as dbUpdateCustomer, deleteCustomer as dbDeleteCustomer, getSystemAdmin } from '../database.js';
+import { getRestaurants, getRestaurantById as dbGetRestaurantById, createRestaurant as dbCreateRestaurant, updateRestaurant as dbUpdateRestaurant, deleteRestaurant as dbDeleteRestaurant, getMenuItemsByRestaurantId, createOrder, getCart as dbGetCart, addToCart as dbAddToCart, removeFromCart as dbRemoveFromCart, clearCart as dbClearCart, getMenuItem as dbGetMenuItem, updateMenuItem as dbUpdateMenuItem, getPlacedOrders, getOrdersByRestaurantId as dbGetOrdersByRestaurantId, assignOrderToWorker, completeDeliveryJob, updateOrderStatus as dbUpdateOrderStatus, getWorkers, getWorkerById as dbGetWorkerById, updateWorker as dbUpdateWorker, createWorker, declineOrderByWorker, deleteWorker, createWorkerApplication as dbCreateWorkerApplication, getWorkerApplications as dbGetWorkerApplications, getWorkerApplicationById as dbGetWorkerApplicationById, updateWorkerApplicationStatus as dbUpdateWorkerApplicationStatus, updateWorkerApplication as dbUpdateWorkerApplication, deleteWorkerApplication as dbDeleteWorkerApplication, getCustomers as dbGetCustomers, getCustomerById as dbGetCustomerById, createCustomer as dbCreateCustomer, updateCustomer as dbUpdateCustomer, deleteCustomer as dbDeleteCustomer, getSystemAdmin, getRestaurantStaffByEmail } from '../database.js';
 import { getJobsForWorker } from '../database.js';
 import argon2 from 'argon2';
 
@@ -563,6 +563,7 @@ export const removeCustomer = async (req, res) => {
 };
 
 export async function loginAdminUser(req, res){
+  // console.log("Data from front end: ", req.body);
 
   const email = req.body.email;
   const password = req.body.password;
@@ -573,7 +574,7 @@ export async function loginAdminUser(req, res){
   }
 
   const fetchedUser = await getSystemAdmin(email);
-  
+
   if(fetchedUser === undefined){
     return res.status(401).send("Invalid Email or Password");
   }
@@ -587,4 +588,51 @@ export async function loginAdminUser(req, res){
   return res.status(200).json({
     authenticated: true,
   });
+}
+
+// =======================================
+// Restaurant Staff Controllers
+// =======================================
+
+export async function loginRestaurantStaff(req, res) {
+  // #swagger.tags = ['Restaurant Staff']
+  // #swagger.summary = 'Login restaurant staff'
+  try {
+    const { email, password } = req.body;
+
+    // Validate email format
+    const emailVerifier = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailVerifier.test(email)) {
+      return res.status(400).json({ error: 'Please enter a valid email' });
+    }
+
+    // Fetch staff by email
+    const staff = await getRestaurantStaffByEmail(email);
+
+    if (!staff) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    // Verify password
+    const correctPassword = await argon2.verify(staff.PasswordHash, password);
+
+    if (!correctPassword) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    // Return staff details (excluding password hash)
+    return res.status(200).json({
+      authenticated: true,
+      staff: {
+        StaffID: staff.StaffID,
+        Name: staff.Name,
+        Email: staff.Email,
+        Phone: staff.Phone,
+        RestaurantID: staff.RestaurantID
+      }
+    });
+  } catch (error) {
+    console.error('Failed to login restaurant staff:', error);
+    res.status(500).json({ error: 'Failed to login' });
+  }
 }

@@ -1,13 +1,15 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Worker Portal | GritDash</title>
+    <title>Restaurant Staff Portal | GritDash</title>
     <link rel="stylesheet" href="homepage-style.css">
     <script src="https://kit.fontawesome.com/5d92ce3398.js" crossorigin="anonymous"></script>
     <style>
       .portal { max-width:720px; margin:3rem auto; text-align:center; }
-      .portal .btn { margin:0.5rem; padding:0.75rem 1.25rem; border-radius:6px; border:none; background:#2b6cb0; color:#fff; cursor:pointer; }
+      .portal .btn { margin:0.5rem; padding:0.75rem 1.25rem; border-radius:6px; border:none; background:#2b6cb0; color:#fff; cursor:pointer; font-size:1rem; }
+      .portal .btn:hover { background:#2c5aa0; }
       .portal a { text-decoration:none; color:inherit; }
+      .portal p { color:#4a5568; font-size:1.05rem; }
     </style>
   </head>
   <body>
@@ -17,7 +19,7 @@
         <a class="nav-link" href="homepage.html">Home</a>
         <a class="nav-link" href="worker-portal.html">Worker Portal</a>
         <a class="nav-link" href="restaurant-staff-portal.html">Restaurant Staff</a>
-        <a class="nav-link" href="admin.html">Admin Portal</a>
+        <a class="nav-link" href="admin-login.html">Admin Portal</a>
       </div>
       <a href="cart.html" aria-label="Cart" style="color:inherit;text-decoration:none;">
         <i class="fa-solid fa-cart-shopping badge" style="font-size:22px;">
@@ -28,11 +30,10 @@
     </header>
 
     <main class="portal">
-      <h2>Student Worker Portal</h2>
-      <p>Choose an option below:</p>
+      <h2>Restaurant Staff Portal</h2>
+      <p>Manage your restaurant's orders and menu</p>
       <div>
-        <a id="signin-link" href="worker-signin.html"><button class="btn">Sign In</button></a>
-        <a href="worker-apply.html"><button class="btn">Apply to be a Worker</button></a>
+        <a id="signin-link" href="restaurant-staff-login.html"><button class="btn">Sign In</button></a>
       </div>
     </main>
 
@@ -40,11 +41,11 @@
       <img class="footer-logo" src="./images/gritdash-logo-1.png">
     </footer>
     <script>
-      // Redirect to worker dashboard if already signed in
+      // Redirect to restaurant staff dashboard if already signed in
       (function(){
         try{
-          const cw = localStorage.getItem('current_worker');
-          if(cw){ window.location.href = 'worker.html'; }
+          const staff = localStorage.getItem('restaurant_staff');
+          if(staff){ window.location.href = 'restaurant-staff-dashboard.html'; }
         }catch(e){ /* ignore */ }
       })();
     </script>

@@ -8,6 +8,18 @@
       .order { border:1px solid #e6e6e6;padding:0.75rem;margin-bottom:0.75rem;border-radius:6px;}
       .order h4{margin:0 0 0.5rem 0}
       .btn{background:#2b6cb0;color:#fff;padding:6px 10px;border-radius:4px;border:none;cursor:pointer}
+      .status-badge { display:inline-block;padding:4px 12px;border-radius:12px;font-size:13px;font-weight:600;margin-left:8px; }
+      .status-available { background:#48bb78;color:#fff; }
+      .status-unavailable { background:#a0aec0;color:#fff; }
+      .status-on-delivery { background:#ed8936;color:#fff; }
+      .availability-control { display:flex;align-items:center;gap:10px;margin:1rem 0;padding:1rem;background:#f7fafc;border-radius:6px; }
+      .toggle-switch { position:relative;display:inline-block;width:50px;height:24px; }
+      .toggle-switch input { opacity:0;width:0;height:0; }
+      .toggle-slider { position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background-color:#cbd5e0;border-radius:24px;transition:.3s; }
+      .toggle-slider:before { position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background-color:white;border-radius:50%;transition:.3s; }
+      input:checked + .toggle-slider { background-color:#48bb78; }
+      input:checked + .toggle-slider:before { transform:translateX(26px); }
+      input:disabled + .toggle-slider { opacity:0.5;cursor:not-allowed; }
     </style>
   </head>
   <body>
@@ -16,6 +28,7 @@
         <img class="nav-logo" src="./images/gritdash-logo-1.png" alt="GritDash logo">
         <a class="nav-link" href="homepage.html">Home</a>
         <a class="nav-link" href="worker-portal.html">Worker Portal</a>
+        <a class="nav-link" href="restaurant-staff-portal.html">Restaurant Staff</a>
         <a class="nav-link" href="admin.html">Admin Portal</a>
       </div>
       <a href="cart.html" aria-label="Cart" style="color:inherit;text-decoration:none;"><i class="fa-solid fa-cart-shopping badge" style="font-size:22px;"><span id="cart-count" class="badge-count">0</span></i></a>
@@ -23,9 +36,22 @@
     </header>
 
     <main class="dashboard">
-      <h2>Your Available Orders</h2>
-  <p id="worker-info"></p>
-  <div style="text-align:right;margin-bottom:0.5rem;"><button id="signout" class="btn" style="background:#e53e3e">Sign Out</button></div>
+      <h2>Worker Dashboard</h2>
+      <p id="worker-info"></p>
+
+      <div class="availability-control">
+        <label style="font-weight:600;">Availability Status:</label>
+        <span id="status-badge" class="status-badge">Loading...</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="availability-toggle">
+          <span class="toggle-slider"></span>
+        </label>
+        <span id="toggle-label">Available</span>
+        <div style="flex:1;"></div>
+        <button id="signout" class="btn" style="background:#e53e3e">Sign Out</button>
+      </div>
+
+      <h3>Available Orders</h3>
       <div id="orders-list">Loading pending orders...</div>
       <h3 style="margin-top:1.5rem">Your Active Jobs</h3>
       <div id="active-jobs">Loading active jobs...</div>
@@ -35,14 +61,82 @@
 
     <script>
       const currentWorker = JSON.parse(localStorage.getItem('current_worker')||'null');
-  const ordersList = document.getElementById('orders-list');
+      const ordersList = document.getElementById('orders-list');
       const workerInfo = document.getElementById('worker-info');
+      const statusBadge = document.getElementById('status-badge');
+      const availabilityToggle = document.getElementById('availability-toggle');
+      const toggleLabel = document.getElementById('toggle-label');
+
       if(!currentWorker){ window.location.href='worker-signin.html'; }
       else { workerInfo.textContent = `Signed in as ${currentWorker.Name} (${currentWorker.WorkerID})`; }
 
       document.getElementById('signout').addEventListener('click', ()=>{
         localStorage.removeItem('current_worker');
         window.location.href = 'worker-signin.html';
+      });
+
+      // Fetch and display current worker availability status
+      async function updateWorkerStatus(){
+        try{
+          const res = await fetch(`/api/workers/${currentWorker.WorkerID}`);
+          if(!res.ok) throw new Error('Failed to fetch worker status');
+          const data = await res.json();
+          const worker = data.worker;
+          const status = worker.AvailabilityStatus || 'Available';
+
+          // Update currentWorker in localStorage
+          currentWorker.AvailabilityStatus = status;
+          localStorage.setItem('current_worker', JSON.stringify(currentWorker));
+
+          // Update UI
+          updateStatusUI(status);
+        }catch(e){
+          console.error('Error fetching worker status:', e);
+        }
+      }
+
+      // Update status badge and toggle based on current status
+      function updateStatusUI(status){
+        // Update badge
+        statusBadge.textContent = status;
+        statusBadge.className = 'status-badge';
+        if(status === 'Available'){
+          statusBadge.classList.add('status-available');
+          availabilityToggle.checked = true;
+          availabilityToggle.disabled = false;
+          toggleLabel.textContent = 'Available';
+        }else if(status === 'Unavailable'){
+          statusBadge.classList.add('status-unavailable');
+          availabilityToggle.checked = false;
+          availabilityToggle.disabled = false;
+          toggleLabel.textContent = 'Unavailable';
+        }else if(status === 'On Delivery'){
+          statusBadge.classList.add('status-on-delivery');
+          availabilityToggle.checked = true;
+          availabilityToggle.disabled = true;
+          toggleLabel.textContent = 'On Delivery';
+        }
+      }
+
+      // Handle availability toggle
+      availabilityToggle.addEventListener('change', async ()=>{
+        const newStatus = availabilityToggle.checked ? 'Available' : 'Unavailable';
+        try{
+          const res = await fetch(`/api/workers/${currentWorker.WorkerID}`, {
+            method: 'PUT',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ AvailabilityStatus: newStatus })
+          });
+          if(!res.ok) throw new Error('Failed to update status');
+          await updateWorkerStatus();
+          // Reload orders to reflect availability filter
+          loadOrders();
+        }catch(e){
+          console.error('Error updating availability:', e);
+          alert('Failed to update availability status');
+          // Revert toggle
+          availabilityToggle.checked = !availabilityToggle.checked;
+        }
       });
 
       // small helper to escape user-provided text when inserting into innerHTML
@@ -58,6 +152,13 @@
 
   async function loadOrders(){
         try{
+          // Check worker availability status
+          const workerStatus = currentWorker.AvailabilityStatus || 'Available';
+          if(workerStatus === 'Unavailable'){
+            ordersList.innerHTML = '<p>You are currently unavailable. Toggle your availability to see orders.</p>';
+            return;
+          }
+
           const res = await fetch('/api/orders/placed');
           if(!res.ok) throw new Error('Failed to load');
           const data = await res.json();
@@ -112,6 +213,7 @@
                   appendActiveJobToDOM(optimisticJob);
                 }catch(e){ console.error('Optimistic UI update failed', e); }
                 // sync with server in background
+                updateWorkerStatus();
                 loadActiveJobs();
                 loadOrders();
             });
@@ -137,7 +239,7 @@
           const done = confirm('Mark this job as delivered and finish?');
           if(done){
             const r = await fetch(`/api/jobs/${job}/complete`, { method: 'POST' });
-            if(r.ok){ alert('Job marked completed. Nice work!'); window.history.replaceState({}, '', 'worker.html'); await loadOrders(); await loadActiveJobs(); }
+            if(r.ok){ alert('Job marked completed. Nice work!'); window.history.replaceState({}, '', 'worker.html'); await updateWorkerStatus(); await loadOrders(); await loadActiveJobs(); }
             else alert('Failed to mark completed');
           } else { window.history.replaceState({}, '', 'worker.html'); }
         }
@@ -177,7 +279,7 @@
               const jobId = btn.dataset.id;
               if(!confirm('Confirm you have delivered this order?')) return;
               const r = await fetch(`/api/jobs/${jobId}/complete`, { method: 'POST' });
-              if(r.ok){ alert('Job completed.'); await loadActiveJobs(); await loadOrders(); }
+              if(r.ok){ alert('Job completed.'); await updateWorkerStatus(); await loadActiveJobs(); await loadOrders(); }
               else alert('Failed to complete job');
             });
           });
@@ -211,7 +313,7 @@
             const jobId = job.JobID;
             if(!confirm('Confirm you have delivered this order?')) return;
             const r = await fetch(`/api/jobs/${jobId}/complete`, { method: 'POST' });
-            if(r.ok){ alert('Job completed.'); await loadActiveJobs(); await loadOrders(); }
+            if(r.ok){ alert('Job completed.'); await updateWorkerStatus(); await loadActiveJobs(); await loadOrders(); }
             else alert('Failed to complete job');
           });
 
@@ -236,11 +338,12 @@
       }
 
       // initial load
+      updateWorkerStatus();
       loadOrders();
       loadActiveJobs();
       maybeCompleteJob();
       // refresh every 15s
-      setInterval(()=>{ loadOrders(); loadActiveJobs(); }, 15000);
+      setInterval(()=>{ updateWorkerStatus(); loadOrders(); loadActiveJobs(); }, 15000);
     </script>
   </body>
 </html>

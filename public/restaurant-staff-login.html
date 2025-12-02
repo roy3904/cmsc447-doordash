@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>GritDash | Restaurant Staff Login</title>
+        <link rel="stylesheet" href="admin-style.css">
+    </head>
+    <body>
+        <header>
+            <p class="webpage-title">GRITDASH RESTAURANT STAFF</p>
+        </header>
+        <a class="return-link" href="homepage.html">&lt Return To Home Portal</a>
+
+        <div class="login-container">
+            <p class="login-title">Restaurant Staff Login</p>
+            <form class="login-form">
+                <label for="email">Email</label>
+                <input type="email" id="email" placeholder="Enter Email" required>
+
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="Enter Password" required>
+
+                <p class="incorrect-login-text hidden">Incorrect Email or Password!</p>
+
+                <button type="submit" class="login-button">Login</button>
+            </form>
+        </div>
+
+        <script type="module" src="./scripts/restaurant-staff-login.js"></script>
+    </body>
+</html>
