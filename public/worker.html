@@ -36,6 +36,7 @@
     </header>
 
     <main class="dashboard">
+<<<<<<< HEAD
       <h2>Worker Dashboard</h2>
       <p id="worker-info"></p>
 
@@ -52,6 +53,13 @@
       </div>
 
       <h3>Available Orders</h3>
+=======
+        <h2>Your Available Orders</h2>
+    <p id="worker-info"></p>
+    <div id="worker-actions" style="margin-top:0.5rem;">
+      <button id="signout" class="btn" style="background:#e53e3e">Sign Out</button>
+    </div>
+>>>>>>> df03d8e4e3b9479b06d522835e8939260f463aed
       <div id="orders-list">Loading pending orders...</div>
       <h3 style="margin-top:1.5rem">Your Active Jobs</h3>
       <div id="active-jobs">Loading active jobs...</div>
@@ -77,6 +85,7 @@
         window.location.href = 'worker-signin.html';
       });
 
+<<<<<<< HEAD
       // Fetch and display current worker availability status
       async function updateWorkerStatus(){
         try{
@@ -140,6 +149,9 @@
           availabilityToggle.checked = !availabilityToggle.checked;
         }
       });
+=======
+      
+>>>>>>> df03d8e4e3b9479b06d522835e8939260f463aed
 
       // small helper to escape user-provided text when inserting into innerHTML
       function escapeHtml(unsafe){
@@ -281,7 +293,11 @@
               const jobId = btn.dataset.id;
               if(!confirm('Confirm you have delivered this order?')) return;
               const r = await fetch(`/api/jobs/${jobId}/complete`, { method: 'POST' });
+<<<<<<< HEAD
               if(r.ok){ alert('Job completed.'); await updateWorkerStatus(); await loadActiveJobs(); await loadOrders(); }
+=======
+              if(r.ok){ alert('Job completed.'); window.location.reload(); }
+>>>>>>> df03d8e4e3b9479b06d522835e8939260f463aed
               else alert('Failed to complete job');
             });
           });
@@ -383,8 +399,11 @@
       loadActiveJobs();
       loadWorkerFeedback();
       maybeCompleteJob();
+<<<<<<< HEAD
       // refresh every 15s
       setInterval(()=>{ updateWorkerStatus(); loadOrders(); loadActiveJobs(); }, 15000);
+=======
+>>>>>>> df03d8e4e3b9479b06d522835e8939260f463aed
     </script>
   </body>
 </html>
