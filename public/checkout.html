@@ -194,6 +194,7 @@
           // show confirmation modal
           document.getElementById('conf-text').innerHTML = `Your order <strong>${order.id}</strong> was placed. Estimated delivery: <strong>20-35 minutes</strong> to ${escapeHtml(building)} ${escapeHtml(room)}.`;
           document.getElementById('confirmation').style.display = 'flex';
+          localStorage.removeItem('current_customer');
         }catch(e){ console.error(e); alert('There was an error placing your order. Please try again.'); }
       });
 
