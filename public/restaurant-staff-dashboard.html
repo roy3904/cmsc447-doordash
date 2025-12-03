@@ -199,6 +199,103 @@
         background: #2b6cb0;
         color: #fff;
       }
+
+      /* Notification Bell Styles */
+      .notification-bell {
+        position: relative;
+        display: inline-block;
+        cursor: pointer;
+        margin: 0 1rem;
+      }
+      .notification-bell i {
+        font-size: 1.5rem;
+        color: #2d3748;
+      }
+      .notification-badge {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background: #e53e3e;
+        color: white;
+        border-radius: 10px;
+        padding: 2px 6px;
+        font-size: 0.7rem;
+        font-weight: bold;
+        display: none;
+      }
+      .notification-badge.show {
+        display: block;
+      }
+      .notification-dropdown {
+        display: none;
+        position: absolute;
+        right: 0;
+        top: 40px;
+        width: 350px;
+        max-height: 400px;
+        overflow-y: auto;
+        background: white;
+        border: 1px solid #e6e6e6;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        z-index: 1000;
+      }
+      .notification-dropdown.show {
+        display: block;
+      }
+      .notification-header {
+        padding: 1rem;
+        border-bottom: 1px solid #e6e6e6;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .notification-header h3 {
+        margin: 0;
+        font-size: 1rem;
+      }
+      .notification-item {
+        padding: 1rem;
+        border-bottom: 1px solid #f7fafc;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      .notification-item:hover {
+        background: #f7fafc;
+      }
+      .notification-item.unread {
+        background: #ebf8ff;
+      }
+      .notification-message {
+        margin: 0;
+        font-size: 0.9rem;
+        color: #2d3748;
+      }
+      .notification-time {
+        font-size: 0.75rem;
+        color: #718096;
+        margin-top: 0.25rem;
+      }
+      .notification-toast {
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        background: #38a169;
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        display: none;
+        z-index: 2000;
+        animation: slideIn 0.3s ease-out;
+      }
+      .notification-toast.show {
+        display: block;
+      }
+      @keyframes slideIn {
+        from { transform: translateX(400px); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
     </style>
   </head>
   <body>
@@ -218,7 +315,26 @@
           <h2 style="margin: 0 0 0.5rem 0;">Restaurant Staff Dashboard</h2>
           <p id="staff-info" class="staff-info">Loading...</p>
         </div>
-        <button id="signout-btn" class="btn btn-danger">Sign Out</button>
+        <div style="display: flex; align-items: center;">
+          <div class="notification-bell" id="notification-bell">
+            <i class="fa-solid fa-bell"></i>
+            <span class="notification-badge" id="notification-badge">0</span>
+            <div class="notification-dropdown" id="notification-dropdown">
+              <div class="notification-header">
+                <h3>Notifications</h3>
+                <button class="btn btn-small" id="mark-all-read" style="font-size: 0.75rem;">Mark All Read</button>
+              </div>
+              <div id="notification-list">
+                <p class="empty-state">No notifications</p>
+              </div>
+            </div>
+          </div>
+          <button id="signout-btn" class="btn btn-danger">Sign Out</button>
+        </div>
+      </div>
+
+      <div class="notification-toast" id="notification-toast">
+        <span id="toast-message">New order received!</span>
       </div>
 
       <!-- Orders Section -->

@@ -297,15 +297,141 @@ function escapeHtml(unsafe) {
 }
 
 // ==========================================
+// ==========================================
+// NOTIFICATION SYSTEM
+// ==========================================
+
+let notifications = [];
+let previousNotificationCount = 0;
+
+const notificationBell = document.getElementById('notification-bell');
+const notificationBadge = document.getElementById('notification-badge');
+const notificationDropdown = document.getElementById('notification-dropdown');
+const notificationList = document.getElementById('notification-list');
+const notificationToast = document.getElementById('notification-toast');
+const toastMessage = document.getElementById('toast-message');
+const markAllReadBtn = document.getElementById('mark-all-read');
+
+// Toggle notification dropdown
+notificationBell.addEventListener('click', (e) => {
+    e.stopPropagation();
+    notificationDropdown.classList.toggle('show');
+});
+
+// Close dropdown when clicking outside
+document.addEventListener('click', () => {
+    notificationDropdown.classList.remove('show');
+});
+
+// Load notifications
+async function loadNotifications() {
+    if (!currentStaff || !currentStaff.StaffID) return;
+
+    try {
+        const response = await fetch(`/api/notifications/RestaurantStaff/${currentStaff.StaffID}`);
+        if (!response.ok) throw new Error('Failed to load notifications');
+
+        const data = await response.json();
+        notifications = data.notifications || [];
+
+        // Update badge
+        const unreadCount = notifications.filter(n => !n.IsRead).length;
+        if (unreadCount > 0) {
+            notificationBadge.textContent = unreadCount;
+            notificationBadge.classList.add('show');
+        } else {
+            notificationBadge.classList.remove('show');
+        }
+
+        // Show toast for new notifications
+        if (unreadCount > previousNotificationCount && previousNotificationCount > 0) {
+            showToast('New order received!');
+        }
+        previousNotificationCount = unreadCount;
+
+        // Render notifications
+        renderNotifications();
+    } catch (error) {
+        console.error('Error loading notifications:', error);
+    }
+}
+
+// Render notifications in dropdown
+function renderNotifications() {
+    if (notifications.length === 0) {
+        notificationList.innerHTML = '<p class="empty-state">No notifications</p>';
+        return;
+    }
+
+    notificationList.innerHTML = notifications.map(n => {
+        const time = new Date(n.CreatedAt).toLocaleString();
+        const unreadClass = n.IsRead ? '' : 'unread';
+        return `
+            <div class="notification-item ${unreadClass}" data-id="${n.NotificationID}">
+                <p class="notification-message">${n.Message}</p>
+                <p class="notification-time">${time}</p>
+            </div>
+        `;
+    }).join('');
+
+    // Add click handlers to mark as read
+    document.querySelectorAll('.notification-item.unread').forEach(item => {
+        item.addEventListener('click', async () => {
+            const id = item.dataset.id;
+            await markNotificationRead(id);
+        });
+    });
+}
+
+// Mark single notification as read
+async function markNotificationRead(id) {
+    try {
+        const response = await fetch(`/api/notifications/${id}/read`, { method: 'PUT' });
+        if (!response.ok) throw new Error('Failed to mark as read');
+        await loadNotifications();
+    } catch (error) {
+        console.error('Error marking notification as read:', error);
+    }
+}
+
+// Mark all notifications as read
+markAllReadBtn.addEventListener('click', async () => {
+    if (!currentStaff || !currentStaff.StaffID) return;
+
+    try {
+        const response = await fetch(`/api/notifications/RestaurantStaff/${currentStaff.StaffID}/read-all`, {
+            method: 'PUT'
+        });
+        if (!response.ok) throw new Error('Failed to mark all as read');
+        await loadNotifications();
+    } catch (error) {
+        console.error('Error marking all as read:', error);
+    }
+});
+
+// Show toast notification
+function showToast(message) {
+    toastMessage.textContent = message;
+    notificationToast.classList.add('show');
+    setTimeout(() => {
+        notificationToast.classList.remove('show');
+    }, 3000);
+}
+
+// ==========================================
 // INITIALIZATION
 // ==========================================
 
 // Initial load
 loadOrders(currentStatus);
 loadMenuItems();
+loadNotifications();
 
 // Auto-refresh every 15 seconds
 setInterval(() => {
     loadOrders(currentStatus);
     loadMenuItems();
 }, 15000);
+
+// Poll notifications every 10 seconds
+setInterval(loadNotifications, 10000);

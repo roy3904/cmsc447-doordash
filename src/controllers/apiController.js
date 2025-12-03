@@ -1,4 +1,4 @@
-import { getRestaurants, getRestaurantById as dbGetRestaurantById, createRestaurant as dbCreateRestaurant, updateRestaurant as dbUpdateRestaurant, deleteRestaurant as dbDeleteRestaurant, getMenuItemsByRestaurantId, createOrder, getCart as dbGetCart, addToCart as dbAddToCart, removeFromCart as dbRemoveFromCart, clearCart as dbClearCart, getMenuItem as dbGetMenuItem, updateMenuItem as dbUpdateMenuItem, getPlacedOrders, getOrdersByRestaurantId as dbGetOrdersByRestaurantId, getOrdersByCustomerId as dbGetOrdersByCustomerId, getFeedbackForWorker as dbGetFeedbackForWorker, deleteFeedback as dbDeleteFeedback, assignOrderToWorker, completeDeliveryJob, updateOrderStatus as dbUpdateOrderStatus, getWorkers, getWorkerById as dbGetWorkerById, updateWorker as dbUpdateWorker, createWorker, declineOrderByWorker, deleteWorker, createWorkerApplication as dbCreateWorkerApplication, getWorkerApplications as dbGetWorkerApplications, getWorkerApplicationById as dbGetWorkerApplicationById, updateWorkerApplicationStatus as dbUpdateWorkerApplicationStatus, updateWorkerApplication as dbUpdateWorkerApplication, deleteWorkerApplication as dbDeleteWorkerApplication, getCustomers as dbGetCustomers, getCustomerById as dbGetCustomerById, createCustomer as dbCreateCustomer, updateCustomer as dbUpdateCustomer, deleteCustomer as dbDeleteCustomer, getCustomerByEmail as dbGetCustomerByEmail, addFeedback as dbAddFeedback, getFeedbackByOrder as dbGetFeedbackByOrder, getSystemAdmin, getRestaurantStaffByEmail } from '../database.js';
+import { getRestaurants, getRestaurantById as dbGetRestaurantById, createRestaurant as dbCreateRestaurant, updateRestaurant as dbUpdateRestaurant, deleteRestaurant as dbDeleteRestaurant, getMenuItemsByRestaurantId, createOrder, getCart as dbGetCart, addToCart as dbAddToCart, removeFromCart as dbRemoveFromCart, clearCart as dbClearCart, getMenuItem as dbGetMenuItem, updateMenuItem as dbUpdateMenuItem, getPlacedOrders, getOrdersByRestaurantId as dbGetOrdersByRestaurantId, getOrdersByCustomerId as dbGetOrdersByCustomerId, getFeedbackForWorker as dbGetFeedbackForWorker, deleteFeedback as dbDeleteFeedback, assignOrderToWorker, completeDeliveryJob, updateOrderStatus as dbUpdateOrderStatus, getWorkers, getWorkerById as dbGetWorkerById, updateWorker as dbUpdateWorker, createWorker, declineOrderByWorker, deleteWorker, createWorkerApplication as dbCreateWorkerApplication, getWorkerApplications as dbGetWorkerApplications, getWorkerApplicationById as dbGetWorkerApplicationById, updateWorkerApplicationStatus as dbUpdateWorkerApplicationStatus, updateWorkerApplication as dbUpdateWorkerApplication, deleteWorkerApplication as dbDeleteWorkerApplication, getCustomers as dbGetCustomers, getCustomerById as dbGetCustomerById, createCustomer as dbCreateCustomer, updateCustomer as dbUpdateCustomer, deleteCustomer as dbDeleteCustomer, getCustomerByEmail as dbGetCustomerByEmail, addFeedback as dbAddFeedback, getFeedbackByOrder as dbGetFeedbackByOrder, getSystemAdmin, getRestaurantStaffByEmail, getRestaurantStaffByRestaurantId, getWorkerActiveRestaurant, getOrderById, getAvailableWorkers, createNotification, getNotifications as dbGetNotifications, markNotificationAsRead as dbMarkNotificationAsRead, markAllNotificationsAsRead as dbMarkAllNotificationsAsRead } from '../database.js';
 import { getJobsForWorker } from '../database.js';
 import argon2 from 'argon2';
 
@@ -118,6 +118,42 @@ export const placeOrder = async (req, res) => {
   // #swagger.summary = 'Place a new order'
   try {
     const orderId = await createOrder(req.body);
+
+    // Create notifications for restaurant staff
+    try {
+      const restaurantId = req.body.restaurantId;
+      if (restaurantId) {
+        const staffMembers = await getRestaurantStaffByRestaurantId(restaurantId);
+        for (const staff of staffMembers) {
+          await createNotification(
+            'RestaurantStaff',
+            staff.StaffID,
+            `New order #${orderId} received`,
+            orderId
+          );
+        }
+      }
+    } catch (notificationError) {
+      // Don't fail the order if notification creation fails
+      console.error('Failed to create restaurant notifications:', notificationError);
+    }
+
+    // Create notifications for available workers
+    try {
+      const availableWorkers = await getAvailableWorkers();
+      for (const worker of availableWorkers) {
+        await createNotification(
+          'Worker',
+          worker.WorkerID,
+          `New delivery request available`,
+          orderId
+        );
+      }
+    } catch (notificationError) {
+      // Don't fail the order if notification creation fails
+      console.error('Failed to create worker notifications:', notificationError);
+    }
+
     res.status(201).json({ message: 'Order placed successfully', orderId });
   } catch (error) {
     console.error('Failed to place order:', error);
@@ -246,7 +282,38 @@ export const acceptOrder = async (req, res) => {
     const orderId = req.params.id;
     const { workerId } = req.body;
     if(!workerId) return res.status(400).json({ error: 'workerId required' });
+
+    // Check for restaurant lock
+    const activeRestaurant = await getWorkerActiveRestaurant(workerId);
+    if (activeRestaurant) {
+      // Worker is locked to a restaurant, verify the order is from the same restaurant
+      const order = await getOrderById(orderId);
+      if (order && order.RestaurantID !== activeRestaurant.RestaurantID) {
+        return res.status(403).json({
+          error: 'Restaurant lock violation',
+          message: `You are currently locked to ${activeRestaurant.Name}. Complete all deliveries before accepting orders from other restaurants.`,
+          lockedRestaurant: activeRestaurant
+        });
+      }
+    }
+
     const jobId = await assignOrderToWorker(orderId, workerId);
+
+    // Notify customer that a driver has accepted their order
+    try {
+      const order = await getOrderById(orderId);
+      if (order && order.CustomerID) {
+        await createNotification(
+          'Customer',
+          order.CustomerID,
+          `A driver has accepted your order #${orderId}`,
+          orderId
+        );
+      }
+    } catch (notificationError) {
+      console.error('Failed to create customer notification:', notificationError);
+    }
+
     res.json({ message: 'Order accepted', jobId });
   } catch (error) {
     console.error('Failed to accept order:', error);
@@ -271,6 +338,28 @@ export const completeOrder = async (req, res) => {
   try {
     const jobId = req.params.id;
     await completeDeliveryJob(jobId);
+
+    // Notify customer that their order has been delivered
+    try {
+      const db = await import('../database.js').then(m => m.openDb());
+      const job = await db.get('SELECT * FROM DeliveryJob WHERE JobID = ?', jobId);
+      await db.close();
+
+      if (job && job.OrderID) {
+        const order = await getOrderById(job.OrderID);
+        if (order && order.CustomerID) {
+          await createNotification(
+            'Customer',
+            order.CustomerID,
+            `Your order #${job.OrderID} has been delivered`,
+            job.OrderID
+          );
+        }
+      }
+    } catch (notificationError) {
+      console.error('Failed to create customer notification:', notificationError);
+    }
+
     res.json({ message: 'Job completed' });
   } catch (error) {
     console.error('Failed to complete job:', error);
@@ -293,6 +382,26 @@ export const updateOrderStatus = async (req, res) => {
     }
 
     await dbUpdateOrderStatus(orderId, status);
+
+    // Create customer notification for important status changes
+    try {
+      const order = await getOrderById(orderId);
+      if (order && order.CustomerID) {
+        let message = '';
+        if (status === 'Preparing') {
+          message = `Your order #${orderId} is being prepared`;
+        } else if (status === 'Ready for Pickup') {
+          message = `Your order #${orderId} is ready for pickup`;
+        }
+
+        if (message) {
+          await createNotification('Customer', order.CustomerID, message, orderId);
+        }
+      }
+    } catch (notificationError) {
+      console.error('Failed to create customer notification:', notificationError);
+    }
+
     res.json({ message: 'Order status updated', status });
   } catch (error) {
     console.error('Failed to update order status:', error);
@@ -320,7 +429,9 @@ export const getWorker = async (req, res) => {
     if (!worker) {
       return res.status(404).json({ error: 'Worker not found' });
     }
-    res.json({ worker });
+    // Include active restaurant (for restaurant lock feature)
+    const activeRestaurant = await getWorkerActiveRestaurant(workerId);
+    res.json({ worker, activeRestaurant });
   } catch (error) {
     console.error('Failed to get worker:', error);
     res.status(500).json({ error: 'Failed to get worker' });
@@ -743,3 +854,68 @@ export async function loginRestaurantStaff(req, res) {
     res.status(500).json({ error: 'Failed to login' });
   }
 }
+
+// =======================================
+// NOTIFICATION CONTROLLERS
+// =======================================
+
+// Get notifications for a user
+export const getUserNotifications = async (req, res) => {
+  try {
+    const { userType, userId } = req.params;
+    const { isRead } = req.query; // optional filter
+
+    // Validate userType
+    const validUserTypes = ['Customer', 'Worker', 'RestaurantStaff'];
+    if (!validUserTypes.includes(userType)) {
+      return res.status(400).json({ error: `Invalid userType. Valid types: ${validUserTypes.join(', ')}` });
+    }
+
+    // Parse isRead if provided
+    let isReadFilter = null;
+    if (isRead !== undefined) {
+      isReadFilter = isRead === 'true' || isRead === '1';
+    }
+
+    const notifications = await dbGetNotifications(userType, userId, isReadFilter);
+    res.json({ notifications });
+  } catch (error) {
+    console.error('Failed to get notifications:', error);
+    res.status(500).json({ error: 'Failed to get notifications' });
+  }
+};
+
+// Mark a single notification as read
+export const markNotificationRead = async (req, res) => {
+  try {
+    const notificationId = req.params.id;
+    if (!notificationId) {
+      return res.status(400).json({ error: 'Notification ID required' });
+    }
+
+    await dbMarkNotificationAsRead(notificationId);
+    res.json({ message: 'Notification marked as read' });
+  } catch (error) {
+    console.error('Failed to mark notification as read:', error);
+    res.status(500).json({ error: 'Failed to mark notification as read' });
+  }
+};
+
+// Mark all notifications as read for a user
+export const markAllNotificationsRead = async (req, res) => {
+  try {
+    const { userType, userId } = req.params;
+
+    // Validate userType
+    const validUserTypes = ['Customer', 'Worker', 'RestaurantStaff'];
+    if (!validUserTypes.includes(userType)) {
+      return res.status(400).json({ error: `Invalid userType. Valid types: ${validUserTypes.join(', ')}` });
+    }
+
+    await dbMarkAllNotificationsAsRead(userType, userId);
+    res.json({ message: 'All notifications marked as read' });
+  } catch (error) {
+    console.error('Failed to mark all notifications as read:', error);
+    res.status(500).json({ error: 'Failed to mark all notifications as read' });
+  }
+};

@@ -442,6 +442,46 @@ export async function completeDeliveryJob(jobId) {
 }
 
 // =======================================
+// Get Worker's Active Restaurant (for restaurant lock)
+// =======================================
+export async function getWorkerActiveRestaurant(workerId) {
+  let db;
+  try {
+    db = await openDb();
+    const result = await db.get(`
+      SELECT DISTINCT r.RestaurantID, r.Name
+      FROM DeliveryJob dj
+      JOIN "Order" o ON dj.OrderID = o.OrderID
+      JOIN Restaurant r ON o.RestaurantID = r.RestaurantID
+      WHERE dj.WorkerID = ? AND dj.JobStatus = 'Accepted'
+    `, workerId);
+    return result || null; // Returns { RestaurantID, Name } or null
+  } catch (error) {
+    console.error('Error getting worker active restaurant:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
+// =======================================
+// Get Order by ID (helper function)
+// =======================================
+export async function getOrderById(orderId) {
+  let db;
+  try {
+    db = await openDb();
+    const order = await db.get('SELECT * FROM "Order" WHERE OrderID = ?', orderId);
+    return order || null;
+  } catch (error) {
+    console.error('Error getting order by ID:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
+// =======================================
 // Update Order Status
 // =======================================
 export async function updateOrderStatus(orderId, newStatus) {
@@ -516,6 +556,23 @@ export async function getWorkerById(workerId) {
     return worker;
   } catch (error) {
     console.error('Error getting worker:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
+// =======================================
+// Get all available workers
+// =======================================
+export async function getAvailableWorkers() {
+  let db;
+  try {
+    db = await openDb();
+    const workers = await db.all('SELECT * FROM Worker WHERE AvailabilityStatus = ?', 'Available');
+    return workers;
+  } catch (error) {
+    console.error('Error getting available workers:', error);
     throw error;
   } finally {
     if (db) await db.close();
@@ -1288,5 +1345,102 @@ export async function getRestaurantStaffByEmail(email) {
     if (db) {
       await db.close();
     }
+  }
+}
+
+// Get all restaurant staff for a specific restaurant
+export async function getRestaurantStaffByRestaurantId(restaurantId) {
+  let db;
+  try {
+    db = await openDb();
+    const staff = await db.all('SELECT * FROM RestaurantStaff WHERE RestaurantID = ?', restaurantId);
+    return staff;
+  } catch (error) {
+    console.error('Error getting restaurant staff by restaurant ID:', error);
+    throw error;
+  } finally {
+    if (db) {
+      await db.close();
+    }
+  }
+}
+
+// =======================================
+// NOTIFICATION FUNCTIONS
+// =======================================
+
+// Create a notification
+export async function createNotification(userType, userId, message, orderId = null) {
+  let db;
+  try {
+    db = await openDb();
+    const validUserTypes = ['Customer', 'Worker', 'RestaurantStaff'];
+    if (!validUserTypes.includes(userType)) {
+      throw new Error(`Invalid userType: ${userType}. Valid types are: ${validUserTypes.join(', ')}`);
+    }
+    const result = await db.run(
+      'INSERT INTO Notification (UserType, UserID, Message, OrderID) VALUES (?, ?, ?, ?)',
+      [userType, userId, message, orderId]
+    );
+    return result.lastID;
+  } catch (error) {
+    console.error('Error creating notification:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
+// Get notifications for a user
+export async function getNotifications(userType, userId, isRead = null) {
+  let db;
+  try {
+    db = await openDb();
+    let query = 'SELECT * FROM Notification WHERE UserType = ? AND UserID = ?';
+    const params = [userType, userId];
+
+    if (isRead !== null) {
+      query += ' AND IsRead = ?';
+      params.push(isRead ? 1 : 0);
+    }
+
+    query += ' ORDER BY CreatedAt DESC';
+    const notifications = await db.all(query, params);
+    return notifications;
+  } catch (error) {
+    console.error('Error getting notifications:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
+// Mark a single notification as read
+export async function markNotificationAsRead(notificationId) {
+  let db;
+  try {
+    db = await openDb();
+    await db.run('UPDATE Notification SET IsRead = 1 WHERE NotificationID = ?', notificationId);
+    return true;
+  } catch (error) {
+    console.error('Error marking notification as read:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
+// Mark all notifications as read for a user
+export async function markAllNotificationsAsRead(userType, userId) {
+  let db;
+  try {
+    db = await openDb();
+    await db.run('UPDATE Notification SET IsRead = 1 WHERE UserType = ? AND UserID = ?', [userType, userId]);
+    return true;
+  } catch (error) {
+    console.error('Error marking all notifications as read:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
   }
 }
