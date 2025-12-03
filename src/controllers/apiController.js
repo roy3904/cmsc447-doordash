@@ -197,6 +197,19 @@ export const getWorkerFeedback = async (req, res) => {
   }
 };
 
+export const getWorkerEarnings = async (req, res) => {
+  try {
+    const workerId = req.params.id;
+    if (!workerId) return res.status(400).json({ error: 'workerId required' });
+    const rows = await getCompletedJobsForWorker(workerId);
+    const totalTips = rows.reduce((acc, r) => acc + (parseFloat(r.Tip) || 0), 0);
+    res.json({ count: rows.length, totalTips, jobs: rows });
+  } catch (error) {
+    console.error('Failed to get worker earnings:', error);
+    res.status(500).json({ error: 'Failed to get worker earnings' });
+  }
+};
+
 export const acknowledgeFeedback = async (req, res) => {
   try {
     const feedbackId = req.params.id;

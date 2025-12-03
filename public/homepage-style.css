@@ -25,6 +25,12 @@ p{
     padding-right: 10px;
     top: 0;
     position: sticky;
+    z-index: 1000;
+}
+
+/* Prevent page content from sliding under the sticky header */
+main, .dashboard, .food-container, .checkout-container {
+    margin-top: 80px;
 }
 
 .header-container{

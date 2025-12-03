@@ -612,6 +612,28 @@ export async function getJobsForWorker(workerId) {
   }
 }
 
+// Get completed (or delivered) jobs for a worker including tip info
+export async function getCompletedJobsForWorker(workerId) {
+  let db;
+  try {
+    db = await openDb();
+    const rows = await db.all(`
+      SELECT dj.JobID, dj.OrderID, dj.CompletionTime, o.Tip, o.TotalCost
+      FROM DeliveryJob dj
+      JOIN "Order" o ON o.OrderID = dj.OrderID
+      WHERE dj.WorkerID = ?
+        AND (dj.JobStatus = ? OR o.OrderStatus = ?)
+      ORDER BY dj.CompletionTime DESC
+    `, [workerId, 'Completed', 'Delivered']);
+    return rows;
+  } catch (error) {
+    console.error('Error getting completed jobs for worker:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
 // =======================================
 // Worker Application Functions
 // =======================================
