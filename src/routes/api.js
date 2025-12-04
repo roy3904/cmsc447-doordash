@@ -1,6 +1,6 @@
 
 import express from 'express';
-import { getAllRestaurants, getRestaurant, addRestaurant, modifyRestaurant, removeRestaurant, getMenuItems, getRestaurantOrders, placeOrder, getCart, addToCart, removeFromCart, clearCart, getMenuItem, modifyMenuItem, getOrdersPlaced, acceptOrder, declineOrder, completeOrder, updateOrderStatus, getAllWorkers, getWorker, modifyWorker, addWorker, getWorkerJobs, removeWorker, createWorkerApplication, getAllWorkerApplications, getWorkerApplication, approveWorkerApplication, declineWorkerApplication, modifyWorkerApplication, removeWorkerApplication, getAllCustomers, getCustomer, addCustomer, modifyCustomer, removeCustomer, loginAdminUser, loginCustomer, postFeedback, getFeedback, getCustomerOrders, getWorkerFeedback, acknowledgeFeedback, getWorkerEarnings, loginRestaurantStaff, mergeCart } from '../controllers/apiController.js';
+import { getAllRestaurants, getRestaurant, addRestaurant, modifyRestaurant, removeRestaurant, getMenuItems, getRestaurantOrders, placeOrder, getCart, addToCart, removeFromCart, clearCart, getMenuItem, modifyMenuItem, getOrdersPlaced, acceptOrder, declineOrder, completeOrder, updateOrderStatus, getAllWorkers, getWorker, modifyWorker, addWorker, getWorkerJobs, removeWorker, createWorkerApplication, getAllWorkerApplications, getWorkerApplication, approveWorkerApplication, declineWorkerApplication, modifyWorkerApplication, removeWorkerApplication, getAllCustomers, getCustomer, addCustomer, modifyCustomer, removeCustomer, loginAdminUser, loginCustomer, postFeedback, getFeedback, getCustomerOrders, getWorkerFeedback, acknowledgeFeedback, getWorkerEarnings, loginRestaurantStaff, getAllRestaurantStaff, mergeCart, modifyRestaurantStaff, removeStaff } from '../controllers/apiController.js';
 
 const router = express.Router();
 
@@ -9,6 +9,15 @@ router.post('/login', loginAdminUser);
 
 // Restaurant Staff Login
 router.post('/restaurant-staff/login', loginRestaurantStaff);
+
+// API Route to get all restaurant staff
+router.get('/restaurant-staff', getAllRestaurantStaff);
+
+//API Route to modify restaurant staff
+router.put('/restaurant-staff/:id', modifyRestaurantStaff);
+
+//API Route to delete a restaurant staff
+router.delete('/restaurant-staff/:id', removeStaff);
 
 // API Route to get all restaurants from the db
 router.get('/restaurants', getAllRestaurants);
@@ -88,6 +97,10 @@ router.get('/workers', getAllWorkers);
 router.get('/workers/:id', getWorker);
 // Get feedback for a worker (feedback left on orders delivered by this worker)
 router.get('/workers/:id/feedback', getWorkerFeedback);
+// Get earnings summary for a worker (completed jobs & tip total)
+router.get('/workers/:id/earnings', getWorkerEarnings);
+// Acknowledge a feedback entry
+router.post('/feedback/:id', acknowledgeFeedback);
 // Get earnings summary for a worker (completed jobs & tip total)
 router.get('/workers/:id/earnings', getWorkerEarnings);
 // Acknowledge a feedback entry
