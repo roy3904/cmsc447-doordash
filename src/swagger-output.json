@@ -426,6 +426,16 @@
         }
       }
     },
+    "/api/cart/merge": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
     "/api/cart/item": {
       "post": {
         "tags": [
@@ -510,7 +520,7 @@
           }
         }
       },
-      "delete": {
+      "post": {
         "description": "",
         "responses": {
           "default": {
@@ -564,6 +574,16 @@
       }
     },
     "/api/workers/{id}/feedback": {
+      "get": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/workers/{id}/earnings": {
       "get": {
         "description": "",
         "responses": {

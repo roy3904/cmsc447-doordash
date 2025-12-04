@@ -76,15 +76,36 @@
               </div>
               <div style="text-align:right">
                 <div class="small">Total: $${total.toFixed(2)}</div>
-                <button class="btn feedback-btn" data-order-id="${escapeHtml(placed)}">Leave Feedback</button>
+                <div class="feedback-area" data-order-id="${escapeHtml(placed)}">
+                  <button class="btn feedback-btn" data-order-id="${escapeHtml(placed)}">Leave Feedback</button>
+                </div>
               </div>
             </div>
             ${itemsHtml}
           `;
           area.appendChild(div);
+          
+          // fetch feedback for this order; if present, show it and remove feedback button
+          (async () => {
+            try {
+              const fid = encodeURIComponent(placed);
+              const resFb = await fetch('/api/feedback/' + fid);
+              if (!resFb.ok) return; // no feedback or server error
+              const fbJson = await resFb.json();
+              const fb = fbJson && fbJson.feedback;
+              const fa = div.querySelector('.feedback-area');
+              if (fb && fa) {
+                // replace the button with the submitted feedback
+                fa.innerHTML = `<div class="small">Your feedback: <strong>${escapeHtml(String(fb.Rating))} / 5</strong>${fb.Comment ? ' — ' + escapeHtml(fb.Comment) : ''}</div>`;
+              }
+            } catch (e) {
+              // ignore fetch errors; leave button present
+              console.debug('feedback fetch failed for', placed, e);
+            }
+          })();
         }
 
-        // attach feedback handlers
+        // attach feedback handlers (buttons that remain)
         document.querySelectorAll('.feedback-btn').forEach(btn => {
           btn.addEventListener('click', (e) => {
             const orderId = e.currentTarget.getAttribute('data-order-id');
