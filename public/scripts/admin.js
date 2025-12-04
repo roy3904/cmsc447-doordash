@@ -373,7 +373,7 @@ async function renderApplications(){
     const totalPages = Math.ceil(total / appState.limit);
 
     let html = `
-        <div style="margin-bottom:1rem;">
+       
             <input type="text" class="js-app-search" placeholder="Search by name, email, or ID" value="${appState.search}" style="width:250px;padding:6px;margin-right:8px;">
             <select class="js-app-status-filter" style="padding:6px;margin-right:8px;">
                 <option value="">All Status</option>
@@ -390,7 +390,7 @@ async function renderApplications(){
             </select>
             <button class="js-bulk-approve" style="padding:6px 12px;margin-right:4px;background:#2b6cb0;color:white;border:none;border-radius:4px;cursor:pointer;">Bulk Approve</button>
             <button class="js-bulk-decline" style="padding:6px 12px;background:#dc3545;color:white;border:none;border-radius:4px;cursor:pointer;">Bulk Decline</button>
-        </div>
+        
     `;
 
     if(!apps.length){
@@ -399,24 +399,20 @@ async function renderApplications(){
         apps.forEach(a => {
             const isSelected = appState.selectedApps.has(a.ApplicationID);
             html += `
-            <div class="database-item app-item" style="display:flex;gap:12px;align-items:flex-start;">
-                <div style="flex-shrink:0;padding-top:4px;">
-                    <input type="checkbox" class="js-app-checkbox" data-app-id="${a.ApplicationID}" ${isSelected ? 'checked' : ''} style="cursor:pointer;width:18px;height:18px;">
-                </div>
-                <div style="flex:1;min-width:0;">
+            <div class="database-item app-item">
+                    <input type="checkbox" class="js-app-checkbox" data-app-id="${a.ApplicationID}" ${isSelected ? 'checked' : ''} style="cursor:pointer;width:18px;height:18px;margin:0px;">
+               
                     <p class="worker-name">${a.Name}</p>
                     <p class="worker-id">${a.WorkerID}</p>
                     <p class="worker-email">${a.Email}</p>
                     <p class="worker-availability">${a.Availability || ''}</p>
                     <p style="font-weight:bold;color:${a.Status==='Pending'?'#f59e0b':a.Status==='Approved'?'#10b981':'#ef4444'}">${a.Status}</p>
-                    <div style="margin-top:8px;">
-                        <button class="js-edit-app" data-app-id="${a.ApplicationID}" style="margin-right:4px;">Edit</button>
+                    
+                        <button class="js-edit-app" data-app-id="${a.ApplicationID}">Edit</button>
                         ${a.Status === 'Pending' ? `
                             <button class="approve js-approve" data-app-id="${a.ApplicationID}">Approve</button>
                             <button class="decline js-decline" data-app-id="${a.ApplicationID}">Decline</button>
                         ` : ''}
-                    </div>
-                </div>
             </div>
             `;
         });

@@ -426,6 +426,16 @@
         }
       }
     },
+    "/api/cart/merge": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
     "/api/cart/item": {
       "post": {
         "tags": [
