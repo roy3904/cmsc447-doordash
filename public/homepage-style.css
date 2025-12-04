@@ -195,7 +195,7 @@ main, .dashboard, .food-container, .checkout-container {
 }
 
 .restaurant-item:hover{
-    background-color: rgb(252, 250, 155);
+    background-color: rgb(255, 222, 0);;
 }
 
 .restaurant-img{
