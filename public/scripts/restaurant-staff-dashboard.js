@@ -249,7 +249,7 @@ function createMenuItemCard(item) {
                 <button class="btn btn-small" onclick="updateItemQuantity('${item.ItemID}')">Update</button>
             </div>
             <div style="display: flex; align-items: center; gap: 0.5rem; width: 100%;">
-                <span style="font-size: 0.85rem; color: #4a5568;">${isAvailable ? 'Available' : 'Out of Stock'}</span>
+                <span style="font-size: 0.85rem; color: ${isAvailable ? '#00d12dff' : '#df0000ff'}">${isAvailable ? 'Available' : 'Out of Stock'}</span>
             </div>
         </div>
     `;

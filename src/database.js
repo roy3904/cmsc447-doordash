@@ -173,7 +173,7 @@ export async function getMenuItemsByRestaurantId(restaurantId) {
     }
 
     // Fetch all items under the matched MenuID with a quantity greater than 0
-    const menuItems = await db.all('SELECT * FROM MenuItem WHERE MenuID = ? AND Quantity > 0', menu.MenuID);
+    const menuItems = await db.all('SELECT * FROM MenuItem WHERE MenuID = ?', menu.MenuID);
 
     // Return array of menu item objects
     return menuItems;
