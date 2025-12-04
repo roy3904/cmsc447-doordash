@@ -1,6 +1,6 @@
 
 import express from 'express';
-import { getAllRestaurants, getRestaurant, addRestaurant, modifyRestaurant, removeRestaurant, getMenuItems, getRestaurantOrders, placeOrder, getCart, addToCart, removeFromCart, clearCart, getMenuItem, modifyMenuItem, getOrdersPlaced, acceptOrder, declineOrder, completeOrder, updateOrderStatus, getAllWorkers, getWorker, modifyWorker, addWorker, getWorkerJobs, removeWorker, createWorkerApplication, getAllWorkerApplications, getWorkerApplication, approveWorkerApplication, declineWorkerApplication, modifyWorkerApplication, removeWorkerApplication, getAllCustomers, getCustomer, addCustomer, modifyCustomer, removeCustomer, loginAdminUser, loginCustomer, postFeedback, getFeedback, getCustomerOrders, getWorkerFeedback, acknowledgeFeedback, loginRestaurantStaff, mergeCart } from '../controllers/apiController.js';
+import { getAllRestaurants, getRestaurant, addRestaurant, modifyRestaurant, removeRestaurant, getMenuItems, getRestaurantOrders, placeOrder, getCart, addToCart, removeFromCart, clearCart, getMenuItem, modifyMenuItem, getAvailableOrders, acceptOrder, declineOrder, completeOrder, updateOrderStatus, getAllWorkers, getWorker, modifyWorker, addWorker, getWorkerJobs, removeWorker, createWorkerApplication, getAllWorkerApplications, getWorkerApplication, approveWorkerApplication, declineWorkerApplication, modifyWorkerApplication, removeWorkerApplication, getAllCustomers, getCustomer, addCustomer, modifyCustomer, removeCustomer, loginAdminUser, loginCustomer, postFeedback, getFeedback, getCustomerOrders, getWorkerFeedback, acknowledgeFeedback, loginRestaurantStaff, mergeCart } from '../controllers/apiController.js';
 
 const router = express.Router();
 
@@ -40,8 +40,8 @@ router.put('/menuitems/:id', modifyMenuItem);
 // API Route to place an order
 router.post('/orders', placeOrder);
 
-// Get orders that are placed and waiting for acceptance
-router.get('/orders/placed', getOrdersPlaced);
+// Get orders that are ready for pickup
+router.get('/orders/available', getAvailableOrders);
 
 // Accept an order (assign to worker)
 router.post('/orders/:id/accept', acceptOrder);

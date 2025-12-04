@@ -188,7 +188,7 @@
             return;
           }
 
-          const res = await fetch('/api/orders/placed');
+          const res = await fetch('/api/orders/available');
           if(!res.ok) throw new Error('Failed to load');
           const data = await res.json();
           const orders = data.orders || [];
@@ -229,7 +229,7 @@
               const d = await resp.json();
               const jobId = d.jobId;
               // show pickup and delivery guidance
-                const order = (await (await fetch('/api/orders/placed')).json()).orders.find(x=>x.OrderID===orderId);
+                const order = (await (await fetch('/api/orders/available')).json()).orders.find(x=>x.OrderID===orderId);
                 const pickup = order && order.restaurant ? order.restaurant.Location : 'Restaurant pickup location';
                 alert(`Order accepted. Pickup at: ${pickup}. Deliver to: ${order.delivery && order.delivery.building} ${order.delivery && order.delivery.room || ''}`);
                 // Optimistically move the order from pending to active jobs immediately for snappy UX
