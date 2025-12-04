@@ -520,7 +520,7 @@
           }
         }
       },
-      "delete": {
+      "post": {
         "description": "",
         "responses": {
           "default": {
@@ -574,6 +574,16 @@
       }
     },
     "/api/workers/{id}/feedback": {
+      "get": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/workers/{id}/earnings": {
       "get": {
         "description": "",
         "responses": {
