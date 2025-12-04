@@ -230,26 +230,6 @@
               if(!resp.ok){ alert('Failed to accept order'); return; }
               // Immediately refresh the page so the worker sees the updated lists (orders, active jobs, feedback)
               window.location.reload();
-              const d = await resp.json();
-              const jobId = d.jobId;
-              // show pickup and delivery guidance
-                const order = (await (await fetch('/api/orders/available')).json()).orders.find(x=>x.OrderID===orderId);
-                const pickup = order && order.restaurant ? order.restaurant.Location : 'Restaurant pickup location';
-                alert(`Order accepted. Pickup at: ${pickup}. Deliver to: ${order.delivery && order.delivery.building} ${order.delivery && order.delivery.room || ''}`);
-                // Optimistically move the order from pending to active jobs immediately for snappy UX
-                try{
-                  // remove pending element from DOM
-                  const pendingEl = btn.closest('.order');
-                  if(pendingEl) pendingEl.remove();
-                  // create minimal job object and render into Active Jobs
-                  const optimisticJob = { JobID: jobId, OrderID: order.OrderID, order: order, items: order.items };
-                  appendActiveJobToDOM(optimisticJob);
-                }catch(e){ console.error('Optimistic UI update failed', e); }
-                // sync with server in background
-                updateWorkerStatus();
-                loadActiveJobs();
-                loadOrders();
-                loadWorkerFeedback();
             });
           });
           document.querySelectorAll('.js-decline').forEach(btn => {
