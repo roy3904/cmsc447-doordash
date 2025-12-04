@@ -315,16 +315,18 @@
           if(!feedbacks.length){ fbEl.innerHTML = '<p>No feedback yet.</p>'; return; }
           fbEl.innerHTML = '';
           for(const f of feedbacks){
-            const div = document.createElement('div'); div.className='order';
-            const who = f.customer ? (f.customer.Name || f.customer.Email) : f.CustomerID;
-            const rest = f.restaurant ? f.restaurant.Name : '';
-            div.innerHTML = `<div><strong>Order:</strong> ${escapeHtml(f.OrderID)} <span class="small">(${escapeHtml(f.CreatedAt)})</span></div>
-              <div><strong>Customer:</strong> ${escapeHtml(who)}</div>
-              <div><strong>Restaurant:</strong> ${escapeHtml(rest)}</div>
-              <div><strong>Rating:</strong> ${escapeHtml(f.Rating)}</div>
-              <div><strong>Comment:</strong> ${escapeHtml(f.Comment || '')}</div>
-              <div style="margin-top:8px"><button class="btn ack-btn" data-feedback-id="${escapeHtml(f.FeedbackID)}">Acknowledge</button></div>`;
-            fbEl.appendChild(div);
+            if(f.Reviewed !== 'Yes'){
+              const div = document.createElement('div'); div.className='order';
+              const who = f.customer ? (f.customer.Name || f.customer.Email) : f.CustomerID;
+              const rest = f.restaurant ? f.restaurant.Name : '';
+              div.innerHTML = `<div><strong>Order:</strong> ${escapeHtml(f.OrderID)} <span class="small">(${escapeHtml(f.CreatedAt)})</span></div>
+                <div><strong>Customer:</strong> ${escapeHtml(who)}</div>
+                <div><strong>Restaurant:</strong> ${escapeHtml(rest)}</div>
+                <div><strong>Rating:</strong> ${escapeHtml(f.Rating)}</div>
+                <div><strong>Comment:</strong> ${escapeHtml(f.Comment || '')}</div>
+                <div style="margin-top:8px"><button class="btn ack-btn" data-feedback-id="${escapeHtml(f.FeedbackID)}">Acknowledge</button></div>`;
+              fbEl.appendChild(div);
+            }
           }
 
           // attach acknowledge handlers
@@ -332,7 +334,7 @@
             btn.addEventListener('click', async (e) => {
               const id = e.currentTarget.getAttribute('data-feedback-id');
               if(!confirm('Acknowledge and remove this feedback?')) return;
-              const r = await fetch('/api/feedback/' + encodeURIComponent(id), { method: 'DELETE' });
+              const r = await fetch('/api/feedback/' + encodeURIComponent(id), { method: 'POST' });
               if(!r.ok){ alert('Failed to remove feedback'); return; }
               // refresh the page so the list stays in sync
               window.location.reload();

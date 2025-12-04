@@ -117,6 +117,7 @@
           try { document.getElementById('clear-cart').style.display = 'none'; } catch(e) {}
           try { document.getElementById('checkout').style.display = 'none'; } catch(e) {}
           try { document.getElementById('past-orders-footer').style.display = 'inline-block'; } catch(e) {}
+          try { document.getElementById('cart-total').style.display = 'none'; } catch(e) {}
           updateCartBadge();
           return;
         }
@@ -161,8 +162,12 @@
       }
 
       async function clearCart() {
+        const customer = localStorage.getItem('current_customer')
+        const customerParsed = JSON.parse(customer);
         if (!confirm('Are you sure you want to clear your cart?')) return;
-        await fetch('/api/cart', { method: 'DELETE' });
+        await fetch('/api/cart', { method: 'DELETE',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ id: customerParsed.CustomerID})});
         renderCart();
       }
 
