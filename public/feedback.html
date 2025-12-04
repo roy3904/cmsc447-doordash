@@ -2,11 +2,26 @@
 <html>
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Feedback | GritDash</title>
     <link rel="stylesheet" href="homepage-style.css">
-    <style>.feedback-box{max-width:520px;margin:2rem auto;padding:1rem;border:1px solid #eee;border-radius:8px}</style>
+    <style>
+      .feedback-box{width:520px;margin:2rem auto;padding:1rem;border:1px solid #eee;border-radius:8px}
+      #order-id{ width:90%; }
+
+      @media screen and (max-width: 450px){
+        .feedback-box{ width: 350px; }
+      }
+    </style>
   </head>
   <body>
+    <header class="nav-bar">
+      <div class="header-container">
+        <a href="homepage.html" style="text-decoration:none;"><img class="nav-logo" src="./images/gritdash-logo-1.png" alt="GritDash logo"></a>
+        <a class="nav-link" href="homepage.html">Home</a>
+        <a class="nav-link" href="cart.html">Cart</a>
+      </div>
+    </header>
     <main class="feedback-box">
       <h2>Leave Feedback</h2>
       <p>Order ID</p>
