@@ -173,7 +173,7 @@ export async function getMenuItemsByRestaurantId(restaurantId) {
     }
 
     // Fetch all items under the matched MenuID with a quantity greater than 0
-    const menuItems = await db.all('SELECT * FROM MenuItem WHERE MenuID = ? AND Quantity > 0', menu.MenuID);
+    const menuItems = await db.all('SELECT * FROM MenuItem WHERE MenuID = ?', menu.MenuID);
 
     // Return array of menu item objects
     return menuItems;
@@ -855,7 +855,7 @@ export async function addToCart(customerId, itemId, quantity) {
     await db.run('BEGIN TRANSACTION');
 
     let cart = await db.get('SELECT * FROM "Order" WHERE CustomerID = ? AND OrderStatus = \'Cart\'', customerId);
-    if (!cart) {
+    if (!cart || cart.length === 0) {
       const menuItem = await db.get('SELECT MenuID FROM MenuItem WHERE ItemID = ?', itemId);
       if (!menuItem) {
         throw new Error(`Item with ID ${itemId} not found`);
@@ -1326,6 +1326,90 @@ export async function getRestaurantStaffByEmail(email) {
     return staff;
   } catch (error) {
     console.error('Error getting restaurant staff:', error);
+    throw error;
+  } finally {
+    if (db) {
+      await db.close();
+    }
+  }
+}
+
+//get all restaurant staff
+export async function getRestaurantStaff() {
+  let db;
+  try {
+    // Open database connection
+    db = await openDb();
+
+    // Execute query to fetch all restaurant records
+    const restaurantStaff = await db.all('SELECT * FROM RestaurantStaff');
+
+    // Return array of restaurant objects
+    return restaurantStaff;
+  } catch (error) {
+    // Log error if query fails
+    console.error('Error getting restaurants:', error);
+    throw error;
+  } finally {
+    // Always close the database connection
+    if (db) {
+      await db.close();
+    }
+  }
+}
+
+//update properties of a restaurant staff
+export async function updateStaff(staffId, updates) {
+  let db;
+  try {
+    db = await openDb();
+    const fields = [];
+    const values = [];
+
+    if (updates.Name !== undefined) {
+      fields.push('Name = ?');
+      values.push(updates.Name);
+    }
+    if (updates.Email !== undefined) {
+      fields.push('Email = ?');
+      values.push(updates.Email);
+    }
+    if (updates.Phone !== undefined) {
+      fields.push('Phone = ?');
+      values.push(updates.Phone);
+    }
+    if (updates.PasswordHash !== undefined) {
+      fields.push('PasswordHash = ?');
+      values.push(updates.PasswordHash);
+    }
+
+    if (fields.length === 0) {
+      return true;
+    }
+
+    values.push(staffId);
+    const query = `UPDATE RestaurantStaff SET ${fields.join(', ')} WHERE StaffID = ?`;
+    await db.run(query, values);
+    return true;
+  } catch (error) {
+    console.error('Error updating RestaurantStaff:', error);
+    throw error;
+  } finally {
+    if (db) {
+      await db.close();
+    }
+  }
+}
+
+//delete a restaurant staff
+export async function deleteStaff(staffId) {
+  let db;
+  try {
+    db = await openDb();
+    await db.run('DELETE FROM RestaurantStaff WHERE staffID = ?', staffId);
+    return true;
+  } catch (error) {
+    console.error('Error deleting restaurant staff:', error);
     throw error;
   } finally {
     if (db) {

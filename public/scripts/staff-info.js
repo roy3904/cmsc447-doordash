@@ -1,24 +1,31 @@
 const params = new URLSearchParams(window.location.search);
-const userId = params.get('id');
+const staffId = params.get('id');
 
-let currCustomer = null;
+let currStaff = null;
 
-async function fetchCustomer() {
+async function fetchStaff() {
     try {
-        const response = await fetch(`/api/customers/${userId}`);
+        const response = await fetch(`/api/restaurant-staff`);
         const data = await response.json();
-        currCustomer = data.customer;
-        renderCustomerInfo();
+        const staffList = data.restaurantStaff;
+
+        for(let i = 0; i < staffList.length; i++){
+            if(staffList[i].StaffID === staffId){
+                currStaff = staffList[i];
+                break;
+            }
+        }
+
+        renderStaffInfo();
+
     } catch (error) {
-        console.error('Failed to fetch customer:', error);
-        currCustomer = null;
-        renderCustomerInfo();
+        console.error('Failed to fetch staff:', error);
     }
 }
 
-async function updateCustomer(updates) {
+async function updateStaff(updates) {
     try {
-        const response = await fetch(`/api/customers/${userId}`, {
+        const response = await fetch(`/api/restaurant-staff/${staffId}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
@@ -26,89 +33,61 @@ async function updateCustomer(updates) {
             body: JSON.stringify(updates)
         });
         if (!response.ok) throw new Error('Failed to update');
-        await fetchCustomer();
+        await fetchStaff();
     } catch (error) {
         console.error('Failed to update customer:', error);
         alert('Failed to update customer');
     }
 }
 
-async function deleteCustomer() {
-    try {
-        const response = await fetch(`/api/customers/${userId}`, {
-            method: 'DELETE'
-        });
-        if (!response.ok) throw new Error('Failed to delete');
-        window.location.href = "admin.html";
-    } catch (error) {
-        console.error('Failed to delete customer:', error);
-        alert('Failed to delete customer');
-    }
-}
+function renderStaffInfo(){
+    let staffInfoHTML = '';
 
-function renderCustomerInfo(){
-    let customerInfoHTML = '';
-
-    if(currCustomer === null){
-        customerInfoHTML = '<p class="invalid-message">This is an empty customer page!</p>';
+    if(currStaff === null){
+        staffInfoHTML = '<p class="invalid-message">This is an empty staff page!</p>';
     }
     else{
-        customerInfoHTML += `
+        staffInfoHTML += `
             <div class="info-header">
 
                 <div class="info-header-leftside">
                     <img class="profile-picture" src="./images/retriever-profile-picture.png">
-                    <p class="title-name">${currCustomer.Name}</p>
+                    <p class="title-name">${currStaff.Name}</p>
                 </div>
-
-                <button class="delete-user-button">Delete User</button>
 
             </div>
-            <div class="info-body js-customer-info-body">
+            <div class="info-body js-staff-info-body">
                 <div class="entity-info js-id-info">
-                    <p class="entity-info-text js-id-text">ID: ${currCustomer.CustomerID}</p>
+                    <p class="entity-info-text js-id-text">ID: ${currStaff.StaffID}</p>
                 </div>
                 <div class="entity-info js-name-info">
-                    <p class="entity-info-text js-name-text">Name: ${currCustomer.Name}</p>
+                    <p class="entity-info-text js-name-text">Name: ${currStaff.Name}</p>
                     <button class="entity-edit-button js-edit-name-button">Edit</button>
                 </div>
                 <div class="entity-info js-phone-info">
-                    <p class="entity-info-text js-phone-text">Phone: ${currCustomer.Phone}</p>
+                    <p class="entity-info-text js-phone-text">Phone: ${currStaff.Phone}</p>
                     <button class="entity-edit-button js-edit-phone-button">Edit</button>
                 </div>
                 <div class="entity-info js-email-info">
-                    <p class="entity-info-text js-email-text">Email: ${currCustomer.Email}</p>
+                    <p class="entity-info-text js-email-text">Email: ${currStaff.Email}</p>
                     <button class="entity-edit-button js-edit-email-button">Edit</button>
                 </div>
             </div>
         `
     }
 
-    document.querySelector('.js-customer-info-container').innerHTML = customerInfoHTML;
+    document.querySelector('.js-staff-info-container').innerHTML = staffInfoHTML;
 
     renderButtons();
 
 }
 
 function renderButtons(){
-    document.querySelector('.delete-user-button').addEventListener('click', () => {
-        document.querySelector('.delete-confirm-window').classList.remove('hidden');
-    })
-
-    document.querySelector('.js-delete-deny-button').addEventListener('click', () => {
-        document.querySelector('.delete-confirm-window').classList.add('hidden');
-    })
-
-    document.querySelector('.js-delete-accept-button').addEventListener('click', () => {
-        deleteCustomer();
-    })
-
     document.querySelector('.js-name-info').addEventListener('click', (event) => {
-        //console.log(event.target.classList);
         if(event.target.classList.contains('js-edit-name-button')){
             document.querySelector('.js-name-info').innerHTML = `
             <div class="enter-input-container">
-                <p class="customer-info-text js-name-text">Name: </p>
+                <p class="staff-info-text js-name-text">Name: </p>
                 <input class="info-input js-name-input" placeholder="Enter New Name">
             </div>
             <div class="edit-buttons js-edit-name-buttons">
@@ -119,11 +98,12 @@ function renderButtons(){
         }
 
         if(event.target.classList.contains('js-cancel-edit-button')){
-            renderCustomerInfo();
+            renderStaffInfo({ Name: document.querySelector('.js-name-input').value });
         }
 
         if(event.target.classList.contains('js-confirm-edit-button')){
-            updateCustomer({ Name: document.querySelector('.js-name-input').value });
+            console.log(document.querySelector('.js-name-input').value);
+            updateStaff({ Name: document.querySelector('.js-name-input').value });
         }
     });
 
@@ -132,7 +112,7 @@ function renderButtons(){
         if(event.target.classList.contains('js-edit-phone-button')){
             document.querySelector('.js-phone-info').innerHTML = `
             <div class="enter-input-container">
-                <p class="customer-info-text js-phone-text">Phone: </p>
+                <p class="staff-info-text js-phone-text">Phone: </p>
                 <input class="info-input js-phone-input" type="tel" placeholder="Enter New Phone" maxlength="12" pattern="[0-9]">
             </div>
             <div class="edit-buttons js-edit-phone-buttons">
@@ -165,7 +145,7 @@ function renderButtons(){
         }
 
         if(event.target.classList.contains('js-cancel-edit-button')){
-            renderCustomerInfo();
+            renderStaffInfo();
         }
 
         if(event.target.classList.contains('js-confirm-edit-button')){
@@ -177,7 +157,7 @@ function renderButtons(){
                 `
             }
             else{
-                updateCustomer({ Phone: document.querySelector('.js-phone-input').value });
+                updateStaff({ Phone: document.querySelector('.js-phone-input').value });
             }
         }
     });
@@ -187,7 +167,7 @@ function renderButtons(){
         if(event.target.classList.contains('js-edit-email-button')){
             document.querySelector('.js-email-info').innerHTML = `
             <div class="enter-input-container">
-                <p class="customer-info-text js-email-text">Email: </p>
+                <p class="staff-info-text js-email-text">Email: </p>
                 <input type="email" class="info-input js-email-input" placeholder="Enter New Email">
             </div>
             <div class="edit-buttons js-edit-email-buttons">
@@ -198,7 +178,7 @@ function renderButtons(){
         }
 
         if(event.target.classList.contains('js-cancel-edit-button')){
-            renderCustomerInfo();
+            renderStaffInfo();
         }
 
         if(event.target.classList.contains('js-confirm-edit-button')){
@@ -206,7 +186,7 @@ function renderButtons(){
             const emailVerifier = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
             if(emailVerifier.test(input)){
-                updateCustomer({ Email: document.querySelector('.js-email-input').value });
+                updateStaff({ Email: document.querySelector('.js-email-input').value });
             }
             else{
                 document.querySelector('.js-edit-email-buttons').innerHTML = `
@@ -220,7 +200,4 @@ function renderButtons(){
     });
 }
 
-fetchCustomer();
-
-
-
+fetchStaff();
