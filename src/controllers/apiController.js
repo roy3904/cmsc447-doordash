@@ -1,4 +1,4 @@
-import { getRestaurants, getRestaurantById as dbGetRestaurantById, createRestaurant as dbCreateRestaurant, updateRestaurant as dbUpdateRestaurant, deleteRestaurant as dbDeleteRestaurant, getMenuItemsByRestaurantId, createOrder, getCart as dbGetCart, addToCart as dbAddToCart, removeFromCart as dbRemoveFromCart, clearCart as dbClearCart, getMenuItem as dbGetMenuItem, updateMenuItem as dbUpdateMenuItem, getPlacedOrders, getOrdersByRestaurantId as dbGetOrdersByRestaurantId, getOrdersByCustomerId as dbGetOrdersByCustomerId, getFeedbackForWorker as dbGetFeedbackForWorker, deleteFeedback as dbDeleteFeedback, assignOrderToWorker, completeDeliveryJob, updateOrderStatus as dbUpdateOrderStatus, getWorkers, getWorkerById as dbGetWorkerById, updateWorker as dbUpdateWorker, createWorker, declineOrderByWorker, deleteWorker, createWorkerApplication as dbCreateWorkerApplication, getWorkerApplications as dbGetWorkerApplications, getWorkerApplicationById as dbGetWorkerApplicationById, updateWorkerApplicationStatus as dbUpdateWorkerApplicationStatus, updateWorkerApplication as dbUpdateWorkerApplication, deleteWorkerApplication as dbDeleteWorkerApplication, getCustomers as dbGetCustomers, getCustomerById as dbGetCustomerById, createCustomer as dbCreateCustomer, updateCustomer as dbUpdateCustomer, deleteCustomer as dbDeleteCustomer, getCustomerByEmail as dbGetCustomerByEmail, addFeedback as dbAddFeedback, getFeedbackByOrder as dbGetFeedbackByOrder, getSystemAdmin, getRestaurantStaffByEmail, getRestaurantStaff, updateStaff as dbUpdateStaff, deleteStaff } from '../database.js';
+import { getRestaurants, getRestaurantById as dbGetRestaurantById, createRestaurant as dbCreateRestaurant, updateRestaurant as dbUpdateRestaurant, deleteRestaurant as dbDeleteRestaurant, getMenuItemsByRestaurantId, createOrder, getCart as dbGetCart, addToCart as dbAddToCart, removeFromCart as dbRemoveFromCart, clearCart as dbClearCart, getMenuItem as dbGetMenuItem, updateMenuItem as dbUpdateMenuItem, getPlacedOrders, getOrdersByRestaurantId as dbGetOrdersByRestaurantId, getOrdersByCustomerId as dbGetOrdersByCustomerId, getFeedbackForWorker as dbGetFeedbackForWorker, deleteFeedback as dbDeleteFeedback, assignOrderToWorker, completeDeliveryJob, updateOrderStatus as dbUpdateOrderStatus, getWorkers, getWorkerById as dbGetWorkerById, updateWorker as dbUpdateWorker, createWorker, declineOrderByWorker, deleteWorker, createWorkerApplication as dbCreateWorkerApplication, getWorkerApplications as dbGetWorkerApplications, getWorkerApplicationById as dbGetWorkerApplicationById, updateWorkerApplicationStatus as dbUpdateWorkerApplicationStatus, updateWorkerApplication as dbUpdateWorkerApplication, deleteWorkerApplication as dbDeleteWorkerApplication, getCustomers as dbGetCustomers, getCustomerById as dbGetCustomerById, createCustomer as dbCreateCustomer, updateCustomer as dbUpdateCustomer, deleteCustomer as dbDeleteCustomer, getCustomerByEmail as dbGetCustomerByEmail, addFeedback as dbAddFeedback, getFeedbackByOrder as dbGetFeedbackByOrder, getSystemAdmin, getRestaurantStaffByEmail, getCompletedJobsForWorker, markFeedbackReviewed } from '../database.js';
 import { getJobsForWorker } from '../database.js';
 import argon2 from 'argon2';
 
@@ -197,12 +197,25 @@ export const getWorkerFeedback = async (req, res) => {
   }
 };
 
+export const getWorkerEarnings = async (req, res) => {
+  try {
+    const workerId = req.params.id;
+    if (!workerId) return res.status(400).json({ error: 'workerId required' });
+    const rows = await getCompletedJobsForWorker(workerId);
+    const totalTips = rows.reduce((acc, r) => acc + (parseFloat(r.Tip) || 0), 0);
+    res.json({ count: rows.length, totalTips, jobs: rows });
+  } catch (error) {
+    console.error('Failed to get worker earnings:', error);
+    res.status(500).json({ error: 'Failed to get worker earnings' });
+  }
+};
+
 export const acknowledgeFeedback = async (req, res) => {
   try {
     const feedbackId = req.params.id;
     if (!feedbackId) return res.status(400).json({ error: 'Feedback ID required' });
-    await dbDeleteFeedback(feedbackId);
-    res.json({ message: 'Feedback acknowledged and removed' });
+    await markFeedbackReviewed(feedbackId);
+    res.json({ message: 'Feedback acknowledged' });
   } catch (error) {
     console.error('Failed to acknowledge feedback:', error);
     res.status(500).json({ error: 'Failed to acknowledge feedback' });
@@ -557,7 +570,8 @@ export const clearCart = async (req, res) => {
   // #swagger.tags = ['Cart']
   // #swagger.summary = 'Clear the user\'s cart'
   try {
-    const customerId = 'CUST-123'; // Hardcoded for now
+    console.log(req.body);
+    const customerId = req.body.id; // Hardcoded for now
     await dbClearCart(customerId);
     res.json({ message: 'Cart cleared successfully' });
   } catch (error) {
@@ -743,45 +757,3 @@ export async function loginRestaurantStaff(req, res) {
     res.status(500).json({ error: 'Failed to login' });
   }
 }
-
-export const getAllRestaurantStaff = async (req, res) => {
-  // #swagger.tags = ['Restaurant Staff']
-  // #swagger.summary = 'Get all restaurant staff'
-  try {
-    const restaurantStaff = await getRestaurantStaff();
-    res.json({ restaurantStaff });
-  } catch (error) {
-    console.error('Failed to get restaurant staff:', error);
-    res.status(500).json({ error: 'Failed to get restaurant staff' });
-  }
-};
-
-export const modifyRestaurantStaff = async (req, res) => {
-  try {
-    const staffId = req.params.id;
-    const updates = req.body;
-    console.log(staffId, " ", updates);
-    if (!staffId) {
-      return res.status(400).json({ error: 'Staff ID required' });
-    }
-    await dbUpdateStaff(staffId, updates);
-    res.json({ message: 'Staff updated' });
-  } catch (error) {
-    console.error('Failed to update staff:', error);
-    res.status(500).json({ error: 'Failed to update staff' });
-  }
-};
-
-export const removeStaff = async (req, res) => {
-  try {
-    const staffId = req.params.id;
-    if (!staffId) {
-      return res.status(400).json({ error: 'Staff ID required' });
-    }
-    await deleteStaff(staffId);
-    res.json({ message: 'Staff deleted' });
-  } catch (error) {
-    console.error('Failed to delete staff:', error);
-    res.status(500).json({ error: 'Failed to delete staff' });
-  }
-};
