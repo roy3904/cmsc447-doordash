@@ -1,4 +1,4 @@
-import { getRestaurants, getRestaurantById as dbGetRestaurantById, createRestaurant as dbCreateRestaurant, updateRestaurant as dbUpdateRestaurant, deleteRestaurant as dbDeleteRestaurant, getMenuItemsByRestaurantId, createOrder, getCart as dbGetCart, addToCart as dbAddToCart, removeFromCart as dbRemoveFromCart, clearCart as dbClearCart, getMenuItem as dbGetMenuItem, updateMenuItem as dbUpdateMenuItem, getPlacedOrders, getOrdersByRestaurantId as dbGetOrdersByRestaurantId, getOrdersByCustomerId as dbGetOrdersByCustomerId, getFeedbackForWorker as dbGetFeedbackForWorker, deleteFeedback as dbDeleteFeedback, assignOrderToWorker, completeDeliveryJob, updateOrderStatus as dbUpdateOrderStatus, getWorkers, getWorkerById as dbGetWorkerById, updateWorker as dbUpdateWorker, createWorker, declineOrderByWorker, deleteWorker, createWorkerApplication as dbCreateWorkerApplication, getWorkerApplications as dbGetWorkerApplications, getWorkerApplicationById as dbGetWorkerApplicationById, updateWorkerApplicationStatus as dbUpdateWorkerApplicationStatus, updateWorkerApplication as dbUpdateWorkerApplication, deleteWorkerApplication as dbDeleteWorkerApplication, getCustomers as dbGetCustomers, getCustomerById as dbGetCustomerById, createCustomer as dbCreateCustomer, updateCustomer as dbUpdateCustomer, deleteCustomer as dbDeleteCustomer, getCustomerByEmail as dbGetCustomerByEmail, addFeedback as dbAddFeedback, getFeedbackByOrder as dbGetFeedbackByOrder, getSystemAdmin, getRestaurantStaffByEmail, getCompletedJobsForWorker, markFeedbackReviewed } from '../database.js';
+import { getRestaurants, getRestaurantById as dbGetRestaurantById, createRestaurant as dbCreateRestaurant, updateRestaurant as dbUpdateRestaurant, deleteRestaurant as dbDeleteRestaurant, getMenuItemsByRestaurantId, createOrder, getCart as dbGetCart, addToCart as dbAddToCart, removeFromCart as dbRemoveFromCart, clearCart as dbClearCart, getMenuItem as dbGetMenuItem, updateMenuItem as dbUpdateMenuItem, getAvailableOrders as dbGetAvailableOrders, getOrdersByRestaurantId as dbGetOrdersByRestaurantId, getOrdersByCustomerId as dbGetOrdersByCustomerId, getFeedbackForWorker as dbGetFeedbackForWorker, deleteFeedback as dbDeleteFeedback, assignOrderToWorker, completeDeliveryJob, updateOrderStatus as dbUpdateOrderStatus, getWorkers, getWorkerById as dbGetWorkerById, updateWorker as dbUpdateWorker, createWorker, declineOrderByWorker, deleteWorker, createWorkerApplication as dbCreateWorkerApplication, getWorkerApplications as dbGetWorkerApplications, getWorkerApplicationById as dbGetWorkerApplicationById, updateWorkerApplicationStatus as dbUpdateWorkerApplicationStatus, updateWorkerApplication as dbUpdateWorkerApplication, deleteWorkerApplication as dbDeleteWorkerApplication, getCustomers as dbGetCustomers, getCustomerById as dbGetCustomerById, createCustomer as dbCreateCustomer, updateCustomer as dbUpdateCustomer, deleteCustomer as dbDeleteCustomer, getCustomerByEmail as dbGetCustomerByEmail, addFeedback as dbAddFeedback, getFeedbackByOrder as dbGetFeedbackByOrder, getSystemAdmin, getRestaurantStaffByEmail, getCompletedJobsForWorker } from '../database.js';
 import { getJobsForWorker } from '../database.js';
 import argon2 from 'argon2';
 
@@ -175,13 +175,13 @@ export const getFeedback = async (req, res) => {
   }
 };
 
-export const getOrdersPlaced = async (req, res) => {
+export const getAvailableOrders = async (req, res) => {
   try {
-    const orders = await getPlacedOrders();
+    const orders = await dbGetAvailableOrders();
     res.json({ orders });
   } catch (error) {
-    console.error('Failed to get placed orders:', error);
-    res.status(500).json({ error: 'Failed to get placed orders' });
+    console.error('Failed to get available orders:', error);
+    res.status(500).json({ error: 'Failed to get available orders' });
   }
 };
 
