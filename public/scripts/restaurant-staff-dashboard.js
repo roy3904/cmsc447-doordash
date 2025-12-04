@@ -427,11 +427,28 @@ loadOrders(currentStatus);
 loadMenuItems();
 loadNotifications();
 
-// Auto-refresh every 15 seconds
-setInterval(() => {
-    loadOrders(currentStatus);
-    loadMenuItems();
-}, 15000);
+// WebSocket connection
+const socket = new WebSocket(`ws://${window.location.host}`);
 
-// Poll notifications every 10 seconds
-setInterval(loadNotifications, 10000);
+socket.onopen = () => {
+    console.log('WebSocket connection established');
+};
+
+socket.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    console.log('WebSocket message received:', data);
+
+    if (data.event === 'new_order' && data.order.RestaurantID === currentStaff.RestaurantID) {
+        showToast('New order received!');
+        loadOrders(currentStatus);
+        loadNotifications();
+    }
+};
+
+socket.onclose = () => {
+    console.log('WebSocket connection closed');
+};
+
+socket.onerror = (error) => {
+    console.error('WebSocket error:', error);
+};

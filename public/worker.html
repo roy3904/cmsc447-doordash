@@ -649,16 +649,47 @@
       }
 
       // initial load
-        updateWorkerStatus();
+      updateWorkerStatus();
       loadOrders();
       loadActiveJobs();
       loadWorkerFeedback();
       loadNotifications();
       maybeCompleteJob();
-      // refresh every 15s (also refresh feedback so workers see new feedback promptly)
-      setInterval(()=>{ updateWorkerStatus(); loadOrders(); loadActiveJobs(); loadWorkerFeedback(); }, 15000);
-      // Poll notifications every 10 seconds
-      setInterval(loadNotifications, 10000);
+
+      // WebSocket connection
+      const socket = new WebSocket(`ws://${window.location.host}`);
+
+      socket.onopen = () => {
+        console.log('WebSocket connection established');
+      };
+
+      socket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        console.log('WebSocket message received:', data);
+
+        if (data.event === 'new_order') {
+          showToast('New delivery request available!');
+          loadOrders();
+        }
+
+        if (data.event === 'order_status_update' && data.status === 'Ready for Pickup') {
+          // Check if this worker is assigned to the order
+          const workerId = currentWorker.WorkerID;
+          // We need to know which worker is assigned to the order.
+          // This information is not currently available in the broadcast message.
+          // For now, we will just show a generic notification.
+          showToast(`An order is ready for pickup!`);
+          loadActiveJobs();
+        }
+      };
+
+      socket.onclose = () => {
+        console.log('WebSocket connection closed');
+      };
+
+      socket.onerror = (error) => {
+        console.error('WebSocket error:', error);
+      };
     </script>
   </body>
 </html>
