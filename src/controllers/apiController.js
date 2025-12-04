@@ -570,7 +570,8 @@ export const clearCart = async (req, res) => {
   // #swagger.tags = ['Cart']
   // #swagger.summary = 'Clear the user\'s cart'
   try {
-    const customerId = 'CUST-123'; // Hardcoded for now
+    console.log(req.body);
+    const customerId = req.body.id; // Hardcoded for now
     await dbClearCart(customerId);
     res.json({ message: 'Cart cleared successfully' });
   } catch (error) {
