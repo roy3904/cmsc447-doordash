@@ -110,11 +110,15 @@ input:focus{
 }
 
 .student-item{
-    grid-template-columns: 170px 170px 170px 170px 170px 150px;
+    grid-template-columns: 200px 200px 200px 250px 150px;
 }
 
 .restaurant-item{
     grid-template-columns: 250px 50px 250px 300px 150px;
+}
+
+.staff-item{
+    grid-template-columns: 200px 200px 200px 250px 150px;
 }
 
 .worker-item{
@@ -284,10 +288,12 @@ input:focus{
     display: flex;
     gap: 20px;
     align-items: center;
+    justify-content: center;
 }
 
 .info-input{
     height: 25px;
+    margin: 0px;
 }
 
 .cancel-edit-button{

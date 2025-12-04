@@ -84,10 +84,6 @@ function renderWorkerInfo(){
                     <p class="entity-info-text js-availability-text">Availability: ${currWorker.AvailabilityStatus}</p>
                     <button class="entity-edit-button js-edit-availability-button">Edit</button>
                 </div>
-                <div class="entity-info js-password-info">
-                    <p class="entity-info-text js-password-text">Password: ${currWorker.PasswordHash}</p>
-                    <button class="entity-edit-button js-edit-password-button">Edit</button>
-                </div>
             </div>
         `;
     }
@@ -258,48 +254,6 @@ function renderButtons(){
 
         if(event.target.classList.contains('js-confirm-edit-button')){
             updateWorker({ AvailabilityStatus: document.querySelector('.js-availability-input').value.trim() });
-        }
-    });
-
-    document.querySelector('.js-password-info')?.addEventListener('click', (event) => {
-        if(event.target.classList.contains('js-edit-password-button')){
-            document.querySelector('.js-password-info').innerHTML = `
-            <div class="enter-input-container">
-                <p class="info-text js-password-text">Password: </p>
-                <input class="info-input js-password-input" type="password" placeholder="Enter New Password">
-            </div>
-            <div class="edit-buttons js-edit-password-buttons">
-                <button class="cancel-edit-button js-cancel-edit-button">Cancel</button>
-                <button class="confirm-edit-button js-confirm-edit-button">Confirm Changes</button>
-            </div>
-        `;
-        }
-
-        if(event.target.classList.contains('js-cancel-edit-button')){
-            renderWorkerInfo();
-        }
-
-        if(event.target.classList.contains('js-confirm-edit-button')){
-            const input = document.querySelector('.js-password-input').value;
-
-            if(input.length < 8){
-                document.querySelector('.js-edit-password-buttons').innerHTML = `
-                    <p class="error-text">Password Must Contain at Least 8 Characters.</p>
-                    <button class="cancel-edit-button js-cancel-edit-button">Cancel</button>
-                    <button class="confirm-edit-button js-confirm-edit-button">Confirm Changes</button>
-                `;
-                return;
-            }
-            if(input.includes(' ')){
-                document.querySelector('.js-edit-password-buttons').innerHTML = `
-                    <p class="error-text">Password Can't Contain Any Spaces.</p>
-                    <button class="cancel-edit-button js-cancel-edit-button">Cancel</button>
-                    <button class="confirm-edit-button js-confirm-edit-button">Confirm Changes</button>
-                `;
-                return;
-            }
-
-            updateWorker({ PasswordHash: input });
         }
     });
 }

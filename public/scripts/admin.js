@@ -5,6 +5,8 @@ export let customers = [];
 
 export let restaurants = [];
 
+export let staff = [];
+
 export function setRestaurants(restaurantList){
     restaurants = restaurantList;
 }
@@ -32,6 +34,18 @@ async function fetchRestaurants() {
     }
 }
 
+async function fetchRestaurantStaff(){
+    try{
+        const response = await fetch('/api/restaurant-staff');
+        const data = await response.json();
+        staff = data.restaurantStaff;
+        renderStaffList();
+    } catch(error){
+        console.error('Failed to fetch restaurant staff: ', error);
+        staff = [];
+    }
+}
+
 function renderCustomerList(){
     let customerListHTML = '';
     customers.forEach((customer) => {
@@ -39,7 +53,6 @@ function renderCustomerList(){
         const id = customer.CustomerID;
         const phone = customer.Phone;
         const email = customer.Email;
-        const password = customer.PasswordHash;
 
         customerListHTML += `
         <div class="database-item student-item">
@@ -47,7 +60,6 @@ function renderCustomerList(){
             <p class="customer-ID">${id}</p>
             <p class="customer-phone">${phone}</p>
             <p class="customer-email">${email}</p>
-            <p class="password">${password}</p>
             <button class="modify-button js-modify-customer" data-user-id="${id}">Modify</button>
         </div>
         `
@@ -92,6 +104,35 @@ function renderRestaurantList(){
     });
 }
 
+function renderStaffList(){
+    let staffListHTML = '';
+    staff.forEach((member) => {
+        const name = member.Name;
+        const id = member.StaffID;
+        const phone = member.Phone;
+        const email = member.Email;
+
+        staffListHTML += `
+        <div class="database-item staff-item">
+            <p class="staff-name">${name}</p>
+            <p class="staff-ID">${id}</p>
+            <p class="staff-phone">${phone}</p>
+            <p class="staff-email">${email}</p>
+            <button class="modify-button js-modify-staff" data-user-id="${id}">Modify</button>
+        </div>
+        `
+    })
+    document.querySelector('.js-staff-list-content').innerHTML = staffListHTML;
+
+    const modifyButtons = document.querySelectorAll('.js-modify-staff');
+    modifyButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            const userId = button.dataset.userId;
+            window.location.href = `staff-info.html?id=${userId}`
+        });
+    });
+}
+
 function searchCustomerList(){
     let customerListHTML = '';
 
@@ -101,7 +142,6 @@ function searchCustomerList(){
         const id = customer.CustomerID;
         const phone = customer.Phone;
         const email = customer.Email;
-        const password = customer.PasswordHash;
 
         if(name.toLowerCase().includes(input.toLowerCase()) || id.toLowerCase().includes(input.toLowerCase())){
             customerListHTML += `
@@ -110,7 +150,6 @@ function searchCustomerList(){
             <p class="customer-ID">${id}</p>
             <p class="customer-phone">${phone}</p>
             <p class="customer-email">${email}</p>
-            <p class="password">${password}</p>
             <button class="modify-button js-modify-customer" data-user-id="${id}">Modify</button>
         </div>
         `
@@ -164,6 +203,43 @@ function searchRestaurantList(){
         button.addEventListener('click', () => {
             const restaurantId = button.dataset.restaurantId;
             window.location.href = `restaurant-info.html?id=${restaurantId}`
+        });
+    });
+}
+
+function searchStaffList(){
+    let staffListHTML = '';
+
+    const input = document.querySelector('.js-search-staff').value;
+    staff.forEach((member) => {
+        const name = member.Name;
+        const id = member.StaffID;
+        const phone = member.Phone;
+        const email = member.Email;
+
+        if(name.toLowerCase().includes(input.toLowerCase()) || id.toLowerCase().includes(input.toLowerCase())){
+            staffListHTML += `
+        <div class="database-item student-item">
+            <p class="staff-name">${name}</p>
+            <p class="staff-ID">${id}</p>
+            <p class="staff-phone">${phone}</p>
+            <p class="staff-email">${email}</p>
+            <button class="modify-button js-modify-staff" data-user-id="${id}">Modify</button>
+        </div>
+        `
+        }
+    })
+
+    if(staffListHTML === ''){
+        staffListHTML = '<p class="not-found-text">Sorry, there were no users found with that information!</p>'
+    }
+    document.querySelector('.js-staff-list-content').innerHTML = staffListHTML;
+
+    const modifyButtons = document.querySelectorAll('.js-modify-staff');
+    modifyButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            const userId = button.dataset.userId;
+            window.location.href = `staff-info.html?id=${userId}`
         });
     });
 }
@@ -267,6 +343,7 @@ export function removeRestaurant(id){
 if(window.location.href.includes('admin.html')){
     fetchCustomers();
     fetchRestaurants();
+    fetchRestaurantStaff();
     const customerSearchInput = document.querySelector('.js-search-customers');
     customerSearchInput.addEventListener('keyup', (event) => {
         if(event.key === 'Enter'){
@@ -293,12 +370,29 @@ if(window.location.href.includes('admin.html')){
         }
     });
 
+    const staffSearchInput = document.querySelector('.js-search-staff');
+    staffSearchInput.addEventListener('keyup', (event) => {
+        if(event.key === 'Enter'){
+            searchStaffList();
+        }
+        else if(event.key === 'Backspace' && staffSearchInput.value.length > 0){
+            searchStaffList();
+        }
+        else if(event.key === 'Backspace' && staffSearchInput.value.length === 0){
+            searchStaffList();
+        }
+    });
+
     document.querySelector('.js-search-customer-button').addEventListener('click', () => {
         searchCustomerList();
     });
 
     document.querySelector('.js-search-restaurant-button').addEventListener('click', () => {
         searchRestaurantList();
+    });
+
+    document.querySelector('.js-search-staff-button').addEventListener('click', () => {
+        searchStaffList();
     });
 }
 

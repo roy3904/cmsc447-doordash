@@ -1,6 +1,6 @@
 
 import express from 'express';
-import { getAllRestaurants, getRestaurant, addRestaurant, modifyRestaurant, removeRestaurant, getMenuItems, getRestaurantOrders, placeOrder, getCart, addToCart, removeFromCart, clearCart, getMenuItem, modifyMenuItem, getOrdersPlaced, acceptOrder, declineOrder, completeOrder, updateOrderStatus, getAllWorkers, getWorker, modifyWorker, addWorker, getWorkerJobs, removeWorker, createWorkerApplication, getAllWorkerApplications, getWorkerApplication, approveWorkerApplication, declineWorkerApplication, modifyWorkerApplication, removeWorkerApplication, getAllCustomers, getCustomer, addCustomer, modifyCustomer, removeCustomer, loginAdminUser, loginCustomer, postFeedback, getFeedback, getCustomerOrders, getWorkerFeedback, acknowledgeFeedback, loginRestaurantStaff, mergeCart } from '../controllers/apiController.js';
+import { getAllRestaurants, getRestaurant, addRestaurant, modifyRestaurant, removeRestaurant, getMenuItems, getRestaurantOrders, placeOrder, getCart, addToCart, removeFromCart, clearCart, getMenuItem, modifyMenuItem, getOrdersPlaced, acceptOrder, declineOrder, completeOrder, updateOrderStatus, getAllWorkers, getWorker, modifyWorker, addWorker, getWorkerJobs, removeWorker, createWorkerApplication, getAllWorkerApplications, getWorkerApplication, approveWorkerApplication, declineWorkerApplication, modifyWorkerApplication, removeWorkerApplication, getAllCustomers, getCustomer, addCustomer, modifyCustomer, removeCustomer, loginAdminUser, loginCustomer, postFeedback, getFeedback, getCustomerOrders, getWorkerFeedback, acknowledgeFeedback, loginRestaurantStaff, mergeCart, getAllRestaurantStaff, modifyRestaurantStaff, removeStaff } from '../controllers/apiController.js';
 
 const router = express.Router();
 
@@ -9,6 +9,15 @@ router.post('/login', loginAdminUser);
 
 // Restaurant Staff Login
 router.post('/restaurant-staff/login', loginRestaurantStaff);
+
+// API Route to get all restaurant staff
+router.get('/restaurant-staff', getAllRestaurantStaff);
+
+//API Route to modify restaurant staff
+router.put('/restaurant-staff/:id', modifyRestaurantStaff);
+
+//API Route to delete a restaurant staff
+router.delete('/restaurant-staff/:id', removeStaff);
 
 // API Route to get all restaurants from the db
 router.get('/restaurants', getAllRestaurants);
