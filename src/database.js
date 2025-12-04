@@ -173,7 +173,7 @@ export async function getMenuItemsByRestaurantId(restaurantId) {
     }
 
     // Fetch all items under the matched MenuID with a quantity greater than 0
-    const menuItems = await db.all('SELECT * FROM MenuItem WHERE MenuID = ? AND Quantity > 0', menu.MenuID);
+    const menuItems = await db.all('SELECT * FROM MenuItem WHERE MenuID = ?', menu.MenuID);
 
     // Return array of menu item objects
     return menuItems;
@@ -912,7 +912,7 @@ export async function addToCart(customerId, itemId, quantity) {
     await db.run('BEGIN TRANSACTION');
 
     let cart = await db.get('SELECT * FROM "Order" WHERE CustomerID = ? AND OrderStatus = \'Cart\'', customerId);
-    if (!cart) {
+    if (!cart || cart.length === 0) {
       const menuItem = await db.get('SELECT MenuID FROM MenuItem WHERE ItemID = ?', itemId);
       if (!menuItem) {
         throw new Error(`Item with ID ${itemId} not found`);

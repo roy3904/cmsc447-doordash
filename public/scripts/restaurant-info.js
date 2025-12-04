@@ -1,8 +1,10 @@
 //JS file for restaurant admin page, NOT DATABASE like restaurant.js
-import {restaurants, setRestaurants, findRestaurant, changeRestaurantName, changeLocation, changeHours, removeRestaurant} from './admin.js';
+import {restaurants, staff, setRestaurants, findRestaurant, changeRestaurantName, changeLocation, changeHours, removeRestaurant} from './admin.js';
 
 const params = new URLSearchParams(window.location.search);
 const restaurantId = params.get('id');
+
+let currStaff = null;
 
 let currRestaurant = null;
 
@@ -11,6 +13,12 @@ async function fetchRestaurant() {
         const response = await fetch(`/api/restaurants/${restaurantId}`);
         const data = await response.json();
         currRestaurant = data.restaurant;
+        for(let i = 0; i < staff.length; i++){
+            if(staff[i].RestaurantID === restaurantId){
+                currStaff = staff[i];
+                break;
+            }
+        }
         renderRestaurantInfo();
     } catch (error) {
         console.error('Failed to fetch restaurant:', error);
@@ -41,7 +49,15 @@ async function deleteRestaurant() {
         const response = await fetch(`/api/restaurants/${restaurantId}`, {
             method: 'DELETE'
         });
+
         if (!response.ok) throw new Error('Failed to delete');
+
+        const response2 = await fetch(`/api/restaurants/${currStaff.StaffID}`, {
+            method: 'DELETE'
+        });
+
+        if (!response2.ok) throw new Error('Failed to delete');
+
         window.location.href = "admin.html";
     } catch (error) {
         console.error('Failed to delete restaurant:', error);

@@ -53,78 +53,80 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Loop through all items + render them
         menuItems.forEach(item => {
-            // Food Item
-            const foodItem = document.createElement('div');
-            foodItem.className = 'food-item';
+            if(item.Quantity > 0){
+                // Food Item
+                const foodItem = document.createElement('div');
+                foodItem.className = 'food-item';
 
-            // Food Description
-            const foodDescription = document.createElement('div');
-            foodDescription.className = 'food-description';
+                // Food Description
+                const foodDescription = document.createElement('div');
+                foodDescription.className = 'food-description';
 
-            // Food name
-            const foodName = document.createElement('p');
-            foodName.className = 'food-name';
-            foodName.textContent = item.Name;
-            foodDescription.appendChild(foodName);
+                // Food name
+                const foodName = document.createElement('p');
+                foodName.className = 'food-name';
+                foodName.textContent = item.Name;
+                foodDescription.appendChild(foodName);
 
-            // Food image
-            const foodImg = document.createElement('img');
-            foodImg.className = 'food-img';
+                // Food image
+                const foodImg = document.createElement('img');
+                foodImg.className = 'food-img';
 
-            // Build image path based on restaurant-name
-            const restaurantNamePath = restaurant.Name.replace(/\s+/g, '-');
-            // console.log('Restaurant Name:', restaurant.Name);
-            // console.log('Restaurant Path:', restaurantNamePath);
+                // Build image path based on restaurant-name
+                const restaurantNamePath = restaurant.Name.replace(/\s+/g, '-');
+                // console.log('Restaurant Name:', restaurant.Name);
+                // console.log('Restaurant Path:', restaurantNamePath);
 
-            // Image path formatting 
-            let imageFilePath;
-            if (!item || !item.ImageFile) {
-                // Derive filename from item name
-                imageFilePath = item.Name.toLowerCase().replace(/\s+/g, '-') + '.png';
-                // console.warn('Missing ImageFile, using derived path:', imageFilePath);
-            } else {
-                imageFilePath = item.ImageFile.toLowerCase();
-                // console.log('Original ImageFile:', item.ImageFile);
-                // console.log('Lowercased ImageFile:', imageFilePath);
+                // Image path formatting 
+                let imageFilePath;
+                if (!item || !item.ImageFile) {
+                    // Derive filename from item name
+                    imageFilePath = item.Name.toLowerCase().replace(/\s+/g, '-') + '.png';
+                    // console.warn('Missing ImageFile, using derived path:', imageFilePath);
+                } else {
+                    imageFilePath = item.ImageFile.toLowerCase();
+                    // console.log('Original ImageFile:', item.ImageFile);
+                    // console.log('Lowercased ImageFile:', imageFilePath);
+                }
+
+                // Construct image path
+                foodImg.src = `../images/${restaurantNamePath}/${imageFilePath}`;
+                foodImg.alt = item.Name;
+
+                // console.log('Final Image Source:', foodImg.src);
+                // console.log('Image Alt Text:', foodImg.alt);
+
+                // foodImg.onload = () => console.log('Image loaded successfully:', foodImg.src);
+                // foodImg.onerror = (err) => console.error('Image failed to load:', foodImg.src, err);
+
+                // Append image + description
+                foodItem.appendChild(foodImg);
+
+                // Display price
+                const foodCost = document.createElement('p');
+                foodCost.className = 'food-cost';
+                foodCost.textContent = `$${item.Price.toFixed(2)}`;
+                foodDescription.appendChild(foodCost);
+
+                foodItem.appendChild(foodDescription);
+
+                const addToCartDiv = document.createElement('div');
+                addToCartDiv.className = 'add-to-cart';
+
+                // Add-To-Cart button
+                const addButton = document.createElement('button');
+                addButton.className = 'food-button';
+                addButton.textContent = 'Add to Cart';
+                addButton.type = 'button';
+                addButton.setAttribute('data-item-id', item.ItemID);
+                addButton.setAttribute('data-quantity', '1');
+
+                addToCartDiv.appendChild(addButton);
+                foodItem.appendChild(addToCartDiv);
+
+                // Attach to DOM
+                container.appendChild(foodItem);
             }
-
-            // Construct image path
-            foodImg.src = `../images/${restaurantNamePath}/${imageFilePath}`;
-            foodImg.alt = item.Name;
-
-            // console.log('Final Image Source:', foodImg.src);
-            // console.log('Image Alt Text:', foodImg.alt);
-
-            // foodImg.onload = () => console.log('Image loaded successfully:', foodImg.src);
-            // foodImg.onerror = (err) => console.error('Image failed to load:', foodImg.src, err);
-
-            // Append image + description
-            foodItem.appendChild(foodImg);
-
-            // Display price
-            const foodCost = document.createElement('p');
-            foodCost.className = 'food-cost';
-            foodCost.textContent = `$${item.Price.toFixed(2)}`;
-            foodDescription.appendChild(foodCost);
-
-            foodItem.appendChild(foodDescription);
-
-            const addToCartDiv = document.createElement('div');
-            addToCartDiv.className = 'add-to-cart';
-
-            // Add-To-Cart button
-            const addButton = document.createElement('button');
-            addButton.className = 'food-button';
-            addButton.textContent = 'Add to Cart';
-            addButton.type = 'button';
-            addButton.setAttribute('data-item-id', item.ItemID);
-            addButton.setAttribute('data-quantity', '1');
-
-            addToCartDiv.appendChild(addButton);
-            foodItem.appendChild(addToCartDiv);
-
-            // Attach to DOM
-            container.appendChild(foodItem);
         });
 
         // Event delegation for Add to Cart buttons - more robust than per-button closures
