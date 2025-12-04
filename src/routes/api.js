@@ -90,8 +90,8 @@ router.get('/workers/:id', getWorker);
 router.get('/workers/:id/feedback', getWorkerFeedback);
 // Get earnings summary for a worker (completed jobs & tip total)
 router.get('/workers/:id/earnings', getWorkerEarnings);
-// Acknowledge (delete) a feedback entry
-router.delete('/feedback/:id', acknowledgeFeedback);
+// Acknowledge a feedback entry
+router.post('/feedback/:id', acknowledgeFeedback);
 router.post('/workers', addWorker);
 router.put('/workers/:id', modifyWorker);
 // Delete a worker
