@@ -131,6 +131,8 @@
       <div id="orders-list">Loading pending orders...</div>
       <h3 style="margin-top:1.5rem">Your Active Jobs</h3>
       <div id="active-jobs">Loading active jobs...</div>
+      <h3 style="margin-top:1.5rem">Earnings Summary</h3>
+      <div id="earnings-summary">Loading earnings...</div>
       <h3 style="margin-top:1.5rem">Customer Feedback</h3>
       <div id="feedback-list">Loading feedback...</div>
     </main>
@@ -398,7 +400,7 @@
               const jobId = btn.dataset.id;
               if(!confirm('Confirm you have delivered this order?')) return;
               const r = await fetch(`/api/jobs/${jobId}/complete`, { method: 'POST' });
-              if(r.ok){ alert('Job completed.'); await updateWorkerStatus(); await loadActiveJobs(); await loadOrders(); }
+              if(r.ok){ alert('Job completed.'); await updateWorkerStatus(); await loadActiveJobs(); await loadOrders(); await loadWorkerFeedback(); await loadWorkerEarnings(); }
               else alert('Failed to complete job');
             });
           });
@@ -410,31 +412,27 @@
         try{
           const fbEl = document.getElementById('feedback-list');
           fbEl.innerHTML = 'Loading feedback...';
-          // fetch worker jobs (to ensure feedbacks belong to this worker)
-          const jobsResp = await fetch(`/api/jobs/worker/${currentWorker.WorkerID}`);
-          const jobsData = jobsResp && jobsResp.ok ? await jobsResp.json().catch(()=>({jobs:[]})) : { jobs: [] };
-          const jobOrderIds = new Set((jobsData.jobs || []).map(j => (j.OrderID || (j.order && j.order.OrderID))));
 
           const res = await fetch(`/api/workers/${currentWorker.WorkerID}/feedback`);
           if(!res.ok){ fbEl.innerHTML = '<p>Failed to load feedback</p>'; return; }
           const data = await res.json();
           const feedbacks = data.feedbacks || [];
-          // Filter feedbacks to only those that correspond to orders this worker handled (defensive)
-          const filtered = feedbacks.filter(f => jobOrderIds.has(f.OrderID));
-          if (filtered.length !== feedbacks.length) console.debug('Filtered out feedback entries not belonging to this worker', feedbacks.map(f=>f.OrderID), Array.from(jobOrderIds));
-          if(!filtered.length){ fbEl.innerHTML = '<p>No feedback yet.</p>'; return; }
+          // Server already filters feedbacks to those belonging to this worker's completed/delivered jobs.
+          if(!feedbacks.length){ fbEl.innerHTML = '<p>No feedback yet.</p>'; return; }
           fbEl.innerHTML = '';
-          for(const f of filtered){
-            const div = document.createElement('div'); div.className='order';
-            const who = f.customer ? (f.customer.Name || f.customer.Email) : f.CustomerID;
-            const rest = f.restaurant ? f.restaurant.Name : '';
-            div.innerHTML = `<div><strong>Order:</strong> ${escapeHtml(f.OrderID)} <span class="small">(${escapeHtml(f.CreatedAt)})</span></div>
-              <div><strong>Customer:</strong> ${escapeHtml(who)}</div>
-              <div><strong>Restaurant:</strong> ${escapeHtml(rest)}</div>
-              <div><strong>Rating:</strong> ${escapeHtml(f.Rating)}</div>
-              <div><strong>Comment:</strong> ${escapeHtml(f.Comment || '')}</div>
-              <div style="margin-top:8px"><button class="btn ack-btn" data-feedback-id="${escapeHtml(f.FeedbackID)}">Acknowledge</button></div>`;
-            fbEl.appendChild(div);
+          for(const f of feedbacks){
+            if(f.Reviewed !== 'Yes'){
+              const div = document.createElement('div'); div.className='order';
+              const who = f.customer ? (f.customer.Name || f.customer.Email) : f.CustomerID;
+              const rest = f.restaurant ? f.restaurant.Name : '';
+              div.innerHTML = `<div><strong>Order:</strong> ${escapeHtml(f.OrderID)} <span class="small">(${escapeHtml(f.CreatedAt)})</span></div>
+                <div><strong>Customer:</strong> ${escapeHtml(who)}</div>
+                <div><strong>Restaurant:</strong> ${escapeHtml(rest)}</div>
+                <div><strong>Rating:</strong> ${escapeHtml(f.Rating)}</div>
+                <div><strong>Comment:</strong> ${escapeHtml(f.Comment || '')}</div>
+                <div style="margin-top:8px"><button class="btn ack-btn" data-feedback-id="${escapeHtml(f.FeedbackID)}">Acknowledge</button></div>`;
+              fbEl.appendChild(div);
+            }
           }
 
           // attach acknowledge handlers
@@ -442,13 +440,27 @@
             btn.addEventListener('click', async (e) => {
               const id = e.currentTarget.getAttribute('data-feedback-id');
               if(!confirm('Acknowledge and remove this feedback?')) return;
-              const r = await fetch('/api/feedback/' + encodeURIComponent(id), { method: 'DELETE' });
+              const r = await fetch('/api/feedback/' + encodeURIComponent(id), { method: 'POST' });
               if(!r.ok){ alert('Failed to remove feedback'); return; }
               // refresh the page so the list stays in sync
               window.location.reload();
             });
           });
         }catch(e){ console.error(e); document.getElementById('feedback-list').innerHTML = '<p>Error loading feedback</p>'; }
+      }
+
+      // Load earnings summary for the worker
+      async function loadWorkerEarnings(){
+        try{
+          const el = document.getElementById('earnings-summary');
+          el.innerHTML = 'Loading earnings...';
+          const res = await fetch(`/api/workers/${currentWorker.WorkerID}/earnings`);
+          if(!res.ok){ el.innerHTML = '<p>Failed to load earnings</p>'; return; }
+          const data = await res.json();
+          const total = parseFloat(data.totalTips || 0);
+          const count = data.count || 0;
+          el.innerHTML = `<div><strong>Total Tips:</strong> $${total.toFixed(2)}</div><div><strong>Delivered Orders:</strong> ${count}</div>`;
+        }catch(e){ console.error('Error loading earnings', e); const el = document.getElementById('earnings-summary'); if(el) el.innerHTML = '<p>Error loading earnings</p>'; }
       }
 
       // Append a single active job to the Active Jobs DOM (used for optimistic UI)

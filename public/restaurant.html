@@ -9,32 +9,32 @@
     <script src="./scripts/cart-common.js"></script>
 </head>
 <body>
-    <main>
-        <header class="nav-bar">
-            <div class="header-container">
-                <img class="nav-logo" src="./images/gritdash-logo-1.png" alt="GritDash logo">
-                <i class="fa-solid fa-bars menu-icon"></i>
-                <div class="header-dropdown hidden">
-                    <a class="dropdown-selection" href="homepage.html">Home</a>
-                    <a class="dropdown-selection" href="worker-portal.html">Worker Portal</a>
-                    <a class="dropdown-selection" href="restaurant-staff-portal.html">Restaurant Staff</a>
-                    <a class="dropdown-selection" href="admin.html">Admin Portal</a>
-                </div>
-                <a class="nav-link" href="homepage.html">Home</a>
-                <a class="nav-link" href="worker-portal.html">Worker Portal</a>
-                <a class="nav-link" href="restaurant-staff-portal.html">Restaurant Staff</a>
-                <a class="nav-link" href="admin.html">Admin Portal</a>
+    <header class="nav-bar">
+        <div class="header-container">
+            <img class="nav-logo" src="./images/gritdash-logo-1.png" alt="GritDash logo">
+            <i class="fa-solid fa-bars menu-icon"></i>
+            <div class="header-dropdown hidden">
+                <a class="dropdown-selection" href="homepage.html">Home</a>
+                <a class="dropdown-selection" href="worker-portal.html">Worker Portal</a>
+                <a class="dropdown-selection" href="restaurant-staff-portal.html">Restaurant Staff</a>
+                <a class="dropdown-selection" href="admin.html">Admin Portal</a>
             </div>
-            <a href="cart.html" aria-label="Cart" class="cart-anchor">
-                <i class="fa-solid fa-cart-shopping badge"></i>
-                <p id="cart-count" class="badge-count">0</p>
-            </a>
+            <a class="nav-link" href="homepage.html">Home</a>
+            <a class="nav-link" href="worker-portal.html">Worker Portal</a>
+            <a class="nav-link" href="restaurant-staff-portal.html">Restaurant Staff</a>
+            <a class="nav-link" href="admin.html">Admin Portal</a>
+        </div>
+        <a href="cart.html" aria-label="Cart" class="cart-anchor">
+            <i class="fa-solid fa-cart-shopping badge"></i>
+            <p id="cart-count" class="badge-count">0</p>
+        </a>
         <script src="./scripts/cart-common.js"></script>
         <script src="./scripts/dropdown-menu.js"></script>
-        </header>
+    </header>
 
+    <main>
         <p class="food-title" id="restaurant-name">Restaurant</p>
-        
+
         <div id="restaurant-info" style="text-align: center;">
             <!-- Restaurant info dynamically loads here -->
         </div>

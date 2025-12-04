@@ -233,12 +233,25 @@ export const getWorkerFeedback = async (req, res) => {
   }
 };
 
+export const getWorkerEarnings = async (req, res) => {
+  try {
+    const workerId = req.params.id;
+    if (!workerId) return res.status(400).json({ error: 'workerId required' });
+    const rows = await getCompletedJobsForWorker(workerId);
+    const totalTips = rows.reduce((acc, r) => acc + (parseFloat(r.Tip) || 0), 0);
+    res.json({ count: rows.length, totalTips, jobs: rows });
+  } catch (error) {
+    console.error('Failed to get worker earnings:', error);
+    res.status(500).json({ error: 'Failed to get worker earnings' });
+  }
+};
+
 export const acknowledgeFeedback = async (req, res) => {
   try {
     const feedbackId = req.params.id;
     if (!feedbackId) return res.status(400).json({ error: 'Feedback ID required' });
-    await dbDeleteFeedback(feedbackId);
-    res.json({ message: 'Feedback acknowledged and removed' });
+    await markFeedbackReviewed(feedbackId);
+    res.json({ message: 'Feedback acknowledged' });
   } catch (error) {
     console.error('Failed to acknowledge feedback:', error);
     res.status(500).json({ error: 'Failed to acknowledge feedback' });
@@ -668,7 +681,8 @@ export const clearCart = async (req, res) => {
   // #swagger.tags = ['Cart']
   // #swagger.summary = 'Clear the user\'s cart'
   try {
-    const customerId = 'CUST-123'; // Hardcoded for now
+    console.log(req.body);
+    const customerId = req.body.id; // Hardcoded for now
     await dbClearCart(customerId);
     res.json({ message: 'Cart cleared successfully' });
   } catch (error) {
