@@ -40,8 +40,8 @@ router.put('/menuitems/:id', modifyMenuItem);
 // API Route to place an order
 router.post('/orders', placeOrder);
 
-// Get orders that are placed and waiting for acceptance
-router.get('/orders/placed', getOrdersPlaced);
+// Get orders that are ready for pickup
+router.get('/orders/available', getAvailableOrders);
 
 // Accept an order (assign to worker)
 router.post('/orders/:id/accept', acceptOrder);

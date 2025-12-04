@@ -256,7 +256,7 @@
             return;
           }
 
-          const res = await fetch('/api/orders/placed');
+          const res = await fetch('/api/orders/available');
           if(!res.ok) throw new Error('Failed to load');
           const data = await res.json();
           let orders = data.orders || [];

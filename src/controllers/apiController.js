@@ -211,13 +211,13 @@ export const getFeedback = async (req, res) => {
   }
 };
 
-export const getOrdersPlaced = async (req, res) => {
+export const getAvailableOrders = async (req, res) => {
   try {
-    const orders = await getPlacedOrders();
+    const orders = await dbGetAvailableOrders();
     res.json({ orders });
   } catch (error) {
-    console.error('Failed to get placed orders:', error);
-    res.status(500).json({ error: 'Failed to get placed orders' });
+    console.error('Failed to get available orders:', error);
+    res.status(500).json({ error: 'Failed to get available orders' });
   }
 };
 
