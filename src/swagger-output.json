@@ -362,7 +362,7 @@
         }
       }
     },
-    "/api/orders/placed": {
+    "/api/orders/available": {
       "get": {
         "description": "",
         "responses": {

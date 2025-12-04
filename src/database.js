@@ -282,13 +282,13 @@ export async function declineOrderByWorker(orderId, workerId) {
 }
 
 // =======================================
-// Get Orders with status 'Placed'
+// Get Orders with status 'Ready for Pickup'
 // =======================================
-export async function getPlacedOrders() {
+export async function getAvailableOrders() {
   let db;
   try {
     db = await openDb();
-    const orders = await db.all('SELECT * FROM "Order" WHERE OrderStatus = ?', 'Placed');
+    const orders = await db.all('SELECT * FROM "Order" WHERE OrderStatus = ?', 'Ready for Pickup');
     for (const o of orders) {
       o.items = await db.all('SELECT * FROM OrderItem WHERE OrderID = ?', o.OrderID);
       // try to parse delivery JSON
@@ -298,7 +298,7 @@ export async function getPlacedOrders() {
     }
     return orders;
   } catch (error) {
-    console.error('Error getting placed orders:', error);
+    console.error('Error getting available orders:', error);
     throw error;
   } finally {
     if (db) await db.close();

@@ -22,6 +22,8 @@
       input:checked + .toggle-slider { background-color:#48bb78; }
       input:checked + .toggle-slider:before { transform:translateX(26px); }
       input:disabled + .toggle-slider { opacity:0.5;cursor:not-allowed; }
+      .order-button-container{ margin-top:0.5rem }
+      .js-decline{ background:#a0aec0;margin-left:8px }
 
       @media screen and (max-width: 450px){
         .dashboard{
@@ -35,13 +37,25 @@
           width: 350px;
           flex-wrap: wrap;
         }
+
+        .order-button-container{
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 40px;
+        }
+
+        .js-decline{
+           margin-left:0px;
+        }
+        
       }
     </style>
   </head>
   <body>
     <header class="nav-bar">
             <div class="header-container">
-                <img class="nav-logo" src="./images/gritdash-logo-1.png" alt="GritDash logo">
+                <a href="homepage.html" style="text-decoration:none;"><img class="nav-logo" src="./images/gritdash-logo-1.png" alt="GritDash logo"></a>
                 <i class="fa-solid fa-bars menu-icon"></i>
                 <div class="header-dropdown hidden">
                     <a class="dropdown-selection" href="homepage.html">Home</a>
@@ -190,7 +204,7 @@
             return;
           }
 
-          const res = await fetch('/api/orders/placed');
+          const res = await fetch('/api/orders/available');
           if(!res.ok) throw new Error('Failed to load');
           const data = await res.json();
           const orders = data.orders || [];
@@ -215,9 +229,9 @@
               <div><strong>Instructions:</strong> ${instructions && instructions.text ? escapeHtml(instructions.text) : 'None'}</div>
               ${instructions && instructions.room ? `<div><strong>Room/Location:</strong> ${escapeHtml(instructions.room)}</div>` : ''}
               <div><strong>Tip:</strong> $${o.Tip || 0}</div>
-              <div style="margin-top:0.5rem">
+              <div class="order-button-container">
                 <button class="btn js-accept" data-id="${o.OrderID}">Accept</button>
-                <button class="btn js-decline" data-id="${o.OrderID}" style="background:#a0aec0;margin-left:8px">Decline</button>
+                <button class="btn js-decline" data-id="${o.OrderID}">Decline</button>
               </div>`;
             ordersList.appendChild(div);
           }
