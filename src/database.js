@@ -855,7 +855,7 @@ export async function addToCart(customerId, itemId, quantity) {
     await db.run('BEGIN TRANSACTION');
 
     let cart = await db.get('SELECT * FROM "Order" WHERE CustomerID = ? AND OrderStatus = \'Cart\'', customerId);
-    if (!cart) {
+    if (!cart || cart.length === 0) {
       const menuItem = await db.get('SELECT MenuID FROM MenuItem WHERE ItemID = ?', itemId);
       if (!menuItem) {
         throw new Error(`Item with ID ${itemId} not found`);

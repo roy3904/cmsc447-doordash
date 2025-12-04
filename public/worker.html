@@ -209,6 +209,7 @@
           const data = await res.json();
           const orders = data.orders || [];
           if(!orders.length){ ordersList.innerHTML = '<p>No pending orders right now.</p>'; return; }
+          else if(currentWorker.AvailabilityStatus === 'On Delivery'){ordersList.innerHTML = '<p>Deliver Your Order Before Taking More!</p>'; return;}
           ordersList.innerHTML = '';
           for (const o of orders) {
             const div = document.createElement('div'); div.className='order';
