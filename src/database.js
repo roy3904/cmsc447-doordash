@@ -1127,8 +1127,8 @@ export async function addFeedback(feedback) {
   try {
     db = await openDb();
     await db.run(
-      'INSERT INTO Feedback (FeedbackID, OrderID, CustomerID, Rating, Comment) VALUES (?, ?, ?, ?, ?)',
-      [feedback.FeedbackID, feedback.OrderID, feedback.CustomerID, feedback.Rating, feedback.Comment || '']
+      'INSERT INTO Feedback (FeedbackID, OrderID, CustomerID, Rating, Comment, Reviewed) VALUES (?, ?, ?, ?, ?, ?)',
+      [feedback.FeedbackID, feedback.OrderID, feedback.CustomerID, feedback.Rating, feedback.Comment || '', 'No']
     );
     return true;
   } catch (error) {
@@ -1150,6 +1150,27 @@ export async function getFeedbackByOrder(orderId) {
     throw error;
   } finally {
     if (db) await db.close();
+  }
+}
+
+export async function markFeedbackReviewed(feedbackId) {
+  let db;
+  try {
+    db = await openDb();
+
+    await db.run(
+      `UPDATE Feedback
+      SET Reviewed = "Yes"
+      WHERE FeedbackID = ?`, feedbackId
+    );
+    
+  } catch (error) {
+    console.error('Error updating feedback item:', error);
+    throw error;
+  } finally {
+    if (db) {
+      await db.close();
+    }
   }
 }
 
@@ -1179,7 +1200,7 @@ export async function getFeedbackForWorker(workerId) {
     db = await openDb();
     // Only include feedback for orders that have a completed delivery job for this worker
     const rows = await db.all(`
-      SELECT f.FeedbackID, f.OrderID, f.CustomerID, f.Rating, f.Comment, f.CreatedAt
+      SELECT f.FeedbackID, f.OrderID, f.CustomerID, f.Rating, f.Comment, f.CreatedAt, f.Reviewed
       FROM Feedback f
       WHERE EXISTS (
         SELECT 1

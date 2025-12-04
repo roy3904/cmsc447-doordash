@@ -214,8 +214,8 @@ export const acknowledgeFeedback = async (req, res) => {
   try {
     const feedbackId = req.params.id;
     if (!feedbackId) return res.status(400).json({ error: 'Feedback ID required' });
-    await dbDeleteFeedback(feedbackId);
-    res.json({ message: 'Feedback acknowledged and removed' });
+    await markFeedbackReviewed(feedbackId);
+    res.json({ message: 'Feedback acknowledged' });
   } catch (error) {
     console.error('Failed to acknowledge feedback:', error);
     res.status(500).json({ error: 'Failed to acknowledge feedback' });
