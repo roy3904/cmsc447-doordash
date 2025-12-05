@@ -52,7 +52,7 @@ async function deleteRestaurant() {
 
         if (!response.ok) throw new Error('Failed to delete');
 
-        const response2 = await fetch(`/api/restaurants/${currStaff.StaffID}`, {
+        const response2 = await fetch(`/api/restaurants-staff/${currStaff.StaffID}`, {
             method: 'DELETE'
         });
 
