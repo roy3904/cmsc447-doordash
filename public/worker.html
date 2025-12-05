@@ -686,6 +686,7 @@
           // Show notification when order is ready for pickup
           showToast(`Order is ready for pickup!`);
           // Reload data without page refresh for real-time updates
+          loadOrders(); // Reload available orders
           loadActiveJobs();
           loadNotifications();
         }
