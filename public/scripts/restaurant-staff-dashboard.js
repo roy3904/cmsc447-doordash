@@ -443,10 +443,9 @@ socket.onmessage = (event) => {
         if (data.order && String(data.order.RestaurantID) === String(currentStaff.RestaurantID)) {
             console.log('New order for this restaurant!');
             showToast('New order received!');
-            // Refresh page after a short delay to show the toast first
-            setTimeout(() => {
-                window.location.reload();
-            }, 1);
+            // Reload data without page refresh for real-time updates
+            loadOrders(currentStatus);
+            loadNotifications();
         } else {
             console.log('New order but not for this restaurant', {
                 orderRestaurantID: data.order?.RestaurantID,

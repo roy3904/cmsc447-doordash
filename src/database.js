@@ -2,7 +2,7 @@ import sqlite3 from 'sqlite3';
 import { open } from 'sqlite';
 
 // Open Database Connection
-async function openDb() {
+export async function openDb() {
   // Open connection to local SQLite database file
   const db = await open({
     filename: './db/gritdash.db',

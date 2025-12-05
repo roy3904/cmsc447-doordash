@@ -287,7 +287,12 @@
             return;
           }
           ordersList.innerHTML = '';
+          // Store orders in a map for easy access
+          window.availableOrdersMap = window.availableOrdersMap || new Map();
           for (const o of orders) {
+            // Store order in map
+            window.availableOrdersMap.set(o.OrderID, o);
+
             const div = document.createElement('div'); div.className='order';
             // build items html with item names
             let itemsHtml = '';
@@ -330,9 +335,10 @@
               }
               const d = await resp.json();
               const jobId = d.jobId;
-              // show pickup and delivery guidance
-                const order = (await (await fetch('/api/orders/placed')).json()).orders.find(x=>x.OrderID===orderId);
-                const pickup = order && order.restaurant ? order.restaurant.Location : 'Restaurant pickup location';
+              // Get order from stored map instead of fetching
+              const order = window.availableOrdersMap.get(orderId);
+              if(order){
+                const pickup = order.restaurant ? order.restaurant.Location : 'Restaurant pickup location';
                 alert(`Order accepted. Pickup at: ${pickup}. Deliver to: ${order.delivery && order.delivery.building} ${order.delivery && order.delivery.room || ''}`);
                 // Optimistically move the order from pending to active jobs immediately for snappy UX
                 try{
@@ -343,11 +349,12 @@
                   const optimisticJob = { JobID: jobId, OrderID: order.OrderID, order: order, items: order.items };
                   appendActiveJobToDOM(optimisticJob);
                 }catch(e){ console.error('Optimistic UI update failed', e); }
-                // sync with server in background
-                updateWorkerStatus();
-                loadActiveJobs();
-                loadOrders();
-                loadWorkerFeedback();
+              }
+              // sync with server in background
+              updateWorkerStatus();
+              loadActiveJobs();
+              loadOrders();
+              loadWorkerFeedback();
             });
           });
           document.querySelectorAll('.js-decline').forEach(btn => {
@@ -675,10 +682,9 @@
         if (data.event === 'order_status_update' && data.status === 'Ready for Pickup') {
           // Show notification when order is ready for pickup
           showToast(`Order is ready for pickup!`);
-          // Refresh page after a short delay to show the toast first
-          setTimeout(() => {
-            window.location.reload();
-          }, 1500);
+          // Reload data without page refresh for real-time updates
+          loadActiveJobs();
+          loadNotifications();
         }
       };
 
