@@ -1,12 +1,12 @@
-import { getRestaurants, getRestaurantById as dbGetRestaurantById, createRestaurant as dbCreateRestaurant, updateRestaurant as dbUpdateRestaurant, deleteRestaurant as dbDeleteRestaurant, getMenuItemsByRestaurantId, createOrder, getCart as dbGetCart, addToCart as dbAddToCart, removeFromCart as dbRemoveFromCart, clearCart as dbClearCart, getMenuItem as dbGetMenuItem, updateMenuItem as dbUpdateMenuItem, getOrdersByRestaurantId as dbGetOrdersByRestaurantId, getOrdersByCustomerId as dbGetOrdersByCustomerId, getFeedbackForWorker as dbGetFeedbackForWorker, deleteFeedback as dbDeleteFeedback, assignOrderToWorker, completeDeliveryJob, updateOrderStatus as dbUpdateOrderStatus, getWorkers, getWorkerById as dbGetWorkerById, updateWorker as dbUpdateWorker, createWorker, declineOrderByWorker, deleteWorker, createWorkerApplication as dbCreateWorkerApplication, getWorkerApplications as dbGetWorkerApplications, getWorkerApplicationById as dbGetWorkerApplicationById, updateWorkerApplicationStatus as dbUpdateWorkerApplicationStatus, updateWorkerApplication as dbUpdateWorkerApplication, deleteWorkerApplication as dbDeleteWorkerApplication, getCustomers as dbGetCustomers, getCustomerById as dbGetCustomerById, createCustomer as dbCreateCustomer, updateCustomer as dbUpdateCustomer, deleteCustomer as dbDeleteCustomer, getCustomerByEmail as dbGetCustomerByEmail, addFeedback as dbAddFeedback, getFeedbackByOrder as dbGetFeedbackByOrder, getSystemAdmin, getRestaurantStaffByEmail, getRestaurantStaffByRestaurantId, getWorkerActiveRestaurant, getOrderById, getAvailableWorkers, createNotification, getNotifications as dbGetNotifications, markNotificationAsRead as dbMarkNotificationAsRead, markAllNotificationsAsRead as dbMarkAllNotificationsAsRead, getJobsForWorker, getAvailableOrders as dbGetAvailableOrders, markFeedbackReviewed, getWorkerForOrder } from '../database.js';
+import * as db from '../database.js';
 import argon2 from 'argon2';
-import { broadcast } from '../websocket.js';
+import * as websocket from '../websocket.js';
 
 export const getAllRestaurants = async (req, res) => {
   // #swagger.tags = ['Restaurants']
   // #swagger.summary = 'Get all restaurants'
   try {
-    const restaurants = await getRestaurants();
+    const restaurants = await db.getRestaurants();
     res.json({ restaurants });
   } catch (error) {
     console.error('Failed to get restaurants:', error);
@@ -22,7 +22,7 @@ export const getRestaurant = async (req, res) => {
     if (!restaurantId) {
       return res.status(400).json({ error: 'Restaurant ID required' });
     }
-    const restaurant = await dbGetRestaurantById(restaurantId);
+    const restaurant = await db.getRestaurantById(restaurantId);
     if (!restaurant) {
       return res.status(404).json({ error: 'Restaurant not found' });
     }
@@ -41,7 +41,7 @@ export const addRestaurant = async (req, res) => {
     if (!restaurant || !restaurant.RestaurantID) {
       return res.status(400).json({ error: 'Restaurant data missing or RestaurantID required' });
     }
-    await dbCreateRestaurant(restaurant);
+    await db.createRestaurant(restaurant);
     res.status(201).json({ message: 'Restaurant created' });
   } catch (error) {
     console.error('Failed to create restaurant:', error);
@@ -58,7 +58,7 @@ export const modifyRestaurant = async (req, res) => {
     if (!restaurantId) {
       return res.status(400).json({ error: 'Restaurant ID required' });
     }
-    await dbUpdateRestaurant(restaurantId, updates);
+    await db.updateRestaurant(restaurantId, updates);
     res.json({ message: 'Restaurant updated' });
   } catch (error) {
     console.error('Failed to update restaurant:', error);
@@ -74,7 +74,7 @@ export const removeRestaurant = async (req, res) => {
     if (!restaurantId) {
       return res.status(400).json({ error: 'Restaurant ID required' });
     }
-    await dbDeleteRestaurant(restaurantId);
+    await db.deleteRestaurant(restaurantId);
     res.json({ message: 'Restaurant deleted' });
   } catch (error) {
     console.error('Failed to delete restaurant:', error);
@@ -86,7 +86,7 @@ export const getMenuItems = async (req, res) => {
   // #swagger.tags = ['Restaurants']
   // #swagger.summary = 'Get menu for a specific restaurant'
   try {
-    const menuItems = await getMenuItemsByRestaurantId(req.params.id);
+    const menuItems = await db.getMenuItemsByRestaurantId(req.params.id);
     res.json({ menuItems });
   } catch (error) {
     console.error(`Failed to get menu items for restaurant ${req.params.id}:`, error);
@@ -105,7 +105,7 @@ export const getRestaurantOrders = async (req, res) => {
       return res.status(400).json({ error: 'Restaurant ID required' });
     }
 
-    const orders = await dbGetOrdersByRestaurantId(restaurantId, status);
+    const orders = await db.getOrdersByRestaurantId(restaurantId, status);
     res.json({ orders, count: orders.length });
   } catch (error) {
     console.error(`Failed to get orders for restaurant ${req.params.id}:`, error);
@@ -117,15 +117,15 @@ export const placeOrder = async (req, res) => {
   // #swagger.tags = ['Orders']
   // #swagger.summary = 'Place a new order'
   try {
-    const orderId = await createOrder(req.body);
+    const orderId = await db.createOrder(req.body);
 
     // Create notifications for restaurant staff
     try {
       const restaurantId = req.body.restaurantId;
       if (restaurantId) {
-        const staffMembers = await getRestaurantStaffByRestaurantId(restaurantId);
+        const staffMembers = await db.getRestaurantStaffByRestaurantId(restaurantId);
         for (const staff of staffMembers) {
-          await createNotification(
+          await db.createNotification(
             'RestaurantStaff',
             staff.StaffID,
             `New order #${orderId} received`,
@@ -141,8 +141,8 @@ export const placeOrder = async (req, res) => {
     // Workers will be notified when the order is ready for pickup, not when it's placed
 
     // Broadcast the new order to all clients
-    const order = await getOrderById(orderId);
-    broadcast({
+    const order = await db.getOrderById(orderId);
+    websocket.broadcast({
       event: 'new_order',
       order: order,
     });
@@ -159,7 +159,7 @@ export const loginCustomer = async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
-    const customer = await dbGetCustomerByEmail(email);
+    const customer = await db.getCustomerByEmail(email);
     if (!customer) return res.status(401).json({ error: 'Invalid credentials' });
     // NOTE: PasswordHash may be plain or hashed in DB. This project currently stores raw/password-hash inconsistently.
     // For now compare directly; in a real app use proper hashing + verification (argon2.verify).
@@ -184,7 +184,7 @@ export const postFeedback = async (req, res) => {
       Rating: parseInt(rating, 10),
       Comment: comment || ''
     };
-    await dbAddFeedback(feedback);
+    await db.addFeedback(feedback);
     res.status(201).json({ message: 'Feedback submitted' });
   } catch (error) {
     console.error('Failed to submit feedback:', error);
@@ -196,7 +196,7 @@ export const getFeedback = async (req, res) => {
   try {
     const orderId = req.params.id;
     if (!orderId) return res.status(400).json({ error: 'Order ID required' });
-    const feedback = await dbGetFeedbackByOrder(orderId);
+    const feedback = await db.getFeedbackByOrder(orderId);
     res.json({ feedback });
   } catch (error) {
     console.error('Failed to get feedback:', error);
@@ -206,7 +206,7 @@ export const getFeedback = async (req, res) => {
 
 export const getAvailableOrders = async (req, res) => {
   try {
-    const orders = await dbGetAvailableOrders();
+    const orders = await db.getAvailableOrders();
     res.json({ orders });
   } catch (error) {
     console.error('Failed to get available orders:', error);
@@ -218,7 +218,7 @@ export const getWorkerFeedback = async (req, res) => {
   try {
     const workerId = req.params.id;
     if (!workerId) return res.status(400).json({ error: 'workerId required' });
-    const feedbacks = await dbGetFeedbackForWorker(workerId);
+    const feedbacks = await db.getFeedbackForWorker(workerId);
     res.json({ feedbacks });
   } catch (error) {
     console.error('Failed to get worker feedback:', error);
@@ -230,7 +230,7 @@ export const getWorkerEarnings = async (req, res) => {
   try {
     const workerId = req.params.id;
     if (!workerId) return res.status(400).json({ error: 'workerId required' });
-    const rows = await getCompletedJobsForWorker(workerId);
+    const rows = await db.getCompletedJobsForWorker(workerId);
     const totalTips = rows.reduce((acc, r) => acc + (parseFloat(r.Tip) || 0), 0);
     res.json({ count: rows.length, totalTips, jobs: rows });
   } catch (error) {
@@ -243,7 +243,7 @@ export const acknowledgeFeedback = async (req, res) => {
   try {
     const feedbackId = req.params.id;
     if (!feedbackId) return res.status(400).json({ error: 'Feedback ID required' });
-    await markFeedbackReviewed(feedbackId);
+    await db.markFeedbackReviewed(feedbackId);
     res.json({ message: 'Feedback acknowledged' });
   } catch (error) {
     console.error('Failed to acknowledge feedback:', error);
@@ -255,7 +255,7 @@ export const getCustomerOrders = async (req, res) => {
   try {
     const customerId = req.query.customerId || req.params.id;
     if (!customerId) return res.status(400).json({ error: 'customerId required' });
-    const orders = await dbGetOrdersByCustomerId(customerId);
+    const orders = await db.getOrdersByCustomerId(customerId);
     res.json({ orders, count: orders.length });
   } catch (error) {
     console.error('Failed to get customer orders:', error);
@@ -269,12 +269,12 @@ export const mergeCart = async (req, res) => {
     const { customerId } = req.body;
     if (!customerId) return res.status(400).json({ error: 'customerId required' });
     const guestCustomerId = 'CUST-123';
-    const guestCart = await dbGetCart(guestCustomerId);
+    const guestCart = await db.getCart(guestCustomerId);
     if (guestCart && Array.isArray(guestCart.items) && guestCart.items.length > 0) {
       for (const it of guestCart.items) {
-        await dbAddToCart(customerId, it.ItemID, it.Quantity || 1);
+        await db.addToCart(customerId, it.ItemID, it.Quantity || 1);
       }
-      await dbClearCart(guestCustomerId);
+      await db.clearCart(guestCustomerId);
     }
     res.json({ message: 'Cart merged' });
   } catch (error) {
@@ -290,10 +290,10 @@ export const acceptOrder = async (req, res) => {
     if(!workerId) return res.status(400).json({ error: 'workerId required' });
 
     // Check for restaurant lock
-    const activeRestaurant = await getWorkerActiveRestaurant(workerId);
+    const activeRestaurant = await db.getWorkerActiveRestaurant(workerId);
     if (activeRestaurant) {
       // Worker is locked to a restaurant, verify the order is from the same restaurant
-      const order = await getOrderById(orderId);
+      const order = await db.getOrderById(orderId);
       if (order && order.RestaurantID !== activeRestaurant.RestaurantID) {
         return res.status(403).json({
           error: 'Restaurant lock violation',
@@ -303,13 +303,13 @@ export const acceptOrder = async (req, res) => {
       }
     }
 
-    const jobId = await assignOrderToWorker(orderId, workerId);
+    const jobId = await db.assignOrderToWorker(orderId, workerId);
 
     // Notify customer that a driver has accepted their order
     try {
-      const order = await getOrderById(orderId);
+      const order = await db.getOrderById(orderId);
       if (order && order.CustomerID) {
-        await createNotification(
+        await db.createNotification(
           'Customer',
           order.CustomerID,
           `A driver has accepted your order #${orderId}`,
@@ -332,7 +332,7 @@ export const declineOrder = async (req, res) => {
     const orderId = req.params.id;
     const { workerId } = req.body;
     if(!workerId) return res.status(400).json({ error: 'workerId required' });
-    const jobId = await declineOrderByWorker(orderId, workerId);
+    const jobId = await db.declineOrderByWorker(orderId, workerId);
     res.json({ message: 'Order declined recorded', jobId });
   } catch (error) {
     console.error('Failed to record decline:', error);
@@ -343,18 +343,18 @@ export const declineOrder = async (req, res) => {
 export const completeOrder = async (req, res) => {
   try {
     const jobId = req.params.id;
-    await completeDeliveryJob(jobId);
+    await db.completeDeliveryJob(jobId);
 
     // Notify customer that their order has been delivered
     try {
-      const db = await import('../database.js').then(m => m.openDb());
-      const job = await db.get('SELECT * FROM DeliveryJob WHERE JobID = ?', jobId);
-      await db.close();
+      const dbConnection = await db.openDb();
+      const job = await dbConnection.get('SELECT * FROM DeliveryJob WHERE JobID = ?', jobId);
+      await dbConnection.close();
 
       if (job && job.OrderID) {
-        const order = await getOrderById(job.OrderID);
+        const order = await db.getOrderById(job.OrderID);
         if (order && order.CustomerID) {
-          await createNotification(
+          await db.createNotification(
             'Customer',
             order.CustomerID,
             `Your order #${job.OrderID} has been delivered`,
@@ -387,10 +387,10 @@ export const updateOrderStatus = async (req, res) => {
       return res.status(400).json({ error: 'Status required' });
     }
 
-    await dbUpdateOrderStatus(orderId, status);
+    await db.updateOrderStatus(orderId, status);
 
     // Broadcast the status update to all clients
-    broadcast({
+    websocket.broadcast({
       event: 'order_status_update',
       orderId: orderId,
       status: status,
@@ -398,7 +398,7 @@ export const updateOrderStatus = async (req, res) => {
 
     // Create customer notification for important status changes
     try {
-      const order = await getOrderById(orderId);
+      const order = await db.getOrderById(orderId);
       if (order && order.CustomerID) {
         let message = '';
         if (status === 'Preparing') {
@@ -408,7 +408,7 @@ export const updateOrderStatus = async (req, res) => {
         }
 
         if (message) {
-          await createNotification('Customer', order.CustomerID, message, orderId);
+          await db.createNotification('Customer', order.CustomerID, message, orderId);
         }
       }
     } catch (notificationError) {
@@ -418,11 +418,11 @@ export const updateOrderStatus = async (req, res) => {
     // Create worker notification when order is ready for pickup
     try {
       if (status === 'Ready for Pickup') {
-        const order = await getOrderById(orderId);
-        const workerId = await getWorkerForOrder(orderId);
+        const order = await db.getOrderById(orderId);
+        const workerId = await db.getWorkerForOrder(orderId);
 
         if (workerId && order) {
-          await createNotification(
+          await db.createNotification(
             'Worker',
             workerId,
             `Order #${orderId} is ready for pickup at ${order.restaurant?.Name || 'the restaurant'}`,
@@ -443,7 +443,7 @@ export const updateOrderStatus = async (req, res) => {
 
 export const getAllWorkers = async (req, res) => {
   try {
-    const workers = await getWorkers();
+    const workers = await db.getWorkers();
     res.json({ workers });
   } catch (error) {
     console.error('Failed to get workers:', error);
@@ -457,12 +457,12 @@ export const getWorker = async (req, res) => {
     if (!workerId) {
       return res.status(400).json({ error: 'Worker ID required' });
     }
-    const worker = await dbGetWorkerById(workerId);
+    const worker = await db.getWorkerById(workerId);
     if (!worker) {
       return res.status(404).json({ error: 'Worker not found' });
     }
     // Include active restaurant (for restaurant lock feature)
-    const activeRestaurant = await getWorkerActiveRestaurant(workerId);
+    const activeRestaurant = await db.getWorkerActiveRestaurant(workerId);
     res.json({ worker, activeRestaurant });
   } catch (error) {
     console.error('Failed to get worker:', error);
@@ -477,7 +477,7 @@ export const modifyWorker = async (req, res) => {
     if (!workerId) {
       return res.status(400).json({ error: 'Worker ID required' });
     }
-    await dbUpdateWorker(workerId, updates);
+    await db.updateWorker(workerId, updates);
     res.json({ message: 'Worker updated' });
   } catch (error) {
     console.error('Failed to update worker:', error);
@@ -489,7 +489,7 @@ export const addWorker = async (req, res) => {
   try {
     const worker = req.body;
     if(!worker || !worker.WorkerID) return res.status(400).json({ error: 'Worker data missing or WorkerID required' });
-    await createWorker(worker);
+    await db.createWorker(worker);
     res.status(201).json({ message: 'Worker created' });
   } catch (error) {
     console.error('Failed to create worker:', error);
@@ -501,7 +501,7 @@ export const removeWorker = async (req, res) => {
   try {
     const workerId = req.params.id;
     if(!workerId) return res.status(400).json({ error: 'workerId required' });
-    await deleteWorker(workerId);
+    await db.deleteWorker(workerId);
     res.json({ message: 'Worker deleted' });
   } catch (error) {
     console.error('Failed to delete worker:', error);
@@ -513,7 +513,7 @@ export const getWorkerJobs = async (req, res) => {
   try {
     const workerId = req.params.id;
     if (!workerId) return res.status(400).json({ error: 'workerId required' });
-    const jobs = await getJobsForWorker(workerId);
+    const jobs = await db.getJobsForWorker(workerId);
     res.json({ jobs });
   } catch (error) {
     console.error('Failed to get worker jobs:', error);
@@ -531,7 +531,7 @@ export const createWorkerApplication = async (req, res) => {
     if (!application || !application.WorkerID) {
       return res.status(400).json({ error: 'Application data missing or WorkerID required' });
     }
-    const applicationId = await dbCreateWorkerApplication(application);
+    const applicationId = await db.createWorkerApplication(application);
     res.status(201).json({ message: 'Application submitted', applicationId });
   } catch (error) {
     console.error('Failed to create worker application:', error);
@@ -550,7 +550,7 @@ export const getAllWorkerApplications = async (req, res) => {
       offset: req.query.offset ? parseInt(req.query.offset) : 0
     };
 
-    const result = await dbGetWorkerApplications(options);
+    const result = await db.getWorkerApplications(options);
     res.json(result);
   } catch (error) {
     console.error('Failed to get worker applications:', error);
@@ -564,7 +564,7 @@ export const getWorkerApplication = async (req, res) => {
     if (!applicationId) {
       return res.status(400).json({ error: 'Application ID required' });
     }
-    const application = await dbGetWorkerApplicationById(applicationId);
+    const application = await db.getWorkerApplicationById(applicationId);
     if (!application) {
       return res.status(404).json({ error: 'Application not found' });
     }
@@ -583,13 +583,13 @@ export const approveWorkerApplication = async (req, res) => {
     }
 
     // Get the application
-    const application = await dbGetWorkerApplicationById(applicationId);
+    const application = await db.getWorkerApplicationById(applicationId);
     if (!application) {
       return res.status(404).json({ error: 'Application not found' });
     }
 
     // Create the worker
-    await createWorker({
+    await db.createWorker({
       WorkerID: application.WorkerID,
       Name: application.Name,
       Email: application.Email,
@@ -599,7 +599,7 @@ export const approveWorkerApplication = async (req, res) => {
     });
 
     // Update application status
-    await dbUpdateWorkerApplicationStatus(applicationId, 'Approved');
+    await db.updateWorkerApplicationStatus(applicationId, 'Approved');
 
     res.json({ message: 'Application approved and worker created' });
   } catch (error) {
@@ -616,7 +616,7 @@ export const declineWorkerApplication = async (req, res) => {
     }
 
     // Update application status
-    await dbUpdateWorkerApplicationStatus(applicationId, 'Declined');
+    await db.updateWorkerApplicationStatus(applicationId, 'Declined');
 
     res.json({ message: 'Application declined' });
   } catch (error) {
@@ -632,7 +632,7 @@ export const modifyWorkerApplication = async (req, res) => {
     if (!applicationId) {
       return res.status(400).json({ error: 'Application ID required' });
     }
-    await dbUpdateWorkerApplication(applicationId, updates);
+    await db.updateWorkerApplication(applicationId, updates);
     res.json({ message: 'Application updated' });
   } catch (error) {
     console.error('Failed to update worker application:', error);
@@ -646,7 +646,7 @@ export const removeWorkerApplication = async (req, res) => {
     if (!applicationId) {
       return res.status(400).json({ error: 'Application ID required' });
     }
-    await dbDeleteWorkerApplication(applicationId);
+    await db.deleteWorkerApplication(applicationId);
     res.json({ message: 'Application deleted' });
   } catch (error) {
     console.error('Failed to delete worker application:', error);
@@ -660,7 +660,7 @@ export const getCart = async (req, res) => {
   try {
     // allow client to pass customerId as query param (e.g., /api/cart?customerId=...)
     const customerId = req.query.customerId || 'CUST-123'; // Hardcoded fallback
-    const cart = await dbGetCart(customerId);
+    const cart = await db.getCart(customerId);
     res.json({ cart });
   } catch (error) {
     console.error('Failed to get cart:', error);
@@ -674,7 +674,7 @@ export const addToCart = async (req, res) => {
   try {
     const customerId = req.body.customerId || 'CUST-123'; // use provided customer id when available
     const { itemId, quantity = 1 } = req.body;
-    await dbAddToCart(customerId, itemId, quantity);
+    await db.addToCart(customerId, itemId, quantity);
     res.json({ message: 'Item added to cart successfully' });
   } catch (error) {
     console.error('Failed to add item to cart:', error);
@@ -688,7 +688,7 @@ export const removeFromCart = async (req, res) => {
   try {
     const customerId = req.body.customerId || 'CUST-123'; // use provided customer id when available
     const { itemId, quantity = 1 } = req.body;
-    await dbRemoveFromCart(customerId, itemId, quantity);
+    await db.removeFromCart(customerId, itemId, quantity);
     res.json({ message: 'Item removed from cart successfully' });
   } catch (error) {
     console.error('Failed to remove item from cart:', error);
@@ -701,7 +701,7 @@ export const clearCart = async (req, res) => {
   // #swagger.summary = 'Clear the user\'s cart'
   try {
     const customerId = (req.body && req.body.customerId) || 'CUST-123';
-    await dbClearCart(customerId);
+    await db.clearCart(customerId);
     res.json({ message: 'Cart cleared successfully' });
   } catch (error) {
     console.error('Failed to clear cart:', error);
@@ -713,7 +713,7 @@ export const getMenuItem = async (req, res) => {
   // #swagger.tags = ['Menu Items']
   // #swagger.summary = 'Get a single menu item'
   try {
-    const menuItem = await dbGetMenuItem(req.params.id);
+    const menuItem = await db.getMenuItem(req.params.id);
     res.json({ menuItem });
   } catch (error) {
     console.error('Failed to get menu item:', error);
@@ -730,7 +730,7 @@ export const modifyMenuItem = async (req, res) => {
     if (!itemId) {
       return res.status(400).json({ error: 'Item ID required' });
     }
-    await dbUpdateMenuItem(itemId, updates);
+    await db.updateMenuItem(itemId, updates);
     res.json({ message: 'Menu item updated' });
   } catch (error) {
     console.error('Failed to update menu item:', error);
@@ -744,7 +744,7 @@ export const modifyMenuItem = async (req, res) => {
 
 export const getAllCustomers = async (req, res) => {
   try {
-    const customers = await dbGetCustomers();
+    const customers = await db.getCustomers();
     res.json({ customers });
   } catch (error) {
     console.error('Failed to get customers:', error);
@@ -758,7 +758,7 @@ export const getCustomer = async (req, res) => {
     if (!customerId) {
       return res.status(400).json({ error: 'Customer ID required' });
     }
-    const customer = await dbGetCustomerById(customerId);
+    const customer = await db.getCustomerById(customerId);
     if (!customer) {
       return res.status(404).json({ error: 'Customer not found' });
     }
@@ -775,7 +775,7 @@ export const addCustomer = async (req, res) => {
     if (!customer || !customer.CustomerID) {
       return res.status(400).json({ error: 'Customer data missing or CustomerID required' });
     }
-    await dbCreateCustomer(customer);
+    await db.createCustomer(customer);
     res.status(201).json({ message: 'Customer created' });
   } catch (error) {
     console.error('Failed to create customer:', error);
@@ -790,7 +790,7 @@ export const modifyCustomer = async (req, res) => {
     if (!customerId) {
       return res.status(400).json({ error: 'Customer ID required' });
     }
-    await dbUpdateCustomer(customerId, updates);
+    await db.updateCustomer(customerId, updates);
     res.json({ message: 'Customer updated' });
   } catch (error) {
     console.error('Failed to update customer:', error);
@@ -804,7 +804,7 @@ export const removeCustomer = async (req, res) => {
     if (!customerId) {
       return res.status(400).json({ error: 'Customer ID required' });
     }
-    await dbDeleteCustomer(customerId);
+    await db.deleteCustomer(customerId);
     res.json({ message: 'Customer deleted' });
   } catch (error) {
     console.error('Failed to delete customer:', error);
@@ -823,7 +823,7 @@ export async function loginAdminUser(req, res){
     return res.status(400).send("Please Enter a Valid Email");
   }
 
-  const fetchedUser = await getSystemAdmin(email);
+  const fetchedUser = await db.getSystemAdmin(email);
 
   if(fetchedUser === undefined){
     return res.status(401).send("Invalid Email or Password");
@@ -857,7 +857,7 @@ export async function loginRestaurantStaff(req, res) {
     }
 
     // Fetch staff by email
-    const staff = await getRestaurantStaffByEmail(email);
+    const staff = await db.getRestaurantStaffByEmail(email);
 
     if (!staff) {
       return res.status(401).json({ error: 'Invalid email or password' });
@@ -909,7 +909,7 @@ export const getUserNotifications = async (req, res) => {
       isReadFilter = isRead === 'true' || isRead === '1';
     }
 
-    const notifications = await dbGetNotifications(userType, userId, isReadFilter);
+    const notifications = await db.getNotifications(userType, userId, isReadFilter);
     res.json({ notifications });
   } catch (error) {
     console.error('Failed to get notifications:', error);
@@ -925,7 +925,7 @@ export const markNotificationRead = async (req, res) => {
       return res.status(400).json({ error: 'Notification ID required' });
     }
 
-    await dbMarkNotificationAsRead(notificationId);
+    await db.markNotificationAsRead(notificationId);
     res.json({ message: 'Notification marked as read' });
   } catch (error) {
     console.error('Failed to mark notification as read:', error);
@@ -944,7 +944,7 @@ export const markAllNotificationsRead = async (req, res) => {
       return res.status(400).json({ error: `Invalid userType. Valid types: ${validUserTypes.join(', ')}` });
     }
 
-    await dbMarkAllNotificationsAsRead(userType, userId);
+    await db.markAllNotificationsAsRead(userType, userId);
     res.json({ message: 'All notifications marked as read' });
   } catch (error) {
     console.error('Failed to mark all notifications as read:', error);

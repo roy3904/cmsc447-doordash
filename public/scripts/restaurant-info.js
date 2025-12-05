@@ -1,5 +1,5 @@
 //JS file for restaurant admin page, NOT DATABASE like restaurant.js
-import {restaurants, staff, setRestaurants, findRestaurant, changeRestaurantName, changeLocation, changeHours, removeRestaurant} from './admin.js';
+import * as admin from './admin.js';
 
 const params = new URLSearchParams(window.location.search);
 const restaurantId = params.get('id');
@@ -13,9 +13,9 @@ async function fetchRestaurant() {
         const response = await fetch(`/api/restaurants/${restaurantId}`);
         const data = await response.json();
         currRestaurant = data.restaurant;
-        for(let i = 0; i < staff.length; i++){
-            if(staff[i].RestaurantID === restaurantId){
-                currStaff = staff[i];
+        for(let i = 0; i < admin.staff.length; i++){
+            if(admin.staff[i].RestaurantID === restaurantId){
+                currStaff = admin.staff[i];
                 break;
             }
         }

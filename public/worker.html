@@ -675,8 +675,11 @@
         console.log('WebSocket message received:', data);
 
         if (data.event === 'new_order') {
-          // Silently refresh orders list without showing notification
-          loadOrders();
+            console.log('New order received!');
+            showToast('New delivery request available!');
+            loadOrders(); // Reload available orders
+            loadActiveJobs(); // Reload active jobs in case a new order was assigned to this worker
+            loadNotifications(); // Reload worker-specific notifications
         }
 
         if (data.event === 'order_status_update' && data.status === 'Ready for Pickup') {

@@ -4,7 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 // WebSocket Server
-import { upgrade } from './websocket.js';
+import * as websocket from './websocket.js';
 
 // Swagger Docs
 import swaggerUi from 'swagger-ui-express';
@@ -39,7 +39,7 @@ app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerFile));
 const server = http.createServer(app);
 
 // Upgrade the server to handle WebSockets
-upgrade(server);
+websocket.upgrade(server);
 
 // Start server
 server.listen(port, '0.0.0.0', () => {
