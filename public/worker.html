@@ -22,8 +22,28 @@
       input:checked + .toggle-slider { background-color:#48bb78; }
       input:checked + .toggle-slider:before { transform:translateX(26px); }
       input:disabled + .toggle-slider { opacity:0.5;cursor:not-allowed; }
-      .order-button-container{ margin-top:0.5rem }
-      .js-decline{ background:#a0aec0;margin-left:8px }
+      .restaurant-lock { display:none;align-items:center;gap:10px;margin:1rem 0;padding:1rem;background:#fff5e6;border:1px solid #f59e0b;border-radius:6px; }
+      .restaurant-lock.active { display:flex; }
+      .lock-icon { color:#f59e0b;font-size:1.2rem; }
+
+      /* Notification Bell Styles */
+      .notification-bell { position:relative;display:inline-block;cursor:pointer;margin:0 1rem; }
+      .notification-bell i { font-size:1.5rem;color:#2d3748; }
+      .notification-badge { position:absolute;top:-8px;right:-8px;background:#e53e3e;color:white;border-radius:10px;padding:2px 6px;font-size:0.7rem;font-weight:bold;display:none; }
+      .notification-badge.show { display:block; }
+      .notification-dropdown { display:none;position:absolute;right:0;top:40px;width:350px;max-height:400px;overflow-y:auto;background:white;border:1px solid #e6e6e6;border-radius:8px;box-shadow:0 4px 6px rgba(0,0,0,0.1);z-index:1000; }
+      .notification-dropdown.show { display:block; }
+      .notification-header { padding:1rem;border-bottom:1px solid #e6e6e6;display:flex;justify-content:space-between;align-items:center; }
+      .notification-header h3 { margin:0;font-size:1rem; }
+      .notification-item { padding:1rem;border-bottom:1px solid #f7fafc;cursor:pointer;transition:background 0.2s; }
+      .notification-item:hover { background:#f7fafc; }
+      .notification-item.unread { background:#ebf8ff; }
+      .notification-message { margin:0;font-size:0.9rem;color:#2d3748; }
+      .notification-time { font-size:0.75rem;color:#718096;margin-top:0.25rem; }
+      .notification-toast { position:fixed;top:80px;right:20px;background:#38a169;color:white;padding:1rem 1.5rem;border-radius:8px;box-shadow:0 4px 6px rgba(0,0,0,0.2);display:none;z-index:2000;animation:slideIn 0.3s ease-out; }
+      .notification-toast.show { display:block; }
+      .empty-state { text-align:center;color:#718096;padding:2rem;font-style:italic; }
+      @keyframes slideIn { from{transform:translateX(400px);opacity:0;} to{transform:translateX(0);opacity:1;} }
 
       @media screen and (max-width: 450px){
         .dashboard{
@@ -89,7 +109,34 @@
         </label>
         <span id="toggle-label">Available</span>
         <div style="flex:1;"></div>
+        <div class="notification-bell" id="notification-bell">
+          <i class="fa-solid fa-bell"></i>
+          <span class="notification-badge" id="notification-badge">0</span>
+          <div class="notification-dropdown" id="notification-dropdown">
+            <div class="notification-header">
+              <h3>Notifications</h3>
+              <button class="btn" id="mark-all-read" style="font-size:0.75rem;padding:4px 8px;">Mark All Read</button>
+            </div>
+            <div id="notification-list">
+              <p class="empty-state">No notifications</p>
+            </div>
+          </div>
+        </div>
         <button id="signout" class="btn" style="background:#e53e3e">Sign Out</button>
+      </div>
+
+      <div class="notification-toast" id="notification-toast">
+        <span id="toast-message">New delivery request!</span>
+      </div>
+
+      <div id="restaurant-lock" class="restaurant-lock">
+        <span class="lock-icon">🔒</span>
+        <div>
+          <strong>Restaurant Lock:</strong>
+          <span id="locked-restaurant-name">Loading...</span>
+        </div>
+        <div style="flex:1;"></div>
+        <small style="color:#92400e;">Complete all deliveries to unlock</small>
       </div>
 
       <h3>Available Orders</h3>
@@ -111,6 +158,9 @@
       const statusBadge = document.getElementById('status-badge');
       const availabilityToggle = document.getElementById('availability-toggle');
       const toggleLabel = document.getElementById('toggle-label');
+      const restaurantLockDiv = document.getElementById('restaurant-lock');
+      const lockedRestaurantName = document.getElementById('locked-restaurant-name');
+      let lockedRestaurant = null; // Store locked restaurant info
 
       if(!currentWorker){ window.location.href='worker-signin.html'; }
       else { workerInfo.textContent = `Signed in as ${currentWorker.Name} (${currentWorker.WorkerID})`; }
@@ -133,10 +183,24 @@
           currentWorker.AvailabilityStatus = status;
           localStorage.setItem('current_worker', JSON.stringify(currentWorker));
 
+          // Update locked restaurant status
+          lockedRestaurant = data.activeRestaurant || null;
+          updateRestaurantLockUI();
+
           // Update UI
           updateStatusUI(status);
         }catch(e){
           console.error('Error fetching worker status:', e);
+        }
+      }
+
+      // Update restaurant lock UI
+      function updateRestaurantLockUI(){
+        if(lockedRestaurant){
+          restaurantLockDiv.classList.add('active');
+          lockedRestaurantName.textContent = lockedRestaurant.Name;
+        }else{
+          restaurantLockDiv.classList.remove('active');
         }
       }
 
@@ -207,11 +271,28 @@
           const res = await fetch('/api/orders/available');
           if(!res.ok) throw new Error('Failed to load');
           const data = await res.json();
-          const orders = data.orders || [];
-          if(!orders.length){ ordersList.innerHTML = '<p>No pending orders right now.</p>'; return; }
-          else if(currentWorker.AvailabilityStatus === 'On Delivery'){ordersList.innerHTML = '<p>Deliver Your Order Before Taking More!</p>'; return;}
+          let orders = data.orders || [];
+
+          // Filter orders by locked restaurant if applicable
+          if(lockedRestaurant){
+            orders = orders.filter(o => o.RestaurantID === lockedRestaurant.RestaurantID);
+          }
+
+          if(!orders.length){
+            if(lockedRestaurant){
+              ordersList.innerHTML = `<p>No pending orders from ${lockedRestaurant.Name} right now.</p>`;
+            }else{
+              ordersList.innerHTML = '<p>No pending orders right now.</p>';
+            }
+            return;
+          }
           ordersList.innerHTML = '';
+          // Store orders in a map for easy access
+          window.availableOrdersMap = window.availableOrdersMap || new Map();
           for (const o of orders) {
+            // Store order in map
+            window.availableOrdersMap.set(o.OrderID, o);
+
             const div = document.createElement('div'); div.className='order';
             // build items html with item names
             let itemsHtml = '';
@@ -242,9 +323,38 @@
               const orderId = btn.dataset.id;
               const body = { workerId: currentWorker.WorkerID };
               const resp = await fetch(`/api/orders/${orderId}/accept`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
-              if(!resp.ok){ alert('Failed to accept order'); return; }
-              // Immediately refresh the page so the worker sees the updated lists (orders, active jobs, feedback)
-              window.location.reload();
+              if(!resp.ok){
+                // Handle restaurant lock violation
+                if(resp.status === 403){
+                  const errorData = await resp.json();
+                  alert(errorData.message || 'Restaurant lock violation: Complete all deliveries before accepting orders from other restaurants.');
+                }else{
+                  alert('Failed to accept order');
+                }
+                return;
+              }
+              const d = await resp.json();
+              const jobId = d.jobId;
+              // Get order from stored map instead of fetching
+              const order = window.availableOrdersMap.get(orderId);
+              if(order){
+                const pickup = order.restaurant ? order.restaurant.Location : 'Restaurant pickup location';
+                alert(`Order accepted. Pickup at: ${pickup}. Deliver to: ${order.delivery && order.delivery.building} ${order.delivery && order.delivery.room || ''}`);
+                // Optimistically move the order from pending to active jobs immediately for snappy UX
+                try{
+                  // remove pending element from DOM
+                  const pendingEl = btn.closest('.order');
+                  if(pendingEl) pendingEl.remove();
+                  // create minimal job object and render into Active Jobs
+                  const optimisticJob = { JobID: jobId, OrderID: order.OrderID, order: order, items: order.items };
+                  appendActiveJobToDOM(optimisticJob);
+                }catch(e){ console.error('Optimistic UI update failed', e); }
+              }
+              // sync with server in background
+              updateWorkerStatus();
+              loadActiveJobs();
+              loadOrders();
+              loadWorkerFeedback();
             });
           });
           document.querySelectorAll('.js-decline').forEach(btn => {
@@ -424,15 +534,171 @@
         }catch(e){ console.error('appendActiveJobToDOM error', e); }
       }
 
+      // ==========================================
+      // NOTIFICATION SYSTEM
+      // ==========================================
+
+      let notifications = [];
+      let previousNotificationCount = 0;
+
+      const notificationBell = document.getElementById('notification-bell');
+      const notificationBadge = document.getElementById('notification-badge');
+      const notificationDropdown = document.getElementById('notification-dropdown');
+      const notificationList = document.getElementById('notification-list');
+      const notificationToast = document.getElementById('notification-toast');
+      const toastMessage = document.getElementById('toast-message');
+      const markAllReadBtn = document.getElementById('mark-all-read');
+
+      // Toggle notification dropdown
+      notificationBell.addEventListener('click', (e) => {
+        e.stopPropagation();
+        notificationDropdown.classList.toggle('show');
+      });
+
+      // Close dropdown when clicking outside
+      document.addEventListener('click', () => {
+        notificationDropdown.classList.remove('show');
+      });
+
+      // Load notifications
+      async function loadNotifications() {
+        if (!currentWorker || !currentWorker.WorkerID) return;
+
+        try {
+          const response = await fetch(`/api/notifications/Worker/${currentWorker.WorkerID}`);
+          if (!response.ok) throw new Error('Failed to load notifications');
+
+          const data = await response.json();
+          notifications = data.notifications || [];
+
+          // Update badge
+          const unreadCount = notifications.filter(n => !n.IsRead).length;
+          if (unreadCount > 0) {
+            notificationBadge.textContent = unreadCount;
+            notificationBadge.classList.add('show');
+          } else {
+            notificationBadge.classList.remove('show');
+          }
+
+          // Show toast for new notifications
+          if (unreadCount > previousNotificationCount && previousNotificationCount > 0) {
+            showToast('New delivery request available!');
+          }
+          previousNotificationCount = unreadCount;
+
+          // Render notifications
+          renderNotifications();
+        } catch (error) {
+          console.error('Error loading notifications:', error);
+        }
+      }
+
+      // Render notifications in dropdown
+      function renderNotifications() {
+        if (notifications.length === 0) {
+          notificationList.innerHTML = '<p class="empty-state">No notifications</p>';
+          return;
+        }
+
+        notificationList.innerHTML = notifications.map(n => {
+          const time = new Date(n.CreatedAt).toLocaleString();
+          const unreadClass = n.IsRead ? '' : 'unread';
+          return `
+            <div class="notification-item ${unreadClass}" data-id="${n.NotificationID}">
+              <p class="notification-message">${n.Message}</p>
+              <p class="notification-time">${time}</p>
+            </div>
+          `;
+        }).join('');
+
+        // Add click handlers to mark as read
+        document.querySelectorAll('.notification-item.unread').forEach(item => {
+          item.addEventListener('click', async () => {
+            const id = item.dataset.id;
+            await markNotificationRead(id);
+          });
+        });
+      }
+
+      // Mark single notification as read
+      async function markNotificationRead(id) {
+        try {
+          const response = await fetch(`/api/notifications/${id}/read`, { method: 'PUT' });
+          if (!response.ok) throw new Error('Failed to mark as read');
+          await loadNotifications();
+        } catch (error) {
+          console.error('Error marking notification as read:', error);
+        }
+      }
+
+      // Mark all notifications as read
+      markAllReadBtn.addEventListener('click', async () => {
+        if (!currentWorker || !currentWorker.WorkerID) return;
+
+        try {
+          const response = await fetch(`/api/notifications/Worker/${currentWorker.WorkerID}/read-all`, {
+            method: 'PUT'
+          });
+          if (!response.ok) throw new Error('Failed to mark all as read');
+          await loadNotifications();
+        } catch (error) {
+          console.error('Error marking all as read:', error);
+        }
+      });
+
+      // Show toast notification
+      function showToast(message) {
+        toastMessage.textContent = message;
+        notificationToast.classList.add('show');
+        setTimeout(() => {
+          notificationToast.classList.remove('show');
+        }, 3000);
+      }
+
       // initial load
-        updateWorkerStatus();
+      updateWorkerStatus();
       loadOrders();
       loadActiveJobs();
       loadWorkerFeedback();
-      loadWorkerEarnings();
+      loadNotifications();
       maybeCompleteJob();
-      // NOTE: Removed periodic polling to avoid UI refresh churn.
-      // The page will refresh relevant sections after user actions (accept/complete).
+
+      // WebSocket connection
+      const socket = new WebSocket(`ws://${window.location.host}`);
+
+      socket.onopen = () => {
+        console.log('WebSocket connection established');
+      };
+
+      socket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        console.log('WebSocket message received:', data);
+
+        if (data.event === 'new_order') {
+            console.log('New order received!');
+            showToast('New delivery request available!');
+            loadOrders(); // Reload available orders
+            loadActiveJobs(); // Reload active jobs in case a new order was assigned to this worker
+            loadNotifications(); // Reload worker-specific notifications
+        }
+
+        if (data.event === 'order_status_update' && data.status === 'Ready for Pickup') {
+          // Show notification when order is ready for pickup
+          showToast(`Order is ready for pickup!`);
+          // Reload data without page refresh for real-time updates
+          loadOrders(); // Reload available orders
+          loadActiveJobs();
+          loadNotifications();
+        }
+      };
+
+      socket.onclose = () => {
+        console.log('WebSocket connection closed');
+      };
+
+      socket.onerror = (error) => {
+        console.error('WebSocket error:', error);
+      };
     </script>
   </body>
 </html>

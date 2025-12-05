@@ -212,7 +212,11 @@
           if(!response.ok) throw new Error('Failed to place order');
 
           // clear server-side cart
-          await fetch('/api/cart', { method: 'DELETE' });
+          await fetch('/api/cart', {
+            method: 'DELETE',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ customerId: order.customerId })
+          });
           await updateBadge();
 
           // show confirmation modal

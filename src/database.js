@@ -2,7 +2,7 @@ import sqlite3 from 'sqlite3';
 import { open } from 'sqlite';
 
 // Open Database Connection
-async function openDb() {
+export async function openDb() {
   // Open connection to local SQLite database file
   const db = await open({
     filename: './db/gritdash.db',
@@ -442,6 +442,46 @@ export async function completeDeliveryJob(jobId) {
 }
 
 // =======================================
+// Get Worker's Active Restaurant (for restaurant lock)
+// =======================================
+export async function getWorkerActiveRestaurant(workerId) {
+  let db;
+  try {
+    db = await openDb();
+    const result = await db.get(`
+      SELECT DISTINCT r.RestaurantID, r.Name
+      FROM DeliveryJob dj
+      JOIN "Order" o ON dj.OrderID = o.OrderID
+      JOIN Restaurant r ON o.RestaurantID = r.RestaurantID
+      WHERE dj.WorkerID = ? AND dj.JobStatus = 'Accepted'
+    `, workerId);
+    return result || null; // Returns { RestaurantID, Name } or null
+  } catch (error) {
+    console.error('Error getting worker active restaurant:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
+// =======================================
+// Get Order by ID (helper function)
+// =======================================
+export async function getOrderById(orderId) {
+  let db;
+  try {
+    db = await openDb();
+    const order = await db.get('SELECT * FROM "Order" WHERE OrderID = ?', orderId);
+    return order || null;
+  } catch (error) {
+    console.error('Error getting order by ID:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
+// =======================================
 // Update Order Status
 // =======================================
 export async function updateOrderStatus(orderId, newStatus) {
@@ -516,6 +556,23 @@ export async function getWorkerById(workerId) {
     return worker;
   } catch (error) {
     console.error('Error getting worker:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
+// =======================================
+// Get all available workers
+// =======================================
+export async function getAvailableWorkers() {
+  let db;
+  try {
+    db = await openDb();
+    const workers = await db.all('SELECT * FROM Worker WHERE AvailabilityStatus = ?', 'Available');
+    return workers;
+  } catch (error) {
+    console.error('Error getting available workers:', error);
     throw error;
   } finally {
     if (db) await db.close();
@@ -606,6 +663,21 @@ export async function getJobsForWorker(workerId) {
     return jobs;
   } catch (error) {
     console.error('Error getting jobs for worker:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
+// Get the worker assigned to an order
+export async function getWorkerForOrder(orderId) {
+  let db;
+  try {
+    db = await openDb();
+    const job = await db.get('SELECT WorkerID FROM DeliveryJob WHERE OrderID = ? AND JobStatus != ?', [orderId, 'Declined']);
+    return job ? job.WorkerID : null;
+  } catch (error) {
+    console.error('Error getting worker for order:', error);
     throw error;
   } finally {
     if (db) await db.close();
@@ -1160,7 +1232,7 @@ export async function markFeedbackReviewed(feedbackId) {
 
     await db.run(
       `UPDATE Feedback
-      SET Reviewed = "Yes"
+      SET Reviewed = 1
       WHERE FeedbackID = ?`, feedbackId
     );
     
@@ -1334,65 +1406,15 @@ export async function getRestaurantStaffByEmail(email) {
   }
 }
 
-//get all restaurant staff
-export async function getRestaurantStaff() {
-  let db;
-  try {
-    // Open database connection
-    db = await openDb();
-
-    // Execute query to fetch all restaurant records
-    const restaurantStaff = await db.all('SELECT * FROM RestaurantStaff');
-
-    // Return array of restaurant objects
-    return restaurantStaff;
-  } catch (error) {
-    // Log error if query fails
-    console.error('Error getting restaurants:', error);
-    throw error;
-  } finally {
-    // Always close the database connection
-    if (db) {
-      await db.close();
-    }
-  }
-}
-
-//update properties of a restaurant staff
-export async function updateStaff(staffId, updates) {
+// Get all restaurant staff for a specific restaurant
+export async function getRestaurantStaffByRestaurantId(restaurantId) {
   let db;
   try {
     db = await openDb();
-    const fields = [];
-    const values = [];
-
-    if (updates.Name !== undefined) {
-      fields.push('Name = ?');
-      values.push(updates.Name);
-    }
-    if (updates.Email !== undefined) {
-      fields.push('Email = ?');
-      values.push(updates.Email);
-    }
-    if (updates.Phone !== undefined) {
-      fields.push('Phone = ?');
-      values.push(updates.Phone);
-    }
-    if (updates.PasswordHash !== undefined) {
-      fields.push('PasswordHash = ?');
-      values.push(updates.PasswordHash);
-    }
-
-    if (fields.length === 0) {
-      return true;
-    }
-
-    values.push(staffId);
-    const query = `UPDATE RestaurantStaff SET ${fields.join(', ')} WHERE StaffID = ?`;
-    await db.run(query, values);
-    return true;
+    const staff = await db.all('SELECT * FROM RestaurantStaff WHERE RestaurantID = ?', restaurantId);
+    return staff;
   } catch (error) {
-    console.error('Error updating RestaurantStaff:', error);
+    console.error('Error getting restaurant staff by restaurant ID:', error);
     throw error;
   } finally {
     if (db) {
@@ -1401,19 +1423,82 @@ export async function updateStaff(staffId, updates) {
   }
 }
 
-//delete a restaurant staff
-export async function deleteStaff(staffId) {
+// =======================================
+// NOTIFICATION FUNCTIONS
+// =======================================
+
+// Create a notification
+export async function createNotification(userType, userId, message, orderId = null) {
   let db;
   try {
     db = await openDb();
-    await db.run('DELETE FROM RestaurantStaff WHERE staffID = ?', staffId);
-    return true;
+    const validUserTypes = ['Customer', 'Worker', 'RestaurantStaff'];
+    if (!validUserTypes.includes(userType)) {
+      throw new Error(`Invalid userType: ${userType}. Valid types are: ${validUserTypes.join(', ')}`);
+    }
+    const result = await db.run(
+      'INSERT INTO Notification (UserType, UserID, Message, OrderID) VALUES (?, ?, ?, ?)',
+      [userType, userId, message, orderId]
+    );
+    return result.lastID;
   } catch (error) {
-    console.error('Error deleting restaurant staff:', error);
+    console.error('Error creating notification:', error);
     throw error;
   } finally {
-    if (db) {
-      await db.close();
+    if (db) await db.close();
+  }
+}
+
+// Get notifications for a user
+export async function getNotifications(userType, userId, isRead = null) {
+  let db;
+  try {
+    db = await openDb();
+    let query = 'SELECT * FROM Notification WHERE UserType = ? AND UserID = ?';
+    const params = [userType, userId];
+
+    if (isRead !== null) {
+      query += ' AND IsRead = ?';
+      params.push(isRead ? 1 : 0);
     }
+
+    query += ' ORDER BY CreatedAt DESC';
+    const notifications = await db.all(query, params);
+    return notifications;
+  } catch (error) {
+    console.error('Error getting notifications:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
+// Mark a single notification as read
+export async function markNotificationAsRead(notificationId) {
+  let db;
+  try {
+    db = await openDb();
+    await db.run('UPDATE Notification SET IsRead = 1 WHERE NotificationID = ?', notificationId);
+    return true;
+  } catch (error) {
+    console.error('Error marking notification as read:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
+// Mark all notifications as read for a user
+export async function markAllNotificationsAsRead(userType, userId) {
+  let db;
+  try {
+    db = await openDb();
+    await db.run('UPDATE Notification SET IsRead = 1 WHERE UserType = ? AND UserID = ?', [userType, userId]);
+    return true;
+  } catch (error) {
+    console.error('Error marking all notifications as read:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
   }
 }

@@ -1,6 +1,10 @@
 import express from 'express';
+import http from 'http';
 import path from 'path';
 import { fileURLToPath } from 'url';
+
+// WebSocket Server
+import * as websocket from './websocket.js';
 
 // Swagger Docs
 import swaggerUi from 'swagger-ui-express';
@@ -30,7 +34,14 @@ app.use('/api', apiRouter);
 
 // Serve Swagger UI Docs
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerFile));
+
+// Create HTTP server
+const server = http.createServer(app);
+
+// Upgrade the server to handle WebSockets
+websocket.upgrade(server);
+
 // Start server
-app.listen(port, '0.0.0.0', () => {
+server.listen(port, '0.0.0.0', () => {
   console.log(`Server listening on http://localhost:${port}`);
 });

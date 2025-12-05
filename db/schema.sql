@@ -115,3 +115,15 @@ CREATE TABLE IF NOT EXISTS Feedback (
     FOREIGN KEY (OrderID) REFERENCES "Order"(OrderID),
     FOREIGN KEY (CustomerID) REFERENCES Customer(CustomerID)
 );
+
+--- Create Notification Table
+CREATE TABLE IF NOT EXISTS Notification (
+    NotificationID INTEGER PRIMARY KEY AUTOINCREMENT,
+    UserType TEXT NOT NULL CHECK(UserType IN ('Customer', 'Worker', 'RestaurantStaff')),
+    UserID TEXT NOT NULL,
+    Message TEXT NOT NULL,
+    OrderID TEXT,
+    IsRead INTEGER DEFAULT 0 CHECK(IsRead IN (0, 1)),
+    CreatedAt TEXT DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (OrderID) REFERENCES "Order"(OrderID)
+);
