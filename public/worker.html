@@ -670,16 +670,15 @@
         if (data.event === 'new_order') {
           showToast('New delivery request available!');
           loadOrders();
+          loadNotifications();
         }
 
         if (data.event === 'order_status_update' && data.status === 'Ready for Pickup') {
           // Check if this worker is assigned to the order
           const workerId = currentWorker.WorkerID;
-          // We need to know which worker is assigned to the order.
-          // This information is not currently available in the broadcast message.
-          // For now, we will just show a generic notification.
           showToast(`An order is ready for pickup!`);
           loadActiveJobs();
+          loadNotifications();
         }
       };
 
