@@ -438,10 +438,21 @@ socket.onmessage = (event) => {
     const data = JSON.parse(event.data);
     console.log('WebSocket message received:', data);
 
-    if (data.event === 'new_order' && data.order.RestaurantID === currentStaff.RestaurantID) {
-        showToast('New order received!');
-        loadOrders(currentStatus);
-        loadNotifications();
+    if (data.event === 'new_order') {
+        // Check if this order belongs to this restaurant (use loose equality for type flexibility)
+        if (data.order && String(data.order.RestaurantID) === String(currentStaff.RestaurantID)) {
+            console.log('New order for this restaurant!');
+            showToast('New order received!');
+            // Refresh page after a short delay to show the toast first
+            setTimeout(() => {
+                window.location.reload();
+            }, 1);
+        } else {
+            console.log('New order but not for this restaurant', {
+                orderRestaurantID: data.order?.RestaurantID,
+                staffRestaurantID: currentStaff.RestaurantID
+            });
+        }
     }
 };
 
