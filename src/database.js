@@ -669,6 +669,21 @@ export async function getJobsForWorker(workerId) {
   }
 }
 
+// Get the worker assigned to an order
+export async function getWorkerForOrder(orderId) {
+  let db;
+  try {
+    db = await openDb();
+    const job = await db.get('SELECT WorkerID FROM DeliveryJob WHERE OrderID = ? AND JobStatus != ?', [orderId, 'Declined']);
+    return job ? job.WorkerID : null;
+  } catch (error) {
+    console.error('Error getting worker for order:', error);
+    throw error;
+  } finally {
+    if (db) await db.close();
+  }
+}
+
 // Get completed (or delivered) jobs for a worker including tip info
 export async function getCompletedJobsForWorker(workerId) {
   let db;

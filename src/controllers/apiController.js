@@ -1,4 +1,4 @@
-import { getRestaurants, getRestaurantById as dbGetRestaurantById, createRestaurant as dbCreateRestaurant, updateRestaurant as dbUpdateRestaurant, deleteRestaurant as dbDeleteRestaurant, getMenuItemsByRestaurantId, createOrder, getCart as dbGetCart, addToCart as dbAddToCart, removeFromCart as dbRemoveFromCart, clearCart as dbClearCart, getMenuItem as dbGetMenuItem, updateMenuItem as dbUpdateMenuItem, getOrdersByRestaurantId as dbGetOrdersByRestaurantId, getOrdersByCustomerId as dbGetOrdersByCustomerId, getFeedbackForWorker as dbGetFeedbackForWorker, deleteFeedback as dbDeleteFeedback, assignOrderToWorker, completeDeliveryJob, updateOrderStatus as dbUpdateOrderStatus, getWorkers, getWorkerById as dbGetWorkerById, updateWorker as dbUpdateWorker, createWorker, declineOrderByWorker, deleteWorker, createWorkerApplication as dbCreateWorkerApplication, getWorkerApplications as dbGetWorkerApplications, getWorkerApplicationById as dbGetWorkerApplicationById, updateWorkerApplicationStatus as dbUpdateWorkerApplicationStatus, updateWorkerApplication as dbUpdateWorkerApplication, deleteWorkerApplication as dbDeleteWorkerApplication, getCustomers as dbGetCustomers, getCustomerById as dbGetCustomerById, createCustomer as dbCreateCustomer, updateCustomer as dbUpdateCustomer, deleteCustomer as dbDeleteCustomer, getCustomerByEmail as dbGetCustomerByEmail, addFeedback as dbAddFeedback, getFeedbackByOrder as dbGetFeedbackByOrder, getSystemAdmin, getRestaurantStaffByEmail, getRestaurantStaffByRestaurantId, getWorkerActiveRestaurant, getOrderById, getAvailableWorkers, createNotification, getNotifications as dbGetNotifications, markNotificationAsRead as dbMarkNotificationAsRead, markAllNotificationsAsRead as dbMarkAllNotificationsAsRead, getJobsForWorker, getAvailableOrders as dbGetAvailableOrders, markFeedbackReviewed } from '../database.js';
+import { getRestaurants, getRestaurantById as dbGetRestaurantById, createRestaurant as dbCreateRestaurant, updateRestaurant as dbUpdateRestaurant, deleteRestaurant as dbDeleteRestaurant, getMenuItemsByRestaurantId, createOrder, getCart as dbGetCart, addToCart as dbAddToCart, removeFromCart as dbRemoveFromCart, clearCart as dbClearCart, getMenuItem as dbGetMenuItem, updateMenuItem as dbUpdateMenuItem, getOrdersByRestaurantId as dbGetOrdersByRestaurantId, getOrdersByCustomerId as dbGetOrdersByCustomerId, getFeedbackForWorker as dbGetFeedbackForWorker, deleteFeedback as dbDeleteFeedback, assignOrderToWorker, completeDeliveryJob, updateOrderStatus as dbUpdateOrderStatus, getWorkers, getWorkerById as dbGetWorkerById, updateWorker as dbUpdateWorker, createWorker, declineOrderByWorker, deleteWorker, createWorkerApplication as dbCreateWorkerApplication, getWorkerApplications as dbGetWorkerApplications, getWorkerApplicationById as dbGetWorkerApplicationById, updateWorkerApplicationStatus as dbUpdateWorkerApplicationStatus, updateWorkerApplication as dbUpdateWorkerApplication, deleteWorkerApplication as dbDeleteWorkerApplication, getCustomers as dbGetCustomers, getCustomerById as dbGetCustomerById, createCustomer as dbCreateCustomer, updateCustomer as dbUpdateCustomer, deleteCustomer as dbDeleteCustomer, getCustomerByEmail as dbGetCustomerByEmail, addFeedback as dbAddFeedback, getFeedbackByOrder as dbGetFeedbackByOrder, getSystemAdmin, getRestaurantStaffByEmail, getRestaurantStaffByRestaurantId, getWorkerActiveRestaurant, getOrderById, getAvailableWorkers, createNotification, getNotifications as dbGetNotifications, markNotificationAsRead as dbMarkNotificationAsRead, markAllNotificationsAsRead as dbMarkAllNotificationsAsRead, getJobsForWorker, getAvailableOrders as dbGetAvailableOrders, markFeedbackReviewed, getWorkerForOrder } from '../database.js';
 import argon2 from 'argon2';
 import { broadcast } from '../websocket.js';
 
@@ -138,21 +138,7 @@ export const placeOrder = async (req, res) => {
       console.error('Failed to create restaurant notifications:', notificationError);
     }
 
-    // Create notifications for available workers
-    try {
-      const availableWorkers = await getAvailableWorkers();
-      for (const worker of availableWorkers) {
-        await createNotification(
-          'Worker',
-          worker.WorkerID,
-          `New delivery request available`,
-          orderId
-        );
-      }
-    } catch (notificationError) {
-      // Don't fail the order if notification creation fails
-      console.error('Failed to create worker notifications:', notificationError);
-    }
+    // Workers will be notified when the order is ready for pickup, not when it's placed
 
     // Broadcast the new order to all clients
     const order = await getOrderById(orderId);
@@ -427,6 +413,25 @@ export const updateOrderStatus = async (req, res) => {
       }
     } catch (notificationError) {
       console.error('Failed to create customer notification:', notificationError);
+    }
+
+    // Create worker notification when order is ready for pickup
+    try {
+      if (status === 'Ready for Pickup') {
+        const order = await getOrderById(orderId);
+        const workerId = await getWorkerForOrder(orderId);
+
+        if (workerId && order) {
+          await createNotification(
+            'Worker',
+            workerId,
+            `Order #${orderId} is ready for pickup at ${order.restaurant?.Name || 'the restaurant'}`,
+            orderId
+          );
+        }
+      }
+    } catch (notificationError) {
+      console.error('Failed to create worker notification:', notificationError);
     }
 
     res.json({ message: 'Order status updated', status });

@@ -668,17 +668,17 @@
         console.log('WebSocket message received:', data);
 
         if (data.event === 'new_order') {
-          showToast('New delivery request available!');
+          // Silently refresh orders list without showing notification
           loadOrders();
-          loadNotifications();
         }
 
         if (data.event === 'order_status_update' && data.status === 'Ready for Pickup') {
-          // Check if this worker is assigned to the order
-          const workerId = currentWorker.WorkerID;
-          showToast(`An order is ready for pickup!`);
-          loadActiveJobs();
-          loadNotifications();
+          // Show notification when order is ready for pickup
+          showToast(`Order is ready for pickup!`);
+          // Refresh page after a short delay to show the toast first
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
         }
       };
 
