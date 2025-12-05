@@ -1217,7 +1217,7 @@ export async function markFeedbackReviewed(feedbackId) {
 
     await db.run(
       `UPDATE Feedback
-      SET Reviewed = "Yes"
+      SET Reviewed = 1
       WHERE FeedbackID = ?`, feedbackId
     );
     
