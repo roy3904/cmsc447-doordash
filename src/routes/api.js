@@ -10,6 +10,15 @@ router.post('/login', apiController.loginAdminUser);
 // Restaurant Staff Login
 router.post('/restaurant-staff/login', apiController.loginRestaurantStaff);
 
+// API Route to get restaurant staff from db'
+router.get('/restaurant-staff', getAllRestaurantStaff);
+
+//API Route to modify restaurant staff
+router.put('/restaurant-staff/:id', modifyRestaurantStaff)
+
+//api Route to delete restaurant staff
+router.delete('/restaurant-staff/:id', removeStaff);
+
 // API Route to get all restaurants from the db
 router.get('/restaurants', apiController.getAllRestaurants);
 

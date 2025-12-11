@@ -301,7 +301,7 @@ main, .dashboard, .food-container, .checkout-container {
     margin-left: 100px;
     margin-right: 100px;
     flex-wrap: wrap;
-    justify-content: flex-start;
+    justify-content: center;
 }
 
 .food-item{
