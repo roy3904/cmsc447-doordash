@@ -951,3 +951,45 @@ export const markAllNotificationsRead = async (req, res) => {
     res.status(500).json({ error: 'Failed to mark all notifications as read' });
   }
 };
+
+export const getAllRestaurantStaff = async (req, res) => {
+  // #swagger.tags = ['Restaurant Staff']
+  // #swagger.summary = 'Get all restaurant staff'
+  try {
+    const restaurantStaff = await db.getRestaurantStaff();
+    res.json({ restaurantStaff });
+  } catch (error) {
+    console.error('Failed to get restaurant staff:', error);
+    res.status(500).json({ error: 'Failed to get restaurant staff' });
+  }
+};
+
+export const modifyRestaurantStaff = async (req, res) => {
+  try {
+    const staffId = req.params.id;
+    const updates = req.body;
+    console.log(staffId, " ", updates);
+    if (!staffId) {
+      return res.status(400).json({ error: 'Staff ID required' });
+    }
+    await db.updateStaff(staffId, updates);
+    res.json({ message: 'Staff updated' });
+  } catch (error) {
+    console.error('Failed to update staff:', error);
+    res.status(500).json({ error: 'Failed to update staff' });
+  }
+};
+
+export const removeStaff = async (req, res) => {
+  try {
+    const staffId = req.params.id;
+    if (!staffId) {
+      return res.status(400).json({ error: 'Staff ID required' });
+    }
+    await db.deleteStaff(staffId);
+    res.json({ message: 'Staff deleted' });
+  } catch (error) {
+    console.error('Failed to delete staff:', error);
+    res.status(500).json({ error: 'Failed to delete staff' });
+  }
+};

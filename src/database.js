@@ -1423,6 +1423,90 @@ export async function getRestaurantStaffByRestaurantId(restaurantId) {
   }
 }
 
+//get all restaurant staff
+export async function getRestaurantStaff() {
+  let db;
+  try {
+    // Open database connection
+    db = await openDb();
+
+    // Execute query to fetch all restaurant records
+    const restaurantStaff = await db.all('SELECT * FROM RestaurantStaff');
+
+    // Return array of restaurant objects
+    return restaurantStaff;
+  } catch (error) {
+    // Log error if query fails
+    console.error('Error getting restaurants:', error);
+    throw error;
+  } finally {
+    // Always close the database connection
+    if (db) {
+      await db.close();
+    }
+  }
+}
+
+//update properties of a restaurant staff
+export async function updateStaff(staffId, updates) {
+  let db;
+  try {
+    db = await openDb();
+    const fields = [];
+    const values = [];
+
+    if (updates.Name !== undefined) {
+      fields.push('Name = ?');
+      values.push(updates.Name);
+    }
+    if (updates.Email !== undefined) {
+      fields.push('Email = ?');
+      values.push(updates.Email);
+    }
+    if (updates.Phone !== undefined) {
+      fields.push('Phone = ?');
+      values.push(updates.Phone);
+    }
+    if (updates.PasswordHash !== undefined) {
+      fields.push('PasswordHash = ?');
+      values.push(updates.PasswordHash);
+    }
+
+    if (fields.length === 0) {
+      return true;
+    }
+
+    values.push(staffId);
+    const query = `UPDATE RestaurantStaff SET ${fields.join(', ')} WHERE StaffID = ?`;
+    await db.run(query, values);
+    return true;
+  } catch (error) {
+    console.error('Error updating RestaurantStaff:', error);
+    throw error;
+  } finally {
+    if (db) {
+      await db.close();
+    }
+  }
+}
+
+//delete a restaurant staff
+export async function deleteStaff(staffId) {
+  let db;
+  try {
+    db = await openDb();
+    await db.run('DELETE FROM RestaurantStaff WHERE staffID = ?', staffId);
+    return true;
+  } catch (error) {
+    console.error('Error deleting restaurant staff:', error);
+    throw error;
+  } finally {
+    if (db) {
+      await db.close();
+    }
+  }
+}
+
 // =======================================
 // NOTIFICATION FUNCTIONS
 // =======================================
