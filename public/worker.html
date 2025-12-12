@@ -661,6 +661,8 @@
       loadActiveJobs();
       loadWorkerFeedback();
       loadNotifications();
+      // Load earnings summary on initial page load
+      loadWorkerEarnings();
       maybeCompleteJob();
 
       // WebSocket connection
